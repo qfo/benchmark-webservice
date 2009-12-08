@@ -1,0 +1,62 @@
+#
+# this script receives resDBfn, relsinfn, seqmapfn, orgMap, lock
+#
+OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+ReadProgram('/local/BenchmarkService/lib/darwinit');
+
+GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
+    global MappingComb;
+    MappingComb := 0;
+    ReadProgram(seqMapFn):
+    if MappingComb=0 then error('could not read sequence mapping file') fi:
+
+    mapping := []:
+    for pg to length(selOrg) do if selOrg[pg]>0 then
+        mapping := append(mapping, op(MappingComb[pg,selOrg[pg]]));
+    fi od:
+    mapping := transpose(sort(mapping));
+end:
+
+# callback function pairwise data
+PairRelations := proc(rel:list)
+    global VPs;
+    for z in rel do
+        i1 := SearchOrderedArray(z[1], mapping[1]);
+	if i1<=0 or i1>NM or mapping[1,i1]<>z[1] then next fi;
+        i2 := SearchOrderedArray(z[2], mapping[1]);
+	if i2<=0 or i2>NM or mapping[1,i2]<>z[2] then next fi;
+	
+        VPs[i1] := append(VPs[i1], i2); 
+        VPs[i2] := append(VPs[i2], i1); 
+    od:
+end:
+
+# callback function group data
+GroupRelations := proc(gps:list)
+    global VPs;
+    error('not yet implemented');
+end:
+
+
+WriteDB := proc(fn:string, VPs, mapping)
+    verb := Set(printgc=false);
+    OpenWriting(fn);
+    for i to length(VPs) do
+        oE := mapping[2,i];
+	vps := [op({seq(mapping[2,z],z=VPs[i])})];
+        printf('<E><OE>%d</OE><VP>%A</VP><SEQ>%s</SEQ></E>\n',
+	       oE, vps, Nr2SEQ(oE) );
+    od:
+    OpenWriting(previous);
+    Set(printgc=verb);
+end:
+
+mapping := GenerateProteinMapping(seqmapfn, orgMap):
+NM := length(mapping[1]):
+VPs := CreateArray(1..NM,[]);
+ReadProgram(relsinfn);
+WriteDB(resDBfn, VPs, mapping);
+ReadDb(resDBfn);
+
+CallSystem('rm -f '.lock);
+done

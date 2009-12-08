@@ -1,0 +1,95 @@
+
+# the following library allows the creation of an index
+# that uses a database as back-end, thus allowing a large
+# number of entries and memory-mapping
+#
+# Search is performed binarily.
+#
+#              C. Dessimoz, 25.8.06
+
+CreateIndex := proc(l:matrix,path:string)
+    sorted_l := sort(l);
+    # we make sure that no key is duplicated
+    for i to length(sorted_l)-1 do
+        if sorted_l[i,1] = sorted_l[i+1,1] then
+            error('Duplicated key at position '.string(i));
+        fi;
+    od;
+    if length(FileStat(path)) > 0 then
+        CallSystem('rm -f '.path);
+        CallSystem('rm -f '.path.'.map');
+        CallSystem('rm -f '.path.'.tree');
+    fi:
+    OpenWriting(path);
+    for i to length(sorted_l) do
+        printf('<E><KEY>%A</KEY><VALUE>%A</VALUE><SEQ>A</SEQ></E>\n',sorted_l[i,1],sorted_l[i,2]);
+    od:
+    OpenWriting(previous);
+    CallSystem('touch -f '.path.'.tree');
+    return(NULL);
+end:
+
+LoadIndex := proc(f:string)
+    global DB;
+    if type(DB,database) then
+        CurrentDB := DB:
+        IndexHandle := ReadDb(f);
+        DB := CurrentDB;
+    else
+        IndexHandle := ReadDb(f);
+    fi;
+    return(IndexHandle);
+end:
+
+SearchIndex := proc(key,IndexHandle:database)
+    global DB;
+    if type(DB,database) then
+        CurrentDB := DB;
+    fi;
+    DB := IndexHandle:
+
+    #### binary search
+    lo := 0;  hi := DB[TotEntries];
+    while hi-lo > 1 do
+        j := round(hi/2 + lo/2);
+        current_key := SearchTag('KEY',Entry(j));
+        if current_key = '' then
+            if type(CurrentDB,database) then DB := CurrentDB; fi;
+            error(sprintf('Malformed Index: Missing key in entry %d of index.',j));
+        else
+            current_key := parse(current_key);
+        fi;
+        if key = current_key then break;
+        elif op(1,{key,current_key}) = key then hi := j else lo := j fi;
+    od;
+    # we still need to test the last entry.
+    if key <> current_key and hi = DB[TotEntries] then
+        current_key := SearchTag('KEY',Entry(DB[TotEntries]));
+        if current_key = '' then
+            if type(CurrentDB,database) then DB := CurrentDB; fi;
+            error(sprintf('Malformed Index: Missing key in entry %d of index.',j));
+        else
+            current_key := parse(current_key);
+        fi;
+        if key <> current_key then
+            if type(CurrentDB,database) then DB := CurrentDB; fi;
+            return(NULL);
+        else
+            j := DB[TotEntries];
+        fi;
+    elif key <> current_key then
+        if type(CurrentDB,database) then DB := CurrentDB; fi;
+        return(NULL);
+    fi;
+    
+    #### return value
+    value := SearchTag('VALUE',Entry(j));
+    if value <> '' then 
+        res := parse(value); 
+    else
+        res := NULL;
+    fi;
+    if type(CurrentDB,database) then DB := CurrentDB; fi;
+    return(res);
+end:
+

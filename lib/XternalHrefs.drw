@@ -1,0 +1,197 @@
+#########################################
+# Create Hrefs to external sources      #
+#########################################
+
+NCBIHref := proc(id_:string, text:string)
+id := TrimID(id_);
+t:=sprintf('<a href="http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=%s" target="_new" class="external" title="NCBI"><img src="/imgs/ncbi.gif" border=0>&nbsp;%s</a>',id,text);
+return(t);
+end:
+
+ENSEMBLSpecies := table(0):
+ENSEMBLSpecies['ACA'] := 'Anolis_carolinensis':
+ENSEMBLSpecies['ANG'] := 'Anopheles_gambiae':
+ENSEMBLSpecies['BTA'] := 'Bos_taurus':
+ENSEMBLSpecies['CAF'] := 'Canis_familiaris':
+ENSEMBLSpecies['CPO'] := 'Cavia_porcellus':
+ENSEMBLSpecies['CIN'] := 'Ciona_intestinalis':
+ENSEMBLSpecies['CSAV'] :='Ciona_savignyi':
+ENSEMBLSpecies['CHO'] := 'Choloepus_hoffmanni':
+ENSEMBLSpecies['DAR'] := 'Danio_rerio':
+ENSEMBLSpecies['DNO'] := 'Dasypus_novemcinctus':
+ENSEMBLSpecies['DOR'] := 'Dipodomys_ordii':
+ENSEMBLSpecies['ETE'] := 'Echinops_telfairi':
+ENSEMBLSpecies['ECA'] := 'Equus_caballus':
+ENSEMBLSpecies['EEU'] := 'Erinaceus_europaeus':
+ENSEMBLSpecies['FCA'] := 'Felis_catus':
+ENSEMBLSpecies['TRU'] := 'Takifugu_rubripes':
+ENSEMBLSpecies['GAL'] := 'Gallus_gallus':
+ENSEMBLSpecies['GAC'] := 'Gasterosteus_aculeatus':
+ENSEMBLSpecies['GGO'] := 'Gorilla_gorilla';
+ENSEMBLSpecies[''] :=    'Homo_sapiens':
+ENSEMBLSpecies['LAF'] := 'Loxodonta_africana':
+ENSEMBLSpecies['MMU'] := 'Macaca_mulatta':
+ENSEMBLSpecies['MEU'] := 'Macropus_eugenii':
+ENSEMBLSpecies['MIC'] := 'Microcebus_murinus':
+ENSEMBLSpecies['MOD'] := 'Monodelphis_domestica':
+ENSEMBLSpecies['MUS'] := 'Mus_musculus':
+ENSEMBLSpecies['MLU'] := 'Myotis_lucifugus':
+ENSEMBLSpecies['OPR'] := 'Ochotona_princeps':
+ENSEMBLSpecies['OAN'] := 'Ornithorhynchus_anatinus':
+ENSEMBLSpecies['OCU'] := 'Oryctolagus_cuniculus':
+ENSEMBLSpecies['ORL'] := 'Oryzias_latipes':
+ENSEMBLSpecies['OGA'] := 'Otolemur_garnettii':
+ENSEMBLSpecies['PTR'] := 'Pan_troglodytes':
+ENSEMBLSpecies['PPY'] := 'Pongo_pygmaeus':
+ENSEMBLSpecies['PCA'] := 'Procavia_capensis':
+ENSEMBLSpecies['PVA'] := 'Pteropus_vampyrus':
+ENSEMBLSpecies['RNO'] := 'Rattus_norvegicus':
+ENSEMBLSpecies['SAR'] := 'Sorex_araneus':
+ENSEMBLSpecies['STO'] := 'Spermophilus_tridecemlineatus':
+ENSEMBLSpecies['TSY'] := 'Tarsius_syrichta':
+ENSEMBLSpecies['TEN'] := 'Tetraodon_nigroviridis':
+ENSEMBLSpecies['TBE'] := 'Tupaia_belangeri':
+ENSEMBLSpecies['TGU'] := 'Taeniopygia_guttata':
+ENSEMBLSpecies['TTR'] := 'Tursiops_truncatus':
+ENSEMBLSpecies['VPA'] := 'Vicugna_pacos':
+ENSEMBLSpecies['XET'] := 'Xenopus_tropicalis':
+
+ENSEMBLView := table(0):
+ENSEMBLView['G'] := 'geneview?gene=':
+ENSEMBLView['P'] := 'protview?peptide=':
+ENSEMBLView['T'] := 'transview?transcript=':
+
+ENSEMBLPrefix := table(''):
+ENSEMBLPrefix['Fugu_rubripes'] := 'NEW':
+
+ENSEMBLHref :=proc(id:string, text:string)
+t := sscanf(id,'ENS%[A-Z]%[0-9]');
+if length(t)<> 2 then t := sscanf(id,'SIN%[A-Z]%[0-9]') fi;
+if length(t)<> 2 then t := sscanf(id,'GS%[A-Z]%[0-9]') fi;
+if length(t)<> 2 then return(id) fi;
+os := ENSEMBLSpecies[t[1,1..-2]];
+if os=0 then return(id) fi;
+view := ENSEMBLView[t[1,-1]];
+if view=0 then return(id) fi;
+prefix := ENSEMBLPrefix[os];
+t:=sprintf('<a href="http://www.ensembl.org/%s/%s%s%s" target="_new" class="external" title="Ensembl"><img src="/imgs/ensembl.gif" border="0" alt="Ensembl"/>&nbsp;%s</a>',os,view,prefix,id,text);
+return(t);
+end:
+
+UnknownHref := proc(id:string)
+# NCBI accession: NP_415852.1
+t := sscanf(id,'%[A-Z]_%[0-9].%d');
+if length(t)=3 and length(t[1])=2 and t[3]<10 then return(NCBIHref(TrimID(id),id)) fi;
+# NCBI type II: AAF62337.1
+t := sscanf(id,'%[A-Z]%[0-9].%d');
+if length(t)=3 and length(t[1])=3 and t[3]<10 then return(NCBIHref(TrimID(id),id)) fi;
+# ENSEMBL: ENSG00000162687 or SINFRUG00000122008
+t := sscanf(id,'ENS%[A-Z]%[0-9]');
+if length(t)=2 then return(ENSEMBLHref(TrimID(id),id)) fi;
+t := sscanf(id,'SINFRU%[GPT]%[0-9]');
+if length(t)=2 then return(ENSEMBLHref(TrimID(id),id)) fi;
+t := sscanf(id,'GSTEN%[PTG]%[0-9]');
+if length(t)=2 then return(ENSEMBLHref(TrimID(id),id)) fi;
+# descr. of ENSEMBL enties: transcript_id=....
+t := sscanf(id,'transcript_id=%[A-Z]%[0-9]');
+if length(t)=2 then 
+    tid := t[1].t[2];
+    return('transcript_id='.ENSEMBLHref(tid,tid)) 
+fi;
+# otherwise return no Xref
+return(id);
+end:
+
+# if an ID contains multiple IDs, try to separate them
+UnknownHrefs := proc(ids:string);
+if ids='' then return(ids) fi;
+idl := SearchDelim(';',ids);
+for i to length(idl) do
+    idl[i] := TrimID(idl[i]);
+od:
+t := UnknownHref(idl[1]);
+for i from 2 to length(idl) do
+    t := t.', '.UnknownHref(idl[i]);
+od:
+if SearchString('<a href="',t)=-1 then t := ids fi;
+return(t);
+end:
+
+# Gene Onthology
+GOHref := proc(id_:string)
+# extract evidenc codes
+t := SearchDelim('@',id_):
+id := t[1]; ev := If(length(t)=2,t[2],'[]');
+if id[1..3]='GO:' then
+    t:='<a href="http://www.godatabase.org/cgi-bin/amigo/go.cgi?view=details&search_constraint=terms&depth=0&query='.id.'" target="_new" class="external" title="'.GOname(id).'">'.id.'</a>';
+	if length(ev)>2 then
+		t := t.'<span class="hint">('.ev[2..-2].')</span>';
+	fi:
+else
+   t := id;
+fi:
+return(t);
+end:
+
+GOHrefs := proc(ids:string)
+if ids='' then return(ids) fi;
+idl := SearchDelim('; ',ids);
+t := '';
+for id in idl do
+    t := t.GOHref(id).', ';
+od: 
+if length(t)>2 then t := t[1..-3] fi;
+return(t);
+end:
+
+# Swissprot
+SProtHref := proc(id_:string, text:string)
+id := TrimID(id_);
+t:=sprintf('<a href="http://uniprot.org/uniprot/%s" target="_new" class="external" title="UniProtKB/Swiss-Prot: reviewed"><img src="/imgs/reviewed.gif" border="0" alt="UniProtKB/Swiss-Prot"/>&nbsp;%s</a>',id,text);
+return(t);
+end:
+
+# InterPro
+IProHref := proc(id_:string, text:string)
+id := TrimID(id_);
+t:=sprintf('<a href="http://www.ebi.ac.uk/interpro/IEntry?ac=%s" class="external" target="_new">%s</a>'
+                                                         ,id,text);
+return(t);
+end:
+
+# UniProtKB/TrEMBL
+UniProtKBHref := proc(id_:string, text:string)
+id := TrimID(id_);
+t:=sprintf('<a href="http://www.uniprot.org/uniprot/%s" target="_new" class="external" title="UniProtKB/TrEMBL: unreviewed"><img src="/imgs/unreviewed.gif" border="0" alt="UniProtKB/TrEMBL"/>&nbsp;%s</a>',id,text);
+return(t);
+end:
+
+
+# return the best xref, align it (use a blank image for unknow xrefs)
+# this is used for tables of entries (search and groups)
+BestAlignedXRef := proc(e:Entry)
+id := SearchTag('AC',e);
+if id='' then id := SearchTag('ID',e) fi;
+id := TrimID(id);
+# replace ID by a UnProt ID if possible
+for tag in ['SwissProt','UniProt/TrEMBL','SwissProt_AC'] do
+    tg := SearchTag(tag,e);
+    if tg<>'' then
+	id := TrimID(tg);
+	ac := SearchTag('SwissProt_AC',e);
+	if ac='' then ac := id else ac := TrimID(ac) fi;
+	if tag<>'SwissProt' then
+	    p := SearchString('_',id);
+	    if p>-1 then id := id[1..p] fi;
+	    id := UniProtKBHref(ac,id);
+	else id := SProtHref(ac,id);
+	fi;
+	break
+    fi;
+od:
+# check if it is an other known xref (Ensembl or NCBI)
+if length(id)<2 or id[1..2]<>'<a' then id := UnknownHref(id) fi;
+# otherwise add a blank symbol in fron to make it aligned
+if length(id)<2 or id[1..2]<>'<a' then id := '<img src="/imgs/unknown.gif" border=0>&nbsp;'.id fi;
+return(id);
+end:

@@ -1,0 +1,62 @@
+PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, isPublic:boolean)
+   noeval(procname(args)):
+end:
+CompleteClass(PKeyData):
+
+AddPKeyData := proc(tit:string, fnbase:string)
+    global PROJECTS;
+    alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
+    id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
+    pr := PKeyData(id, tit, fnbase, date(), false);
+
+    OpenAppending(datdir.'projectKeys.drw');
+    printf('PROJECTS[%A] := %A:\n', id, pr);
+    OpenAppending(previous);
+    
+    ReadProgram(datdir.'projectKeys.drw');
+ 
+    return(id);
+end:
+
+GetPKeyData := proc(id:string)
+    global PROJECTS;
+    if not assigned(PROJECTS) or PROJECTS[id]=0 then 
+        ReadProgram(datdir.'projectKeys.drw') 
+    fi:
+
+    p := PROJECTS[id];
+    if p=0 then error('invalid project id') fi:
+    return(p);
+end:
+
+GetPublicProjects := proc()
+    global PROJECTS;
+    if not assigned(PROJECTS) then ReadProgram(datdir.'projectKeys.drw') fi;
+
+    p := [];
+    for id in Indices(PROJECTS) do
+        if PROJECTS[id, isPublic] then
+           p := append(p, PROJECTS[id]);
+        fi;
+    od;
+    return(p);
+end:
+
+GetProjISets := proc(prjs:list)
+    global ISET:
+    iSet := intersect();
+    for z in prjs do 
+        if type(z,PKeyData) then
+            PKobj := z;
+        elif type(z,string) then
+            PKobj := GetPKeyData(z);
+        else error('invalid project id') fi:
+
+        ISET := 0;
+        ReadProgram(PKobj['fnBase'].'.iset');
+        if ISET=0 then error('could not load iSet of '.PKobj['Title']) fi:
+
+        iSet := intersect(iSet, ISET);
+    od:
+    return(iSet);
+end:

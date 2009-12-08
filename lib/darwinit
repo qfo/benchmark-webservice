@@ -1,0 +1,43 @@
+# darwinit file for the special functions of the OMA browser
+if RUNLOCAL=false then
+    wdir := '/home/darwin/v2/source/bio-recipes/Orthologues/BenchmarkService/':
+    omalib := '/home/darwin/v2/source/bio-recipes/Orthologues/lib/':
+else
+    wdir := '/local/BenchmarkService/';
+    omalib := '/local/oma_lib/':
+fi:
+imgdir := wdir . 'htdocs/img/':
+imgurl := '/img/':
+brwdat := wdir . 'BrwDat/';
+brwrel := 'All.Oct2009';
+omaDBpath := brwdat.brwrel.'/';
+datdir := wdir . '/data/';
+resdir := wdir . '/results/';
+
+ReadProgram(omalib.'darwinit');
+GenerateTemplate := noeval(ReadLibrary( wdir.'/lib/GenerateTemplate', GenerateTemplate)):
+CreateIndex := noeval(ReadLibrary( wdir.'/lib/Index',CreateIndex));
+SearchIndex := noeval(ReadLibrary( wdir.'/lib/Index',SearchIndex));
+LoadIndex := noeval(ReadLibrary( wdir.'/lib/Index',LoadIndex));
+GetIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',GetIDType));
+WriteIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',WriteIDTypes));
+TrimID := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',TrimID));
+
+LoadGenomeStartIDs := noeval(ReadLibrary( wdir.'lib/EntryNav', LoadGenomeStartIDs));
+GenomeNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromENr));
+GenomeCodeFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeCodeFromENr));
+ENrFromLabel := noeval(ReadLibrary( wdir.'lib/EntryNav', ENrFromLabel));
+GenomeRange := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeRange));
+GenomeNrFromCode := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromCode));
+
+ENr2Label := noeval(ReadLibrary( wdir.'lib/EntryNav', ENr2Label));
+Nr2SEQ := noeval(ReadLibrary( wdir.'lib/EntryNav', Nr2SEQ));
+DbEntryNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', DbEntryNrFromENr));
+
+PKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',PKeyData));
+AddPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',AddPKeyData));
+GetPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPKeyData));
+GetPublicProjects := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPublicProjects));
+GetProjISets := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', GetProjISets));
+
+

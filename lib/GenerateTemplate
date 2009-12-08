@@ -1,0 +1,25 @@
+#
+#
+#
+
+GenerateTemplate := proc(file:string,t:table);
+	if not FileExists(file) then error('Missing template file'); fi;
+	f := remember(ReadRawFile(file));
+	tag_op := '<DVAR name="';
+	tag_cl := '">';
+	output := '';
+	do
+    	pos1 := SearchString(tag_op,f);
+		# we are over!
+		if pos1 = -1 then output := output . f; break fi;
+		# still have tags
+		output := output . f[1..pos1];
+		pos2 := SearchString(tag_cl,f[pos1..-1]);
+		if pos2 = -1 then error('Malformed darwin tag'); fi;
+		key := f[pos1+length(tag_op)+1..pos1+pos2-1];
+		if key = unassigned then error('Missing key '.key.' in input table'); fi;
+		output := output . t[key];
+		f := f[pos1+pos2+length(tag_cl)..-1];
+	od;
+	return(output);
+end:

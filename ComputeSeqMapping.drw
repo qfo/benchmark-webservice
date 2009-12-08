@@ -1,0 +1,95 @@
+#
+#  this script receives spListFn, seqFn, omaDBpath, resFn, lock
+#
+OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+ReadProgram('/local/BenchmarkService/lib/darwinit');
+SeqDB := DB := ReadDb(omaDBpath.'ServerSeqs.db');
+
+ExactSeq2ENr := proc(locID:string, pep:string)
+   global DB;
+   
+   # look for two possible sequences. first, the one passed to the function
+   #  and second also one where all the multi-Xs are collapsed to one single
+   #  X. This is the procedure we do when we convert the ensembl genomes.
+   l := length(pep):
+   if l<10 then return() fi:
+   
+   pep2 := copy(pep);
+   p := SearchString('XXXXX',pep2);
+   l2 := length(pep2):
+   while p>-1 do
+       for p2 from p+1 to l2 while pep2[p2]='X' do od:
+       pep2 := pep2[1..p].'X'.pep2[p2..-1];
+       p := SearchString('XXXXX',pep2);
+       l2 := length(pep2);
+   od:
+   
+   DB := SeqDB:
+   for s in [pep, If(l2<l, pep2, NULL)] do
+      ssd := SearchSeqDb(s);
+      cand := []:
+      for off from ssd[1,1] to ssd[1,2] do 
+         eNr := GetEntryNumber(DB[Pat,off]);
+         dbSeq := Sequence(Entry(eNr)):
+	 if |length(dbSeq) - length(s)| / length(s) < 0.005 then 
+	    cand := append(cand, eNr);
+	 fi:
+      od:
+      
+      if length(cand)>0 then break fi:
+   od:
+
+   return(cand):
+end:
+
+SpecNrMap := proc( sp )
+    g := SearchOrderedArray(sp, SPS):
+    assert(g>0 and g<=NSPS and SPS[g]=sp);
+    return( g ):
+end:
+
+
+SPS := 0;
+ReadProgram(spListFn);
+if SPS=0 then 
+   print('faild to read the SpeciesListFile '.spListFn);
+   quit;
+fi;
+SPS := sort(SPS):
+NSPS := length(SPS):
+
+
+LoadGenomeStartIDs();
+MappingComb := CreateArray(1..NSPS, 1..NS+1, []);
+
+to 1 do
+   OpenReading(seqFn);
+   cnt := 0;
+   do 
+       Protein := 0;
+       line := ReadLine();
+       if line=EOF then break fi:
+       
+       cnt := cnt+1;
+       if Protein=0 then print('failed to read line '.cnt.' in '.seqFn); quit fi:
+       og := SpecNrMap(Protein[2]):
+       PepMap := ExactSeq2ENr( Protein[1], Protein[3] );
+       if length(PepMap)>0 then
+           for z in PepMap do
+	       g := GenomeNrFromENr(z):
+	       MappingComb[og,g] := append(MappingComb[og,g], [Protein[1],z]);
+	   od:
+       else
+           MappingComb[og,NS+1] := append(MappingComb[og,NS+1], Protein[1]):
+       fi:
+   od:
+od:
+
+OpenWriting(resFn):
+printf('MappingComb := %A:\n', MappingComb):
+printf('SPS := %A:\n', SPS);
+OpenWriting(previous):
+
+CallSystem('rm -f '.lock);
+printf('# successfully finished\n');
+done;

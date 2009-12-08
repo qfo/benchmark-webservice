@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<link type="text/css" rel="stylesheet" href="/benchmarkservice.css"/>
+<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
+<title>Ortholog Benchmarking Webservice</title>
+<script src="/scripts.js" type="text/javascript"></script>
+</head>
+<body> 
+<div id="main">
+<!-- <img src="<DVAR name="logo">" alt="Ortholog Benchmarking Service" width="299" height="134"/><br/> -->
+
+<form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
+ <fieldset><legend>Protein Sequence Data</legend>
+  <div class="notes"><h4>Protein Sequence Data</h4>
+   <p>Please provid us with your own orthology inference data.</p>
+  </div>
+  <div>
+   <label for="seqs">Protein Sequences:</label>
+   <input type="file" name="seqs" class="inputFile" />
+  </div>
+  <div>
+   <label for="seqType">Format:</label> 
+   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked />Fasta
+   <input type="radio" name="seqType" value="xml" class="inputRadio"/>XML
+  </div>
+ </fieldset>
+ 
+ <fieldset><legend>Ortholog Relation Data</legend>
+  <div class="notes"><h4>Ortholog Relation Data</h4>
+   <p>Please provid us with your own orthology inference data.</p>
+  </div>
+  <div>
+   <label for="rels">Ortholog Relations:</label>
+   <input type="file" name="rels" class="inputFile" />
+  </div>
+  <div>
+   <label for="relType">Format:</label> 
+   <input type="radio" name="relType" value="txt" class="inputRadio" checked />Text
+   <input type="radio" name="relType" value="xml" class="inputRadio"/>XML
+  </div>
+ </fieldset>
+
+ <fieldset><legend>General Project Infos</legend>
+ <div class="notes"><h4>General Infos</h4>
+  <p>This information will be used for displaying the results</p>
+ </div>
+ <div>
+  <label for="methName">Method Name:</label> 
+  <input type="text" name="methName"  maxlength="50" class="inputText" />
+ </div>
+ </fieldset>
+
+ <fieldset>
+  <input type="hidden" name="f" value="UploadData">
+  <input type="submit" value="Submit &raquo;" class="inputSubmit"/>
+ </fieldset>
+</form>
+<p><b>About:</b> <a href="/about.html">OMA Browser</a> | 
+<a href="/Algorithm.html">The OMA Algorithm</a></p>
+<p><em>&copy;2009, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em><p>
+</small>
+</div>
+</body>
+</html>

@@ -1,0 +1,365 @@
+body {
+    background-color: white; 
+    font-family: sans-serif, Arial, Geneva;
+    padding: 0px;
+    font-size: 12pt;
+}
+
+#main {
+    width: 960px;
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+a:link { text-decoration: none; }
+	
+a:visited { text-decoration: none; }
+
+a:hover { text-decoration: underline; }
+
+.external { 
+    color: #4444FF; 
+    padding-right:11px;
+    background: url(/imgs/ext.png) 0 no-repeat;
+    background-position:center right;
+}
+
+table { 
+    border-spacing: 0pt;
+    border-width: 0pt;
+}
+
+.topline {
+    border-top: 1px solid #888888;
+}
+
+.oddrow {
+    background-color: #eeeeee;
+}
+
+pre {
+    font-size: 10pt;
+}
+
+.hint {
+    font-size:small;
+    color: #440044;
+}
+
+.error {
+    color: #CC0000;
+}
+
+.kw1 {
+    font-weight: bold;
+    background-color: #FFFF66;
+}
+
+.kw2 {
+    font-weight: bold;
+    background-color: #A0FFFF;
+}
+
+.kw3 {
+    font-weight: bold;
+    background-color: #99FF99;
+}
+
+.kw4 {
+    font-weight: bold;
+    background-color: #FF9999;
+}
+
+.entryhead {
+    font-weight: bold;
+    background-color: #AAFFAA;
+    padding: 2px;
+    border: 1px solid #77BB77;
+}
+
+.entrytitle {
+    font-weight: bold;
+    font-size: 18pt;
+}
+
+.internal {
+    color: #DDD;
+    font-size: smaller;
+}
+
+.new {
+    font-size: small;
+    color: red;
+    background-color: yellow;
+}
+
+.phylotable {
+    font-size: smaller;
+}
+
+.xstooltip {
+    visibility: hidden; 
+    position: absolute; 
+    top: 0;  
+    left: 0; 
+    z-index: 2; 
+    font: normal 8pt sans-serif; 
+    padding: 3px; 
+    border: solid 1px;
+    background-color: #AAFFAA;
+}
+
+.navline {
+    background-color: #DDEEDD;
+    padding: 3px;
+}
+
+.protlist {
+    font-size: 12pt;
+    border-spacing: 7pt;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+
+}
+
+.species {
+    font-size: small;
+}
+
+.desc {
+    font-size: small;
+}
+
+.headmain {
+    background-color: #AAFFAA;
+    padding-left: 30px;
+    padding-right: 30px;
+    border: 1px solid #77BB77;
+}
+
+.head1 {
+    font-size: 180%;
+    font-weight: bold;
+    padding-bottom: 8px;
+}
+
+.head2 {
+    font-size: small;
+}
+
+
+div.modalPopupTransparent {
+    filter: alpha(opacity=75);
+    -moz-opacity: .75;
+    background: #CCCCCC;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+div.modalPopupWindow {
+    position: absolute;
+    background-color: #FFFF88;
+    border: 2px solid black;
+    padding: 8px;
+    text-align: left;
+}
+
+
+
+form {
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+  min-width: 560px;
+  max-width: 620px;
+  width: 590px;
+}
+
+form fieldset {
+  clear: both;
+  font-size: 100%;
+  border-color: #000000;
+  border-width: 1px 0 0 0;
+  border-style: solid none none none;
+  padding: 10px;
+  margin: 0 0 0 0;
+}
+
+form fieldset legend {
+  font-size: 130%;
+  font-weight: normal;
+  color: #000000;
+  margin: 0 0 0 0;
+  padding: 0 5px;
+}
+
+label {
+  font-size: 100%;
+}
+
+input, select, textarea {
+  font-family: sans-serif, Arial, Geneva;
+  font-size: 100%;
+  color: #000000;
+}
+
+textarea {
+  overflow: auto;
+}
+
+form div {
+  clear: left;
+  display: block;
+  width: 800px;
+  zoom: 1;
+  margin: 5px 0 0 0;
+  padding: 1px 3px;
+}
+
+form fieldset div.notes {
+  float: right;
+  width: 260px;
+  height: auto;
+  margin: 0 0 10px 10px;
+  padding: 5px;
+  border: 1px solid #666666;
+  background-color: #ffffe1;
+  color: #666666;
+  font-size: 88%;
+}
+
+form fieldset div.notes h4 {
+  background-image: url(/imgs/icon_info.gif);
+  background-repeat: no-repeat;
+  background-position: top left;
+  padding: 3px 0 3px 27px;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: #666666;
+  color: #666666;
+  font-size: 100%;
+}
+
+form fieldset div.notes p {
+  margin: 0em 0em 1.2em 0em;
+  color: #666666;
+  font-size: 80%
+}
+
+form fieldset div.notes p.last {
+  margin: 0em;
+}
+
+form div fieldset {
+  clear: none;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #666666;
+  margin: 0 0 0 144px;
+  padding: 0 5px 5px 5px;
+  width: 197px;
+}
+
+form div fieldset legend {
+  font-size: 100%;
+  padding: 0 3px 0 9px;
+}
+
+form div label {
+  display: block;
+  float: left;
+  width: 200px;
+  padding: 3px 5px;
+  margin: 0 0 5px 0;
+  text-align: right;
+}
+
+form div label.labelCheckbox, form div label.labelRadio {
+  float: none;
+  display: block;
+  width: 200px;
+  zoom: 1;
+  padding: 0;
+  margin: 0 0 5px 142px;
+  text-align: left;
+}
+
+form div fieldset label.labelCheckbox, form div fieldset label.labelRadio {
+  margin: 0 0 5px 0;
+  width: 170px;
+}
+
+form div img {
+  border: 1px solid #000000;
+}
+
+form div select, form div textarea {
+  width: 200px;
+  padding: 1px 3px;
+  margin: 0 0 0 0;
+}
+
+form div input.inputText, form div input.inputPassword {
+  width: 200px;
+  padding: 1px 3px;
+  margin: 0 0 0 0;
+}
+
+form div input.inputFile {
+  width: 211px;
+}
+
+form div select.selectOne, form div select.selectMultiple {
+  width: 211px;
+  padding: 1px 3px;
+}
+
+form div input.inputCheckbox, form div input.inputRadio, input.inputCheckbox, input.inputRadio {
+  display: inline;
+  height: auto;
+  width: auto;
+  background-color: transparent;
+  border-width: 0;
+  padding: 0;
+  margin: 0 0 0 140px;
+}
+
+form div.submit {
+  width: 214px;
+  padding: 0 0 0 146px;
+}
+
+form div.submit div {
+  display: inline;
+  float: left;
+  text-align: left;
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
+form div input.inputSubmit, form div input.inputButton, input.inputSubmit, input.inputButton {
+  background-color: #cccccc;
+  color: #000000;
+  width: auto;
+  padding: 0 6px;
+  margin: 0;
+}
+
+form div.submit div input.inputSubmit, form div.submit div input.inputButton {
+  float: right;
+  margin: 0 0 0 5px;
+}
+
+form div small {
+  display: block;
+  margin: 0 0 5px 142px;
+  padding: 1px 3px;
+  font-size: 88%;
+  zoom: 1;
+}
+

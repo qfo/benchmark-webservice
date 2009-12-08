@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
+<link type="text/css" rel="stylesheet" href="/benchmarkservice.css"/>
+<script src="/scripts.js" type="text/javascript"></script>
+<title>Benchmark Selection <DVAR name="tit"></title>
+</head>
+<body>
+<div id="main">
+<h2>Benchmark Selection for <DVAR name="tit"></h2>
+Select from the available benchmarks and against which standard 
+orthlogy inference project you would like to compare your predictions
+<form action="gateway.pl" method="post">
+
+<fieldset><legend>Phylogeny-Based Definition Tests</legend>
+  <div class="notes"><h4>Phylogeny-Based Definition</h4>
+   <p>According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
+  </div>
+  <div>
+   <label for="pTTEuk">Species Tree Discordance</label>
+    <fieldset>
+     <input type="checkbox" name="pTTEuk1" class="inputCheckbox" <DVAR name="hasEukaryota">/>Eukaryotic <br/>
+     <input type="checkbox" name="pTTFun1" class="inputCheckbox" <DVAR name="hasFungi">/>Fungi <br/>
+     <input type="checkbox" name="pTTBac1" class="inputCheckbox" <DVAR name="hasBacteria">/>Bacteria <br/>
+    </fieldset>
+   <label for="pTTPrj1">Projects to compare with</label>
+   <DVAR name="TTprojects">
+  </div>
+ </fieldset>
+ 
+ <fieldset><legend>Function-Based Definition Test</legend>
+  <div class="notes"><h4>Function-Based</h4>
+   <p>One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
+  </div>
+  <div>
+   <input type="checkbox" name="pGO1" class="inputCheckbox" checked />Gene Ontology Test<br/>
+   <label for="pGOPrj1">Projects to compare with</label>
+   <DVAR name="pGOprojects">
+  </div>
+ </fieldset>
+
+ <fieldset>
+  <div>
+   <input type="hidden" name="f" value="RunTests" />
+   <input type="hidden" name="pPID" value="<DVAR name="PID">" />
+   <input type="submit" value="Compute &raquo;" />
+  </div>
+ </fieldset>
+</form>
+<DVAR name="content">
+</div>
+</body>
+</html>

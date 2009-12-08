@@ -1,0 +1,9 @@
+# words or sequences that are not allowed as keywords
+NoGos := {'and','to','similar','by','protein','similar to','start','start by',
+'start by similarity','saccharomyces','cerevisiae','of','involved in',
+'or','(ec','[goid','predicted','activity [goid','contains','in',
+'start by similar','at',',','transcript','aa',' ','saccharomyces cerevisiae',
+'as','the','by similar','go_component:','go_function:','go_process:','domain',
+'identical','putative','highly similar to','from','by similarity',
+'highly similar','similarity','homolog','aa)','e()','e():','hypothetical',
+'identified by'}:

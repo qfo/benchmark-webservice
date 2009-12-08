@@ -1,0 +1,480 @@
+##
+#  Script to run the species tree discordance test  
+#
+#  in: resFn, problem, projs, lock
+Set(printgc=false):
+
+OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+CreateDayMatrices();
+
+
+prj := [seq(GetPKeyData(z),z=projs)]:
+iSet := GetProjISets(prj);
+LoadGenomeStartIDs(); # initalizes GSID
+
+ReadProgram(problem); # this loads the species tree and the bins containg species
+nrBins := length(catBins);
+catBinsNr := [seq({seq(GenomeNrFromCode(g),g=catBins[i])}, i=1..nrBins)];
+
+
+
+tab := Table(Row('Debug Message'), 
+        Row(sprintf('Currently computing the tree tests for %s domain. The following projects are taken: %A))\n', problem, [seq(z['Title'], z=prj)])));
+OpenWriting(resFn);
+printf('%A', tab);
+OpenWriting(previous);
+
+CallSystem('rm -f '.lock);
+done;
+
+ProblemCase := proc(proj:list(string), spTree:Tree, 
+    genomes:list(string), protNrs:list(posint) )
+
+    noeval(procname(args)):
+end:
+
+
+
+BuildCategories := proc(cats:list(string))
+    ReadProgram(BrwDatDir.'Summaries.drw');
+    GS := GenomeSummaries:
+    categories := table():
+    for z in genomes do
+        lin := GS[z,Lineage];
+        catInd := -1;
+        for c from length(cats) to 1 by -1 do
+            if cats[c]=z then 
+                categories[z] := c:
+                break:
+            else
+                if SearchArray(cats[c], lin) > 0 then
+                    catInd := c:
+                fi:
+            fi:
+        od:
+        if catInd > 0 then
+            categories[z] := catInd;
+        fi:
+    od:
+    print(categories):
+    return(categories);
+end:
+
+GenMapFromDB := proc( db:database, tag:string ; filter:list(posint..posint))
+    global DB;
+    if type(DB,database) then curDB := DB fi:
+
+    DB := db;
+    mapping := [];
+    for i to DB[TotEntries] do
+        key := eval(parse(SearchTag(tag, Entry(i))));
+        toMap := nargs<=2:
+        if nargs>2 then 
+            for k to length(filter) do
+                if filter[k,1]<=key and key<=filter[k,2] then 
+                    toMap := true;
+                    break:
+                fi:
+            od:
+        fi:
+        if toMap then
+            mapping := append( mapping, [key,i] );
+        fi:
+    od:
+    mapping := transpose(sort(mapping));
+    
+    if type(curDB,database) then DB := curDB: fi:
+    return( mapping );
+end:
+
+GetTrueTree := proc(spTree:Tree, labs:list(string), pres:list(boolean))
+    tt := copy(SpecTree):
+    if length(labs)=length(pres) then
+        for l in Leaves(tt) do l[Label] := labs[l[Label]] od:
+    else
+        llabs := CreateArray(1..length(pres),'');
+        i := 1;
+        for j to length(pres) do if pres[j] then
+            llabs[j] := labs[i]; i:=i+1;
+        fi od:
+        
+        tt := GetTrueTreeR(tt,llabs, pres):
+    fi:
+    return(tt):
+end:
+
+GetTrueTreeR := proc(t:Tree, l:list(string), pres:list(boolean))
+    if type(t,Leaf) then
+        if not pres[ t[Label] ] then return( NULL ):
+        else return( Leaf( l[t[Label]], t[2..-1]) ); fi:
+    else
+        tL := GetTrueTreeR(t[Left],l,pres):
+        tR := GetTrueTreeR(t[Right],l,pres):
+        if tL=NULL then tR;
+        elif tR=NULL then tL;
+        else Tree(tL,t[Height],tR); fi:
+    fi:
+end:
+
+TreebasedTest := proc(Projects:list(Project), iSet:{set(posint),intersect()}, 
+    specs:table, parallelDir:string ) 
+
+    global DB, IndDB:
+    
+    # this function takes a project-database, a category_1_protein for which a tree should be build later on,
+    #   a map containing the categories for all the possible proteins and a variable protSet in which the 
+    #   result will be stored. the function returns a number corresponding to the categorypostions which are
+    #   assigneable powered by their index. if there are less than length(categories)-2 non-assignable 
+    #   positions, the function returns NULL
+    GetCatProtSet := proc( prot:posint, vps:list, treeProts:array)
+        vpCat := CreateArray(1..NrLeafs,[]);
+        for vp in vps do
+            if not member(vp, iSet) then next fi: 
+
+            k1 := SearchOrderedArray(vp, catMap[1]);
+            cat:= catMap[3,k1]:
+            if cat > 0 then 
+                vpCat[cat] := append( vpCat[cat], vp );
+            fi:
+        od:
+        # add id of protein itself at position 1 and choose
+        #   a random protein from each position.
+        treeProts[1] := prot; 
+        mis := []; 
+        for i from 2 to NrLeafs do
+            if length(vpCat[i])>0 then
+                treeProts[i] := vpCat[i,Rand(1..length(vpCat[i]))];
+            else 
+                treeProts[i] := 0; 
+                mis := append(mis,i);
+            fi:
+        od:
+        
+        return(mis);
+        
+    end:
+
+   
+    printf('# TreeTest for %A on %s PID %d\n', [seq(p[Name],p=Projects)], hostname(), getpid());
+    
+    catMap := []: NrGenomes := length(genomesStartID[1]):
+    for i to NrGenomes do
+        new_cat := specs[genomesStartID[2,i]];
+        if new_cat=unassigned then new_cat := -1 fi:
+        catMap := append( catMap, [genomesStartID[1,i], 
+                    If( i<NrGenomes, genomesStartID[1,i+1]-1,IndDB[TotEntries]),
+                    new_cat] );
+    od:
+    catMap := transpose(catMap):
+    
+    SetRandSeed();
+    
+    # the number of Leafs a tree has (same than number of categories).
+    NrLeafs := length(categories);
+
+    cat1p := SearchAllArray(1,catMap[3]);
+    cat1_filter := [];
+    for c in cat1p do
+        cat1_filter := append(cat1_filter, catMap[1,c]..catMap[2,c]);
+    od:
+    printf('Looping over the those entries (bounds): %A\n', cat1_filter):
+    printf('Threshold of present lineages: %d (of %d)\n', presThreshold, NrLeafs);
+
+    NrProj := length(Projects);
+    ppMapProj := CreateArray(1..NrProj,[]);
+    for pNr to NrProj do if not Projects[pNr,directMap] then
+        ppMapProj[pNr] := GenMapFromDB(Projects[pNr,'DB'],'ENTRYNR',cat1_filter):
+    fi od;
+    
+    c_trees := Counter('# of possible trees');
+    
+    rFrac := 1: tfile := '/tmp/xxx.tmp':
+    while true do
+    # for all the proteins belonging to category[1] look at possible trees
+    for filt_part in cat1_filter do 
+        for protNr from filt_part[1] to filt_part[2] do
+            if not member(protNr, iSet) then next fi:
+            
+            printf('Processing OMA Entry %d\n', protNr);
+            treeProt := CreateArray(1..NrProj): 
+            # logical array if lineage is present in all projects
+            pres := CreateArray(1..NrLeafs,true);
+            goOn := true; 
+            for pNr to NrProj while goOn do
+                
+                # get entry nr of project DB of protein having omaEntryNr protNr
+                if Projects[pNr,directMap] then oE := protNr;
+                else
+                    i1 := SearchOrderedArray(protNr, ppMapProj[pNr,1]);
+                    if i1<=0 or i1>length(ppMapProj[pNr,1]) or 
+                        protNr<>ppMapProj[pNr,1,i1] then
+                        error('must not happen');
+                    fi:
+                    oE := ppMapProj[pNr,2,i1]:
+                fi:
+            
+                prots4tree := CreateArray(1..NrLeafs);
+                DB  := Projects[pNr,'DB']: 
+                vps := ParseLong(SearchTag('VP', Entry(oE)));
+                GetCatProtSet( protNr, vps, prots4tree );
+                treeProt[pNr] := prots4tree;
+                pres := [seq(pres[i] and prots4tree[i]>0, i=1..NrLeafs)];
+            
+                # if too many categories are missing, skip
+                if sum( If(pres[i],1,0), i=1..NrLeafs) < presThreshold then
+                    goOn := false; next
+                fi:
+            od;
+
+            if not goOn then 
+                printf('\t\tskipping protein %d\n\n', protNr);
+                next
+            fi:
+            
+            c_trees + 1:
+            if assigned(onlyCount) and onlyCount then next fi:
+            if Rand() > rFrac then next fi:
+
+            # generate a jobfile
+            builtTrees := probs := [];
+            for pNr to NrProj do
+                labs := prots := genomes := []:
+                for i to NrLeafs do
+                    if pres[i] then 
+                        p_i := treeProt[pNr,i];
+                        gInd := SearchOrderedArray(p_i, genomesStartID[1]);
+                        genomes := append(genomes, genomesStartID[2,gInd]):
+                        prots := append(prots, p_i-genomesStartID[1,gInd]+1):
+                        labs := append(labs, genomes[-1].prots[-1]);
+                    fi:
+                od:
+                tt := GetTrueTree(SpecTree, labs, pres);
+                tInd := SearchArray(tt, builtTrees); 
+                if tInd>0 then
+                    # another proj builts same tree. just compute it once...
+                    probs[tInd,1] := append(probs[tInd,1], Projects[pNr,Name]):
+                else
+                    builtTrees := append(builtTrees, tt):
+                    probs := append(probs,
+                        ProblemCase([Projects[pNr,Name]], tt, genomes, prots) );
+                fi:
+            od:
+            OpenAppending(tfile):
+            for k to length(probs) do
+                printf('echo "projects := %A: doRAxML := %a: spTree := %A: '.
+				'genomes := %A: ids := %A: ReadProgram(''RunParallel32.drw''):" | '.
+                'darwindev -q > %s/tmp-%d-%d\n', probs[k,1], doRAxML, probs[k,2], 
+                probs[k,3], probs[k,4], parallelDir, protNr,k):
+            od:
+            OpenAppending(previous);
+        od 
+    od:
+    print(c_err,c_trees):
+    if |rFrac-1|< 1e-10 and c_trees[value]-MAX_NR_TREES > .01*MAX_NR_TREES then
+        rFrac := MAX_NR_TREES/c_trees[value];
+		CallSystem('rm -f '.tfile);
+    else
+        CallSystem('cat '.tfile.' >> '.commfile.'; rm -f '.tfile);
+        break;
+    fi;
+    od:
+    return( c_trees[value]*NrProj );
+end:
+
+
+##
+#  MAIN 
+#
+
+# default variables
+if not assigned(problem) then 
+    printf('ERROR: no problem defined\n'):
+    quit:
+fi:
+ReadProgram(problem):
+if not assigned(SpecTree) then 
+    printf('ERROR: TrueTree is not specified\n'):
+    quit:
+fi:
+if not assigned(resDir) then resDir := '.' fi:
+if not assigned(isLineage) then isLineage := true fi:
+if not assigned(doRAxML) then doRAxML := true fi:
+if not assigned(onlyCount) then onlyCount := false fi:
+
+
+# check what projects should be compared
+t0_UTC := UTCTime():
+ap := AllProjects():
+if not assigned(doProjs) or not type(doProjs,list) then
+    printf('ERROR: doProjs has to be assigned\n'):
+    quit:
+fi:
+nrP := length(doProjs):
+if sum([ seq( If(type(doProjs[i],posint),1,0), i=1..nrP) ])=nrP then
+    prj := doProjs
+else
+    apName := [seq( lowercase(ap[i,Name]), i=1..length(ap))]:
+    prj := [seq( SearchArray( lowercase(doProjs[i]), apName), i=1..nrP)]:
+fi:
+for i to nrP do if prj[i]<=0 then 
+    printf('ERROR: unknown Project (%a)\n', doProjs[i]):
+    quit:
+fi od:
+
+# construct filename of result
+resFile := sprintf('%s/result_%d', resDir, prj[1]):
+for i from 2 to nrP do resFile := resFile.'-'.prj[i] od:
+resFile := sprintf('%s_%s',resFile,problem):
+
+# construct filename of result
+pDir := sprintf('%s/parallel/%s_%d', resDir, problem, prj[1]):
+for i from 2 to nrP do pDir := pDir.'-'.prj[i] od:
+CallSystem('mkdir -p '.pDir):
+
+# generate commfile name and write header
+commfile := sprintf('xxx.%s_%d',problem, prj[1]):
+for i from 2 to nrP do commfile := commfile.'-'.prj[i] od:
+OpenWriting(commfile):
+printf('#!/bin/tcsh\nset noclobber\nunlimit stacksize\n');
+printf('cd %s\n', BenchDir.'/TreeBased/');
+OpenWriting(previous):
+CallSystem('chmod +x '.commfile):
+
+
+prj := [seq( ap[prj[i]], i=1..nrP)]:
+
+# built genome starting Id lookup table
+DB := IndDB:
+genomesStartID := transpose(BuildGenomeStartID()):
+
+iSet := LoadISet(prj):
+if isLineage then specs := BuildCategories(categories);    fi:
+
+# call main method
+nrCalls := TreebasedTest( prj, iSet, specs, pDir ):
+
+
+printf('# Comparison finished. Took %.2f hrs Wall time on %s\n', 
+    (UTCTime()-t0_UTC)/3600, hostname()):
+done:
+
+
+
+
+################
+################
+# code to generate parallel execution of 
+# treebased test
+ReadProgram('../darwinit'):
+ReadProgram('../configs/stockholm.drw'):
+cats := ['FungiCat.drw','EukayotaCat.drw','BacteriaCat.drw']:
+ap := prjFun(): 
+
+OpenWriting('xxx'):
+printf('#!/bin/tcsh\nset noclobber\nunlimit stacksize\n'):
+printf('alias darwin /home/darwin/v2/source/darwin64\n'):
+printf('cd /home/darwin/v2/source/bio-recipes/Orthologues/'.
+    'adriaal/benchmark/TreeBased/\n'):
+for c in cats do for i from 2 to length(ap) do
+    printf('echo "doProjs:=[''OMA'',''%s'']: problem := ''%s'': ', ap[i,Name], c):
+    printf('ReadProgram(''TreebasedTest.drw''):" | '):
+    printf('darwin -q > tmp-1-%d-%s\n',i,c[1..-8]):
+od: od:
+OpenWriting(previous):
+CallSystem('chmod 755 xxx'):
+
+
+###########
+###########
+foreach i ( 55 55 55 55 ) 
+  echo linneus$i.inf.ethz.ch
+  ssh linneus$i.inf.ethz.ch "nice +14 v2/source/bio-recipes/Orthologues/adriaal/benchmark/TreeBased/xxx" </dev/null & ; sleep 9
+end
+
+
+if not type(genomes, list(string)) then
+	printf('genomes has to be of type list(string): %A\n', genomes);
+	quit
+fi:
+
+if not type(ids,list(posint)) then
+	printf('ids has to be of type list(posint): %A\n', ids);
+	quit
+fi:
+
+if not type(spTree, Tree) then
+	printf('spTree has to be of type Tree: %A\n', spTree);
+	quit
+fi:
+
+if not type(projects,list(string)) then
+	printf('projects has to be of type list(string): %A\n', projects);
+	quit
+fi:
+if not assigned(doRAxML) then doRAxML := true fi:
+
+printf('# TreeTest for %A %A on %s, PID %.5d\n', genomes, ids, hostname(), getpid()):
+t0 := UTCTime():
+
+TreeResult := proc(protID:posint, proj:string, spTree:Tree, 
+	prots:list(posint), cor_trees:list(integer), trees:list(Tree))
+
+    noeval(procname(args))
+end:
+
+N := length(genomes):
+# load dbs
+ReadProgram(BrwDatDir.'GenomeFileName'):
+dbs := CreateArray(1..N):
+for i to N do dbs[i] := ReadDb(GenomeFileName[genomes[i]]) od:
+
+if not assigned(DMS) then CreateDayMatrices() fi;
+
+seqs := CreateArray(1..N): 
+labs := CreateArray(1..N):
+for i to N do
+	DB := dbs[i]; seqs[i] := Sequence(Entry(ids[i]));
+	labs[i] := sprintf('%s%d',genomes[i],ids[i]);
+od:
+
+treeMST := traperror( PhylogeneticTree(seqs, labs, DISTANCE) );
+if treeMST=lasterror then 
+    printf('ERROR in PhylogenticTree for %s:\t%s',
+          projects[1],lasterror); 
+	quit
+fi: 
+okMST := If( IdenticalTrees(treeMST, spTree), 1, 0 );
+
+if doRAxML then
+    msa := traperror( MuscleMSA(seqs, labs) );
+    if msa=lasterror then 
+        printf('ERROR in MAlign for %s:\t%s\n', projects[1], lasterror);
+		quit
+    fi:
+    treeML := traperror( RAxML(msa, 'GAMMA') ):
+    if treeML=lasterror then 
+        printf('ERROR in RAxML for %s:\t%s\n'.projects[1],lasterror);
+    	quit
+	fi:
+    okML := If( IdenticalTrees(treeML, spTree), 1, 0):
+else
+    treeML := NULL: okML := 0:
+fi:
+
+# built genome starting Id lookup table
+genomesStartID := transpose(BuildGenomeStartID()):
+
+dbids := CreateArray(1..N):
+for i to N do 
+	k := SearchArray(genomes[i], genomesStartID[2]);
+	dbids[i] := genomesStartID[1,k]+ids[i]-1:
+od:
+for p in projects do
+	res := TreeResult(dbids[1], p, spTree, dbids, 
+	                  [okMST, okML], [treeMST, treeML]);
+	printf('%A:\n', res):
+od:
+
+printf('# Took %.2f min Wall\n', (UTCTime() - t0)/60 );
+done;
+

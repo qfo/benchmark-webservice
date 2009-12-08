@@ -1,0 +1,24 @@
+categories := CreateArray(1..6):
+
+isLineage := false:
+SpecTree := Tree(Tree(Tree(Tree(Tree(Leaf(1,5),4,Leaf(2,5)),3,Leaf(3,4)),2,Leaf(4,3)),1,Leaf(5,2)),0,Leaf(6,1)):
+doDarwin := true:
+doRAxML  := false:
+onlyCount := false:
+restart := false:
+presThreshold := 5:
+MAX_NR_TREES := 10000:
+
+specs := table():
+specs[YEAST] := 1:
+specs[CANGA] := 1:
+specs[ASHGO] := 2:
+specs[KLULA] := 2:
+specs[CANAL] := 3:
+specs[DEBHA] := 3:
+specs[YARLI] := 4:
+specs[ASPFU] := 5:
+specs[SCHPO] := 5:
+specs[CRYNE] := 6:
+specs[ENCCU] := 6:
+
