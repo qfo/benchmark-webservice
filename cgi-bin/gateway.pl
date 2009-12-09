@@ -27,7 +27,7 @@ use Time::localtime;
 use strict;
 
 # maximum Post size in bytes 
-$CGI::POST_MAX = 1<<26;
+$CGI::POST_MAX = 1<<30;
 
 #use Time::HiRes qw(time);
 my $hostname = `/bin/hostname`;
