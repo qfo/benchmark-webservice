@@ -1,4 +1,5 @@
-PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, isPublic:boolean)
+PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, 
+                 isPublic:boolean, directMap:boolean)
    noeval(procname(args)):
 end:
 CompleteClass(PKeyData):
@@ -7,7 +8,7 @@ AddPKeyData := proc(tit:string, fnbase:string)
     global PROJECTS;
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
-    pr := PKeyData(id, tit, fnbase, date(), false);
+    pr := PKeyData(id, tit, fnbase, date(), false, false);
 
     OpenAppending(datdir.'projectKeys.drw');
     printf('PROJECTS[%A] := %A:\n', id, pr);

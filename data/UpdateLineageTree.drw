@@ -1,0 +1,55 @@
+#
+# This script updates the TreeTest_xxx.drw files. If new genomes have been
+# added to the OMA Browser, this script should be ran in order to have a 
+# complete set of genomes in the datasets.
+#
+
+########################
+# Adjust this part according to your dataset
+MAX_NR_TREES := 10000;
+missThreshold := 1;
+
+Lineage := ['Homo sapiens', 'Primates', 'Mammalia', 'Vertebrata', 'Protostomia', 'Fungi']:
+#Lineage := ['Gammaproteobacteria','Betaproteobacteria', 'Alphaproteobacteria', 
+#            'Deltaproteobacteria', 'Epsilonproteobacteria', 'Spirochaetes','Firmicutes'];
+
+dataset := 'Eukaryota';
+#dataset := 'Bacteria';
+
+speciestree := Tree(Tree(Tree(Tree(Tree(Leaf(1,5),4,Leaf(2,5)),3,Leaf(3,4)),2,Leaf(4,3)),1,Leaf(5,2)),0,Leaf(6,1)):
+#speciestree := Tree(Tree(Tree(Tree(Tree(Tree(Leaf(1,6),5,Leaf(2,6)),4,Leaf(3,5)),3,Leaf(4,4)),2,Leaf(5,3)),1,Leaf(6,2)),0,Leaf(7,1)):
+########################
+
+pwd := TimedCallSystem('pwd')[2];
+if SearchDelim('/',pwd[1..-2])[-1]<>'BenchmarkService' then 
+    printf('wrong working directory. Should be at BenchmarkService'); quit; fi:
+
+ReadProgram('lib/darwinit');
+ReadProgram(omaDBpath.'Summaries.drw');
+GS := GenomeSummaries:
+
+nrBins := length(Lineage); 
+catBins := CreateArray(1..nrBins,{});
+for g in genomes do
+    lin := GS[g,'Lineage'];
+    bin := 0;
+    for i from nrBins to 1 by -1 do
+        if SearchArray(Lineage[i], lin) > 0 then
+            bin := i;
+        fi:
+    od:
+    # if genome belongs to any bin, store it in most specific linneage bin.
+    if bin>0 then catBins[bin] := append(catBins[bin], g) fi:
+od:
+
+hist := [seq(length(z), z=catBins)];
+fn := sprintf('data/TreeCat_%s.drw', dataset);
+OpenWriting(fn);
+printf('# Histogram of the %d used genomes: %A\n', sum(hist), hist);
+lprint('catBins :=', catBins, ':');
+printf('MAX_NR_TREES := %d:\n', MAX_NR_TREES);
+printf('speciestree := %A:\n', speciestree);
+printf('missThreshold := %d:\n', missThreshold);
+OpenWriting(previous);
+
+done
