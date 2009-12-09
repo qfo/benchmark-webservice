@@ -12,7 +12,7 @@ ExactSeq2ENr := proc(locID:string, pep:string)
    #  and second also one where all the multi-Xs are collapsed to one single
    #  X. This is the procedure we do when we convert the ensembl genomes.
    l := length(pep):
-   if l<10 then return() fi:
+   if l<10 then return([]) fi:
    
    pep2 := copy(pep);
    p := SearchString('XXXXX',pep2);
