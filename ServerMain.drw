@@ -481,18 +481,18 @@ bsMapData := proc(PID:string)
            t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown">\n'.
                 '<tr><th>extracted species</th><th># protein not mappable at all</th><th>mapped species</th></tr>';
            for pg to prNS do
-               t := sprintf('%s<tr><td>%a</td><td>%d</td><td><select name="p%04d">\n', 
-                    t, SPS[pg], cnts[pg,NS+1], pg);
+               t := t.sprintf('<tr><td>%a</td><td>%d</td><td><select name="p%04d">\n', 
+                    SPS[pg], cnts[pg,NS+1], pg);
                ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-               t := sprintf('%s  <option value="n.a.">not mapping</option>\n',t);
+               t := t.'<option value="n.a.">not mapping</option>\n';
                for p to NS while cnts[pg,ord[p]]>0 do 
-                   t := sprintf('%s  <option value="%s"%s>%s - %s</option>\n',
-                        t, genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
-                        GS[genomes[ord[p]],SCINAME]);
+                   t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
+                          genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
+                          GS[genomes[ord[p]],SCINAME]);
                od:
                t := t.'</select></td></tr>\n';
            od:
-           t := sprintf('%s</table>\n<input type="hidden" name="p0" value="%s" />\n',t, PID);
+           t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
            t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
                 '<input type="submit" value="Next"/></form>\n';
                     
