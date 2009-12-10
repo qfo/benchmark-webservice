@@ -5,7 +5,7 @@ OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 ReadProgram('/local/BenchmarkService/lib/darwinit');
 
 GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
-    global MappingComb;
+    global MappingComb, Colls;
     MappingComb := 0;
     ReadProgram(seqMapFn):
     if MappingComb=0 then error('could not read sequence mapping file') fi:
@@ -14,7 +14,14 @@ GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
     for pg to length(selOrg) do if selOrg[pg]>0 then
         mapping := append(mapping, op(MappingComb[pg,selOrg[pg]]));
     fi od:
+    mapping := sort(mapping);
+    pset := [op({seq(z[2],z=mapping)})];
     mapping := transpose(sort(mapping));
+end:
+
+ResolveCollisions := proc(mapping)
+    pset := {seq(z[2],z=mapping)}:
+
 end:
 
 # callback function pairwise data
@@ -58,6 +65,7 @@ end:
 
 
 mapping := GenerateProteinMapping(seqmapfn, orgMap):
+CollResolver := ResolveCollisions(mapping):
 NM := length(mapping[1]):
 VPs := CreateArray(1..NM,[]);
 ReadProgram(relsinfn);

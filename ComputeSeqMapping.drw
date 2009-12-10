@@ -4,6 +4,7 @@
 OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 ReadProgram('/local/BenchmarkService/lib/darwinit');
 SeqDB := DB := ReadDb(omaDBpath.'ServerSeqs.db');
+printlevel := 2;
 
 ExactSeq2ENr := proc(locID:string, pep:string)
    global DB;
@@ -60,8 +61,8 @@ NSPS := length(SPS):
 
 
 LoadGenomeStartIDs();
-MappingComb := CreateArray(1..NSPS, 1..NS+1, []);
-
+MappingComb := CreateArray(1..NSPS, 1..NS+1, []):
+id2nr := CreateArray(1..DB[TotEntries],[]);
 to 1 do
    OpenReading(seqFn);
    cnt := 0;
@@ -76,6 +77,7 @@ to 1 do
        PepMap := ExactSeq2ENr( Protein[1], Protein[3] );
        if length(PepMap)>0 then
            for z in PepMap do
+	       id2nr[z] := append(id2nr[z], Protein[1]);
 	       g := GenomeNrFromENr(z):
 	       MappingComb[og,g] := append(MappingComb[og,g], [Protein[1],z]);
 	   od:
@@ -85,9 +87,19 @@ to 1 do
    od:
 od:
 
+#########
+# find collissions to warn user
+Colls := []:
+for i to DB[TotEntries] do if length( id2nr[i] )>1 then
+    z := {op(id2nr[i])}:
+    if length(z)<>length(id2nr[i]) then lprint('doubious: multiple ids: ', id2nr[i]) fi:
+    Colls := append(Colls, [z,i]); 
+fi od:
+    
 OpenWriting(resFn):
 printf('MappingComb := %A:\n', MappingComb):
 printf('SPS := %A:\n', SPS);
+printf('Colls := %A:\n', Colls);
 OpenWriting(previous):
 
 CallSystem('rm -f '.lock);

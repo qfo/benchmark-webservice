@@ -36,7 +36,7 @@ GenomeNrFromCode := proc(g:string)
         if k<=0 or k>NS or GSPOR[1,k]<>g then 
             error('unknown genome code: '.g); fi:
 
-        return(k);
+        return(GSPOR[2,k]);
     fi:
 end:
 

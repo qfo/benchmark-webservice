@@ -23,12 +23,11 @@ for i to nrBins do for z in catBinsNr[i] do orgNr2Bin[z] := i; od od:
 nP := length(prj); dbs := CreateArray(1..nP):
 for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
-directMap := evalb(iSet=intersect());
 cases := [];
 for gNr in catBinsNr[1] do for oE from GSID[1,gNr] to GSID[1,gNr]+GSID[3,gNr]-1 do
     if not member(oE, iSet) then next fi:
     
-    assert( orgNr2Bin[GenomeNr(oE)]=1 );
+    assert( orgNr2Bin[GenomeNrFromENr(oE)]=1 );
     treeProt := CreateArray(1..nP): 
     # logical array if lineage is present in all projects
     miss := CreateArray(1..nrBins, 0);
@@ -36,9 +35,9 @@ for gNr in catBinsNr[1] do for oE from GSID[1,gNr] to GSID[1,gNr]+GSID[3,gNr]-1 
     for pNr to nP do
         # get entry nr of project DB of protein having omaEntryNr oE
         DB := dbs[pNr];
-        eNr := If( prj['directMap'], oE, DbEntryNrFromENr(oE) );
+        eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
         
-        vps := ParseLong(SearchTag('VP', Entry(eNr)));
+        vps := ParseLongList(SearchTag('VP', Entry(eNr)));
 	vpCat := CreateArray(1..nrBins,[]):
         for vp in vps do
 	    if not member(vp,iSet) then next fi;
@@ -48,7 +47,7 @@ for gNr in catBinsNr[1] do for oE from GSID[1,gNr] to GSID[1,gNr]+GSID[3,gNr]-1 
 	od:
 	for i from 2 to nrBins do 
 	    if length(vpCat[i])>0 then
-	       vpCat[i] := vpCat[i, Rand(1..length(vpCat[i])];
+	       vpCat[i] := vpCat[i, Rand(1..length(vpCat[i]))];
 	    else 
 	       miss[i] := 1;
 	    fi
@@ -72,7 +71,7 @@ od od:
 if length(cases) > MAX_NR_TREES then
     cases := Shuffle(cases)[1..MAX_NR_TREES]:
 fi:
-
+lprint('nr of cases:',length(cases));
 
 RFstat := [seq( Stat(sprintf('Robinson-Fould split distance for %s', 
                              p['Title'])), p=prj)];
@@ -83,7 +82,7 @@ for cas in cases do for pNr to nP do
     for i to nrBins do if cas[pNr,i]>0 then 
         seqs := append(seqs, Sequence(Entry(cas[pNr,i])));
         labs := append(labs, i);
-    od:
+    fi od:
     genetree := traperror(PhylogeneticTree(seqs, labs, 'DISTANCE'));
     if genetree=lasterror then cErr+1; next fi;
 
