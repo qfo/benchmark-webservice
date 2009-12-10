@@ -1,11 +1,40 @@
-#
-# GoTest measures the similarity between the putative orthologs 
-# of any project. 
+# 
+# A script to measures the similarity between the putative orthologs 
+# based on the code of the benchmark paper.
 #
 #                               Adrian Altenhoff, Sept 2006
 #                  rewritten    Adrian Altenhoff, July 13, 2007
 #   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009  
 #
+#  in: resFn, filter, projs, lock
+
+Set(printgc=false); Set(gc=5e6):
+OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+
+prj := [seq(GetPKeyData(z),z=projs)]:
+iSet := GetProjISets(prj);
+LoadGenomeStartIDs(); # initalizes GSID
+
+# load the project databases
+nP := length(prj); dbs := CreateArray(1..nP):
+for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
+
+GOparents := CreateArray(1..1e5):
+for i to 1e5 do GOparents[i] := GOsuperclassR(i) od:
+
+directMap := evalb(iSet=intersect()):
+nProt := If(directMap,GODB[TotEntries],length(iSet)):
+GOs := CreateArray(1..nProt,[]):
+DB := GODB;
+for i to nProt do 
+    eNr := If(directMap, i, iSet[i]);
+    gos := SearchTag('GO', Entry(eNr)):
+    if gos='' then next fi;
+    gos := SearchDelim('; ',gos);
+    
+    gos := [seq(SearchDelim('@',z), z=gos)];
+od:
+
 
 ReadProgram('/home/darwin/v2/source/bio-recipes/Orthologues/'.
             'adriaal/lib/darwinit'):
