@@ -29,6 +29,7 @@ GenomeCodeFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeCodeFromENr)
 ENrFromLabel := noeval(ReadLibrary( wdir.'lib/EntryNav', ENrFromLabel));
 GenomeRange := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeRange));
 GenomeNrFromCode := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromCode));
+ParseLongList := noeval(ReadLibrary( wdir.'lib/EntryNav', ParseLongList));
 
 ENr2Label := noeval(ReadLibrary( wdir.'lib/EntryNav', ENr2Label));
 Nr2SEQ := noeval(ReadLibrary( wdir.'lib/EntryNav', Nr2SEQ));

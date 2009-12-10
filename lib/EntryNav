@@ -103,3 +103,12 @@ DbEntryNrFromENr := proc(oE:posint)
     fi:
 end:
 
+###############
+# Parses a potentially long LIST of more than 70000 chars.
+ParseLongList := proc(s:string)
+        if length(s) <= 70000 then return(parse(s));
+        else
+                parts := SearchDelim(',', s[2..-2]);
+                return( [seq( parse(z), z=parts)] );
+        fi;
+end:
