@@ -50,6 +50,7 @@ for gNr in catBinsNr[1] do for oE from GSID[1,gNr] to GSID[1,gNr]+GSID[3,gNr]-1 
 	       vpCat[i] := vpCat[i, Rand(1..length(vpCat[i]))];
 	    else 
 	       miss[i] := 1;
+	       vpCat[i] := 0;
 	    fi
 	od:
 	vpCat[1] := oE;
@@ -71,23 +72,34 @@ od od:
 if length(cases) > MAX_NR_TREES then
     cases := Shuffle(cases)[1..MAX_NR_TREES]:
 fi:
-lprint('nr of cases:',length(cases));
+nC := length(cases);
+lprint('nr of cases:',nC);
 
-RFstat := [seq( Stat(sprintf('Robinson-Fould split distance for %s', 
-                             p['Title'])), p=prj)];
+RFstat := [seq( Stat(p['Title']), p=prj)];
 DB := SeqDB := ReadDb(omaDBpath.'ServerSeqs.db'):
 cErr := Counter('# errors in PhylogeneticTree');
-for cas in cases do for pNr to nP do
-    seqs := labs := [];
-    for i to nrBins do if cas[pNr,i]>0 then 
-        seqs := append(seqs, Sequence(Entry(cas[pNr,i])));
-        labs := append(labs, i);
-    fi od:
-    genetree := traperror(PhylogeneticTree(seqs, labs, 'DISTANCE'));
-    if genetree=lasterror then cErr+1; next fi;
-
-    RFstat[pNr] + RobinsonFoulds([genetree, speciestree])[1,2];
-od od:
+t0 := time();
+for cnt to nC do
+    cas := cases[cnt];
+    for pNr to nP do
+        seqs := labs := [];
+        for i to nrBins do if cas[pNr,i]>0 then 
+            seqs := append(seqs, Sequence(Entry(cas[pNr,i])));
+            labs := append(labs, i);
+        fi od:
+        genetree := traperror(PhylogeneticTree(seqs, labs, DISTANCE));
+        if genetree=lasterror then cErr+1; next fi;
+        
+        pruned_st := PruneTree(speciestree, labs);
+        RFstat[pNr] + RobinsonFoulds([genetree, pruned_st])[1,2];
+    od;
+    
+    OpenWriting(lock);
+    lprint( getpid() );
+    printf( 'Finished %d / %d (%.1f%%) trees in %.2f min\n', 
+        cnt, nC, 100*cnt/nC, (time()-t0)/60);
+    OpenWriting(previous);
+od:
 
 OpenWriting(resFn);
 printf('RFstat := %A:\n', RFstat):

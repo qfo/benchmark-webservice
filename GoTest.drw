@@ -19,21 +19,63 @@ LoadGenomeStartIDs(); # initalizes GSID
 nP := length(prj); dbs := CreateArray(1..nP):
 for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
-GOparents := CreateArray(1..1e5):
-for i to 1e5 do GOparents[i] := GOsuperclassR(i) od:
+nGo := 1e5;
+GOparents := CreateArray(1..nGo):
+for i to nGo do GOparents[i] := GOsuperclassR(i) od:
 
+# extract important all GO annotations from ServerIndexed.db
+DB := GODB := ReadDb(omaDBpath.'ServerIndexed.db'):
 directMap := evalb(iSet=intersect()):
 nProt := If(directMap,GODB[TotEntries],length(iSet)):
 GOs := CreateArray(1..nProt,[]):
 DB := GODB;
 for i to nProt do 
     eNr := If(directMap, i, iSet[i]);
-    gos := SearchTag('GO', Entry(eNr)):
+    gos := SearchTag('GO', Entry(eNr));
     if gos='' then next fi;
     gos := SearchDelim('; ',gos);
     
     gos := [seq(SearchDelim('@',z), z=gos)];
+    for z in gos do if length( intersect({z[2,2..-2]}, filter) )>0 then
+        GOs[i] := append(GOs[i], parse(z[1,4..-1]) );
+    fi od:
 od:
+
+# compute GO term frequencies of proteins in iSet;
+freqs := CreateArray(1..nGo): cnts := 0;
+for p in GOs do for go in p do
+    cnts := cnts+1;
+    freqs[go] := freqs[go]+1;
+    for parent in GOparents[go] do freqs[parent] := freqs[parent]+1; od:
+od od:
+freqs := freqs/cnts;
+
+
+# measure similarities between putative orthologs
+Sims := [seq(Stat(z['Title']), z=prj)];
+iList := [op(iSet)]:
+for pNr to nP do 
+    DB := prj[pNr];
+    for i to nProt do if length(GOs[i]) > 0 then
+        oE := If(directMap, i, iSet[i]);
+        eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
+    
+        vps := ParseLongList(SearchTag('VP', Entry(eNr)));
+        for vp in vps do 
+            if vp<oE then next fi: # uni-directional
+            if not member(vp, iSet) then next fi; # 
+            
+            k := SearchOrderedArray(vp, iList):
+            assert(k>0 and k<nProt and iList[k]=vp);
+            if length(GOs[k]) = 0 then next fi:
+            
+
+            for go1 in GOs[i] do for go2 in GOs[k] do
+            od od:
+        od:
+    od:
+od:
+            
 
 
 ReadProgram('/home/darwin/v2/source/bio-recipes/Orthologues/'.
@@ -84,11 +126,11 @@ ND}; # No biological Data available
 FilterEvidence := proc(evidFilter:set(string); 
           termFilter:procedure)
     N := length(genomes);
-	doTermMap := evalb(assigned(termFilter));
+        doTermMap := evalb(assigned(termFilter));
     ns := [seq( GS[genomes[i,2],TotEntries], i=1..N)]:
     GOout := CreateArray(1..N,[]);
     for i to N do GOout[i]:=CreateArray(1..ns[i],[]) od:
-	c_anno := Counter('# of annotated proteins');
+        c_anno := Counter('# of annotated proteins');
     s_nrEv := Stat('Number of evidence codes / GO annotaion');
     s_finP := Stat('Avg. nr of annotations / annotated protein');
     for i to N do 
@@ -98,35 +140,35 @@ FilterEvidence := proc(evidFilter:set(string);
         M := length(go);
         GOout[i] := CreateArray(1..M,[]);
         for j to M do if go[j]<>[] then
-			c_anno + 1;
-			tmp := []:
+                        c_anno + 1;
+                        tmp := []:
             for k to length(go[j]) do
-				terms := If( doTermMap, termFilter(go[j,k,1]), 
-					[If(type(go[j,k,1],string),parse(go[j,k,1,4..-1]),go[j,k,1])] );
-				if terms=[] then next fi:
+                                terms := If( doTermMap, termFilter(go[j,k,1]), 
+                                        [If(type(go[j,k,1],string),parse(go[j,k,1,4..-1]),go[j,k,1])] );
+                                if terms=[] then next fi:
 
                 evid := intersect(go[j,k,2], evidFilter);
                 if evid <> {} then
                     tmp := append(tmp, seq([t, evid],t=terms));
-				fi:
+                                fi:
             od:
-			tmp := sort(tmp): 
-			for x1 to length(tmp) do 
-				for x2 from x1+1 to length(tmp) while tmp[x1,1]=tmp[x2,1] do od:
-				if doTermMap then
-					go_sup := {seq(op(termFilter(z)),z=GOsuperclassR(tmp[x1,1]))}:
-				else
+                        tmp := sort(tmp): 
+                        for x1 to length(tmp) do 
+                                for x2 from x1+1 to length(tmp) while tmp[x1,1]=tmp[x2,1] do od:
+                                if doTermMap then
+                                        go_sup := {seq(op(termFilter(z)),z=GOsuperclassR(tmp[x1,1]))}:
+                                else
                     go_sup := GOsuperclassR(tmp[x1,1]);
-				fi:
-				GOout[i,j] := append(GOout[i,j], [ tmp[x1,1], go_sup,
-				    union(seq(z[2],z=tmp[x1..x2-1])) ] );
-				assert( GOout[i,j,-1,3] minus existEvidCodes = {} ):
-				s_nrEv + length(GOout[i,j,-1,3]);
+                                fi:
+                                GOout[i,j] := append(GOout[i,j], [ tmp[x1,1], go_sup,
+                                    union(seq(z[2],z=tmp[x1..x2-1])) ] );
+                                assert( GOout[i,j,-1,3] minus existEvidCodes = {} ):
+                                s_nrEv + length(GOout[i,j,-1,3]);
                 # adjust index variable
-				x1 := x2-1;
-			od:
+                                x1 := x2-1;
+                        od:
 
-			if GOout[i,j]<>[] then s_finP + length(GOout[i,j]) fi;
+                        if GOout[i,j]<>[] then s_finP + length(GOout[i,j]) fi;
         fi od;
     od;
     print(c_anno, s_nrEv, s_finP);
@@ -143,8 +185,8 @@ ComputeGoFrqs := proc(GOs:list, iSet:{intersect(),set(posint)} )
     freqs := CreateArray(1..gomax);
     cnts := 0:
     for i to IndDB[TotEntries] do
-		if not member(i,iSet) then next fi;
-		
+                if not member(i,iSet) then next fi;
+                
         k := SearchOrderedArray(i, gT[1]);
         # protein nr in genome
         j := i - gT[1,k] + 1;
@@ -179,8 +221,8 @@ GoTest := proc( proj:Project, GOs:list, freqs:list({0,positive}) ;
     t0 := time();
     DB := proj['DB'];
     gT := transpose(genomes);
-	s_stat := Covariance('Average Similarity and Information conservation',
-		['Similarity','Information']):
+        s_stat := Covariance('Average Similarity and Information conservation',
+                ['Similarity','Information']):
     simEv := table(); infoEv := table();
     
     for i to DB[TotEntries] do
@@ -203,11 +245,11 @@ GoTest := proc( proj:Project, GOs:list, freqs:list({0,positive}) ;
             # at this point, we have two proteins having at least 
             # one GO-Annotation each. Lets compare them.
             maxSim := maxInfo := 0; evSetSim := evSetInfo := {}:
-			avgSim := avgInfo := avgSimRun := avgInfoRun := l2 := 0;
+                        avgSim := avgInfo := avgSimRun := avgInfoRun := l2 := 0;
             for go1 in GOs[g,j] do for go2 in GOs[g2,j2] do
                 ic := intersect( {go1[1],op(go1[2])},{go2[1],op(go2[2])} );
-				if ic={} then next fi:
-					
+                                if ic={} then next fi:
+                                        
                 #                     2*ln(prob(interClass[i]))
                 # similarity   sim = ---------------------------
                 #                    ln(prob(go1))+ln(prob(go2))
@@ -222,17 +264,17 @@ GoTest := proc( proj:Project, GOs:list, freqs:list({0,positive}) ;
                         maxSim  := sim;
                         evSetSim := union(go1[3],go2[3]);
                     fi;
-					if info > avgInfoRun then avgInfoRun := info fi;
-					if sim  > avgSimRun  then avgSimRun := sim fi;
+                                        if info > avgInfoRun then avgInfoRun := info fi;
+                                        if sim  > avgSimRun  then avgSimRun := sim fi;
                 od:
-				avgSim := avgSim+avgSimRun;
-				avgInfo := avgInfo+avgInfoRun;
+                                avgSim := avgSim+avgSimRun;
+                                avgInfo := avgInfo+avgInfoRun;
             od od:
-			if l2>0 then # we have at least one from same ontology
-    			s_stat + [avgSim / l2, avgInfo/l2 ]:
+                        if l2>0 then # we have at least one from same ontology
+                        s_stat + [avgSim / l2, avgInfo/l2 ]:
                 if simEv[evSetSim]=unassigned then simEv[evSetSim] := Stat() fi;
                 simEv[evSetSim] + maxSim;
-			fi;
+                        fi;
         od;
     od;
     status := sprintf('Took %.2f mins on %s (%s)', (time()-t0)/60, hostname(), date());
@@ -245,10 +287,10 @@ GoTest := proc( proj:Project, GOs:list, freqs:list({0,positive}) ;
     printf('\n Analysis on evidence codes:\n');
     for i to length(statistics) do
         printf('  %a  -->  %s (%d)\n', statistics[i,1], 
-		       statistics[i,2,MeanVar], statistics[i,2,Number]);
+                       statistics[i,2,MeanVar], statistics[i,2,Number]);
     od;
-	
-	res := ResultHandler(proj[Name], s_stat, If(assigned(refProj),refProj,NULL)): 
+        
+        res := ResultHandler(proj[Name], s_stat, If(assigned(refProj),refProj,NULL)): 
     OpenAppending( resFile );
     printf('%A:\n', res);
     printf('# %s\n', status);
@@ -265,106 +307,106 @@ if not assigned(filter) then filter := {IDA,IEP,IGI,IMP,IPI,EXP}:
 elif not type(filter,set) or minus(filter, existEvidCodes)<>{} then
     printf('ERROR: filter is not correctely specified as set of '.
            'existing evidence codes:\n%A\n', filter);
-	ForceCrash();
+        ForceCrash();
 fi:
 fFile := DBDir.'GOfiltered.': for i in filter do fFile:=fFile.i.'.' od:
 
 if assigned(termfilter) then
-	if termfilter = 'GOslim' then
-		s := ReadURL('ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/goslim/goaslim.map');
-	    tmp := [seq( If(z[1]='!',NULL,SearchDelim('\t',z[1..-2])), z=SplitLines(s))];
-		tmp := sort([seq( [parse(z[1,4..-1]), parse(z[2,4..-1])], z=tmp)]);
+        if termfilter = 'GOslim' then
+                s := ReadURL('ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/goslim/goaslim.map');
+            tmp := [seq( If(z[1]='!',NULL,SearchDelim('\t',z[1..-2])), z=SplitLines(s))];
+                tmp := sort([seq( [parse(z[1,4..-1]), parse(z[2,4..-1])], z=tmp)]);
         super := CreateArray(1..5e5);
-		for z in tmp do if super[z[2]]=0 then super[z[2]] := GOsuperclassR(z[2]) fi od:
+                for z in tmp do if super[z[2]]=0 then super[z[2]] := GOsuperclassR(z[2]) fi od:
 
-		# remove parent terms in mapping
-		slim := []:
+                # remove parent terms in mapping
+                slim := []:
         for i to length(tmp) do 
-			for j from i+1 to length(tmp) while tmp[i,1]=tmp[j,1] do od:
+                        for j from i+1 to length(tmp) while tmp[i,1]=tmp[j,1] do od:
             if j>i+1 then 
-				mappedTerms := [seq(z[2],z=tmp[i..j-1])]; lMT := j-i;
-				keep := CreateArray(1..lMT,true):
-				for k to lMT do for z in super[mappedTerms[k]] do
-					x := SearchOrderedArray(z,mappedTerms):
-					if x<=0 or x>lMT or mappedTerms[x]<>z then next fi:
+                                mappedTerms := [seq(z[2],z=tmp[i..j-1])]; lMT := j-i;
+                                keep := CreateArray(1..lMT,true):
+                                for k to lMT do for z in super[mappedTerms[k]] do
+                                        x := SearchOrderedArray(z,mappedTerms):
+                                        if x<=0 or x>lMT or mappedTerms[x]<>z then next fi:
 
-					# if we come to this point, mappedTerms[x] is a parent of mappedTerms[k] 
-					# and thus can be excluded.
-					keep[x] := false:
-				od od:
+                                        # if we come to this point, mappedTerms[x] is a parent of mappedTerms[k] 
+                                        # and thus can be excluded.
+                                        keep[x] := false:
+                                od od:
 
-				slim := append(slim, seq(If(keep[k], tmp[i+k-1], NULL), k=1..lMT));
-			else 
-				slim := append(slim, tmp[i]);
-			fi:
+                                slim := append(slim, seq(If(keep[k], tmp[i+k-1], NULL), k=1..lMT));
+                        else 
+                                slim := append(slim, tmp[i]);
+                        fi:
             
-			i := j-1;
-		od:
+                        i := j-1;
+                od:
 
         # add the terms for the ontology toplevels
-		slim := append(slim, seq([z,z], z=[3674, 5575, 8150]));
+                slim := append(slim, seq([z,z], z=[3674, 5575, 8150]));
         slim := transpose(sort(slim)): 
-		
-		termFiltProc := proc(x_)
-		    x := If(type(x_,string), parse(x_[4..-1]), x_);
-		    k := SearchOrderedArray(x,slim[1]);
-			if k<0 or k>length(slim[1]) or slim[1,k]<>x then return( [] );
-			else 
-				for l from k-1 to 1 by -1 while slim[1,l]=x do od:
-				return( copy(slim[2,l+1..k]) ); 
-			fi:
-		end:
-	    fFile := fFile[1..-2] . '_GOslim.';
+                
+                termFiltProc := proc(x_)
+                    x := If(type(x_,string), parse(x_[4..-1]), x_);
+                    k := SearchOrderedArray(x,slim[1]);
+                        if k<0 or k>length(slim[1]) or slim[1,k]<>x then return( [] );
+                        else 
+                                for l from k-1 to 1 by -1 while slim[1,l]=x do od:
+                                return( copy(slim[2,l+1..k]) ); 
+                        fi:
+                end:
+            fFile := fFile[1..-2] . '_GOslim.';
     
-	else
-	    if termfilter = 'ECterms' then
-			go_nr := GOnumber('catalytic activity');
-			fFile := fFile[1..-2] . '_GOenzymes.';
-		elif termfilter = 'binding' then
-			go_nr := GOnumber('binding');
-			fFile := fFile[1..-2] . '_GObinding.';
-		elif termfilter = 'transcription' then
-			go_nr := GOnumber('transcription regulator activity');
-			fFile := fFile[1..-2] . '_GOtranscription.';
-		elif termfilter = 'transducer' then
-			go_nr := GOnumber('molecular transducer activity');
-			fFile := fFile[1..-2] . '_GOtransducer.';
-		elif termfilter = 'enzReg' then
-			go_nr := GOnumber('enzyme regulator activity');
-			fFile := fFile[1..-2] . '_GOenzReg.';
-		elif termfilter = 'structural' then
-			go_nr := GOnumber('structural molecule activity');
-			fFile := fFile[1..-2] . '_GOstructural.';
-		elif termfilter = 'transporter' then
-			go_nr := GOnumber('transporter activity');
-			fFile := fFile[1..-2] . '_GOtransporter.';
-	    else error('unknown termfilter: '.termfilter) fi: 
-		    
-	    subterms := { op(GOsubclassR(go_nr)), go_nr, op(GOsuperclassR(go_nr)) }:
-		termFiltProc := proc(x_) 
-		    x := If(type(x_,string), parse(x_[4..-1]), x_);
-			assert(type(x,integer));
-			if member(x,subterms) then [x] else [] fi 
-		end:
+        else
+            if termfilter = 'ECterms' then
+                        go_nr := GOnumber('catalytic activity');
+                        fFile := fFile[1..-2] . '_GOenzymes.';
+                elif termfilter = 'binding' then
+                        go_nr := GOnumber('binding');
+                        fFile := fFile[1..-2] . '_GObinding.';
+                elif termfilter = 'transcription' then
+                        go_nr := GOnumber('transcription regulator activity');
+                        fFile := fFile[1..-2] . '_GOtranscription.';
+                elif termfilter = 'transducer' then
+                        go_nr := GOnumber('molecular transducer activity');
+                        fFile := fFile[1..-2] . '_GOtransducer.';
+                elif termfilter = 'enzReg' then
+                        go_nr := GOnumber('enzyme regulator activity');
+                        fFile := fFile[1..-2] . '_GOenzReg.';
+                elif termfilter = 'structural' then
+                        go_nr := GOnumber('structural molecule activity');
+                        fFile := fFile[1..-2] . '_GOstructural.';
+                elif termfilter = 'transporter' then
+                        go_nr := GOnumber('transporter activity');
+                        fFile := fFile[1..-2] . '_GOtransporter.';
+            else error('unknown termfilter: '.termfilter) fi: 
+                    
+            subterms := { op(GOsubclassR(go_nr)), go_nr, op(GOsuperclassR(go_nr)) }:
+                termFiltProc := proc(x_) 
+                    x := If(type(x_,string), parse(x_[4..-1]), x_);
+                        assert(type(x,integer));
+                        if member(x,subterms) then [x] else [] fi 
+                end:
 
-	fi:
+        fi:
 fi:
 
 fFile := fFile.'drw':
 
 suc := traperror(ReadProgram(fFile)):
 if suc=lasterror then
-	#no tempfile with this filter exist. create it!
-	ReadProgram(DBDir.'GOsummaries.drw');
-	GOs := FilterEvidence(filter, If(assigned(termFiltProc),termFiltProc,NULL)):
-	OpenWriting(fFile);
-	printf('#filter:=%A\n#termfilter: %s\nGOs := %A:\n',filter, termfilter, GOs);
-	OpenWriting(previous);
-	CallSystem('gzip -v9 '.fFile);
+        #no tempfile with this filter exist. create it!
+        ReadProgram(DBDir.'GOsummaries.drw');
+        GOs := FilterEvidence(filter, If(assigned(termFiltProc),termFiltProc,NULL)):
+        OpenWriting(fFile);
+        printf('#filter:=%A\n#termfilter: %s\nGOs := %A:\n',filter, termfilter, GOs);
+        OpenWriting(previous);
+        CallSystem('gzip -v9 '.fFile);
 fi:
 if not assigned(GOs) then 
-	printf('ERROR: For some unknown reason, GOs is not assigned\n');
-	ForceCrash();
+        printf('ERROR: For some unknown reason, GOs is not assigned\n');
+        ForceCrash();
 fi:
 
 pNames := [seq(ap[i,Name], i=1..length(ap))]:
@@ -375,23 +417,23 @@ if p=0 then
 fi:
 
 if doPairwise then
-	iSet := LoadISet(ap[p]):
-	freqs := ComputeGoFrqs(GOs, iSet):
-	GoTest( ap[p], GOs, freqs ):
-	if iSet<>intersect() then
-		oma := AllProjects()[1]:
-	    GoTest(oma, GOs, freqs, not ap[p,'directMap'], iSet, ap[p,Name]);
-	fi:
+        iSet := LoadISet(ap[p]):
+        freqs := ComputeGoFrqs(GOs, iSet):
+        GoTest( ap[p], GOs, freqs ):
+        if iSet<>intersect() then
+                oma := AllProjects()[1]:
+            GoTest(oma, GOs, freqs, not ap[p,'directMap'], iSet, ap[p,Name]);
+        fi:
 fi:
 
 if doISet then
-	big := iSetPrj(ap):
-	isBig := evalb( SearchArray(ap[p,Name], [seq(z[Name],z=big)]) > 0):
-	if isBig then
-    	iSet := LoadISet(big):
-	    printf('Size of reduced ISet: %d\n', length(iSet));
-    	freqs := ComputeGoFrqs(GOs, iSet);
-	    GoTest(ap[p], GOs, freqs, true, iSet, 'multiComparison'):
-	fi:
+        big := iSetPrj(ap):
+        isBig := evalb( SearchArray(ap[p,Name], [seq(z[Name],z=big)]) > 0):
+        if isBig then
+        iSet := LoadISet(big):
+            printf('Size of reduced ISet: %d\n', length(iSet));
+        freqs := ComputeGoFrqs(GOs, iSet);
+            GoTest(ap[p], GOs, freqs, true, iSet, 'multiComparison'):
+        fi:
 fi:
 done;

@@ -597,7 +597,7 @@ IsLockProcessAlive := proc(lock:string)
     lockOldAndEmpty := FileStat(lock)['st_size']=0 and UTCTime()-FileStat(lock)['st_mtime']>60;
     procDeath := false;
     if FileStat(lock)['st_size']>0 then 
-        pid := ReadRawFile(lock);
+        pid := SplitLines(ReadRawFile(lock))[1];
         t := TimedCallSystem('ps -eo pid | grep -w '.pid,4);
         procDeath := evalb(t[1]<>0);
     fi:
@@ -606,6 +606,7 @@ end:
 
 
 StartTreeTest := proc(PID:string, king:string,params:list, pnames:list)
+    global RFstat;
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.%s.lock',fnBase,king);
     vars := table('');
@@ -620,14 +621,29 @@ StartTreeTest := proc(PID:string, king:string,params:list, pnames:list)
     resFn := sprintf('%s/TreeTest.%s.%a.drw', resdir, king, hash(projs) );
     if FileExists(lock) then
         if IsLockProcessAlive(lock) then
-            vars['content'] := '<p>We are still computing the result...</p>';
-        else vars['content'] := '<p>Computation crashed</p>';
+	    t := SplitLines(ReadRawFile(lock));
+	    msg := '';
+	    if length(t)>1 then 
+	        msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+	    fi:
+            vars['content'] := msg.'<p>We are still computing the final result...</p>';
+        else
+	    CallSystem('rm -f '.lock);
+	    vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
         fi:
     elif FileExists(resFn) then
-        tab := traperror(parse(ReadRawFile(resFn))):
-        if tab=lasterror or not type(t, Table) then 
-            vars['content'] := '*** ERROR: An unexpected error occured: '.tab;
-        else vars['content'] := HTMLC(tab); fi;
+        RFstat := 0;
+        traperror(ReadProgram(resFn)):
+	if RFstat=0 then 
+            vars['content'] := '*** ERROR: An unexpected error occured: '.RFstat;
+        else 
+            tab := Table( border, gutter=2, ColAlign(l,r,c), 
+	        Row('Project','# trees','avg RF distance genetree - speciestree'));
+            for z in RFstat do 
+	        tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+	    od:
+            vars['content'] := HTMLC(tab);
+	fi;
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
                'projs := %A; lock:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
