@@ -1,7 +1,7 @@
-<h4>Species Tree Discordance Test - Dataset <DVAR name="case"></h4>
+<h4><DVAR name="resheader"></h4>
 <div class="RawResults"> 
 <DVAR name="content">;
 </div>
 <div class="Graphics">
-
+<IMG src="<DVAR name="fig">">
 </div>
