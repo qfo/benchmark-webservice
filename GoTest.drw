@@ -93,7 +93,8 @@ for pNr to nP do
             k := SearchOrderedArray(vp, iList):
             assert(k>0 and k<nProt and iList[k]=vp);
             if length(GOs[k]) = 0 then next fi:
-            
+           
+            pairs := [];
             for ig1 to length(GOs[i]) do for ig2 to length(GOs[k]) do
                 go1 := GOs[i,ig1]; go2 := GOs[k,ig2];
                 ic := intersect( {go1, op(GOparents[go1])},
