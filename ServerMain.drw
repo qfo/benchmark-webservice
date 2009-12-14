@@ -605,12 +605,13 @@ IsLockProcessAlive := proc(lock:string)
 end:
 
 
-StartTreeTest := proc(PID:string, king:string,params:list, pnames:list)
+StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     global RFstat;
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.%s.lock',fnBase,king);
     vars := table('');
     vars['case'] := king;
+    vars['resheader'] := 'Species Tree Discordance Test - Dataset '.king;
     
     pubPrj := GetPublicProjects();
 
@@ -653,12 +654,65 @@ StartTreeTest := proc(PID:string, king:string,params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( GenerateTemplate(wdir.'templates/treeResult.htmlc', vars) );
+    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
 
-StartGoTest := proc(params:list, pnames:list)
+StartGoTest := proc(PID:string, params:list, pnames:list)
+    global Sims;
+    fnBase := GetPKeyData(PID)['fnBase'];
+    lock  := sprintf('%s.%s.lock',fnBase,king);
+    vars := table('');
+    vars['resheader'] := 'Gene Ontology conservation test';
+    exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,ND};
     
+    pubPrj := GetPublicProjects();
+
+    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := sort( projs, x->x['Title'] );
+    sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', parse(z[7..-1]), NULL), z=pnames)];
+    projs := [seq(projs[i,'PID'], i=sel), PID];
+
+    filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', parse(z[7..-1]),NULL), z=pnames)};
+    filter := intersect(filter, exEv);
+    measure := params[ SearchArray('pGOMeasure',pnames) ];
+    
+    resFn := sprintf('%s/GO.%a.drw', resdir, hash([projs,filter,measure]) );
+    if FileExists(lock) then
+        if IsLockProcessAlive(lock) then
+	    t := SplitLines(ReadRawFile(lock));
+	    msg := '';
+	    if length(t)>1 then 
+	        msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+	    fi:
+            vars['content'] := msg.'<p>We are still computing the final result...</p>';
+        else
+	    CallSystem('rm -f '.lock);
+	    vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
+        fi:
+    elif FileExists(resFn) then
+        Sims := 0;
+        traperror(ReadProgram(resFn)):
+	if Sims=0 then 
+            vars['content'] := '*** ERROR: An unexpected error occured: '.Sims;
+        else 
+            tab := Table( border, gutter=2, ColAlign(l,r,c), 
+	        Row('Project','# ortholog relations',measure));
+            for z in Sims do 
+	        tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+	    od:
+            vars['content'] := HTMLC(tab);
+	fi;
+    else 
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; filter := %A;'.
+               'projs := %A; lock:=%A; measure:=%A; ReadProgram(''%s/GoTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, filter, projs, lock, measure, wdir, darwin64);
+        prints(cmd);
+        CallSystem( cmd );
+        WriteLog('started command: '.cmd);
+        vars['content'] := '<p>Computation started...</p>';
+    fi:
+    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
 #################################
@@ -678,20 +732,20 @@ bsRunTests := proc(params:list, pnames:list)
     fi;
 
     k := SearchArray('pTTFun1', pnames);
-    if k>0 and pnames[k]='on' then
+    if k>0 and params[k]='on' then
         # do fungi tree test
         vars['TTFun1'] := StartTreeTest(PID,'Fungi',params, pnames);
     fi;
 
     k := SearchArray('pTTBac1', pnames);
-    if k>0 and pnames[k]='on' then 
+    if k>0 and params[k]='on' then 
         vars['TTBac1'] := StartTreeTest(PID,'Bacteria',params, pnames);
         # do bacteria tree test
     fi;
 
     k := SearchArray('pGO1',pnames);
-    if k>0 and pnames[k]='on' then
-        # do GO test
+    if k>0 and params[k]='on' then
+        vars['GO'] := StartGoTest(PID, params, pnames)
     fi:
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:

@@ -1,6 +1,6 @@
 <h4><DVAR name="resheader"></h4>
 <div class="RawResults"> 
-<DVAR name="content">;
+<DVAR name="content">
 </div>
 <div class="Graphics">
 <IMG src="<DVAR name="fig">">

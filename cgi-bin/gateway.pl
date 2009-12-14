@@ -110,7 +110,7 @@ else {
 	print DBGLOG "Parameters: @pa\n";
     }
     foreach my $m (sort($req->param)) {
-        if ($m =~/^p([A-Z]*[a-z]*\d*)$/) {
+        if ($m =~/^p([A-Za-z]*\d*)$/) {
             my $c = $req->param($m);
             # multiline input format
             $c =~ s/\r\n//sg;

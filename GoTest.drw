@@ -60,7 +60,18 @@ ComputeSimilarity := proc(data:list; 'method'=(method:string))
     elif method='max Info' then
         return( max(seq(z[3], z=data)) );
     elif method='avg Schlicker' then
-        error('not finished'); 
+        max1 := CreateArray(1..max(seq(z[4],z=data)),1..2,-DBL_MAX);
+        max2 := CreateArray(1..max(seq(z[5],z=data)),1..2,-DBL_MAX);
+	for i to length(data) do
+	     z := data[i];
+	     if z[2] > max1[z[4],1] then max1[z[4]] := [z[2],i]; fi; 
+	     if z[2] > max2[z[5],1] then max2[z[5]] := [z[2],i]; fi; 
+	od:
+	s := c := 0;
+	for i in [op(max1),op(max2)] do
+	    if i[1]>-DBL_MAX then s := s+i[1]; c:=c+1; fi:
+	od:
+	return( s/c );
     else error('similarity not implemented') fi:
 end:
 
@@ -69,7 +80,7 @@ Sims := [seq(Stat(z['Title']), z=prj)];
 iList := [op(iSet)]:
 onts := [3674, 5575, 8150]:
 for pNr to nP do 
-    DB := prj[pNr];
+    DB := dbs[pNr];
     for i to nProt do if length(GOs[i]) > 0 then
         oE := If(directMap, i, iSet[i]);
         eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
@@ -83,7 +94,6 @@ for pNr to nP do
             assert(k>0 and k<nProt and iList[k]=vp);
             if length(GOs[k]) = 0 then next fi:
             
-
             for ig1 to length(GOs[i]) do for ig2 to length(GOs[k]) do
                 go1 := GOs[i,ig1]; go2 := GOs[k,ig2];
                 ic := intersect( {go1, op(GOparents[go1])},
@@ -103,12 +113,11 @@ for pNr to nP do
                     if info > infoRun then infoRun := info; infoInt := int fi;
                     if sim  > simRun  then simRun := sim; simInt := int fi;
                 od:
-                pairs := append(pairs, [ont, simRun, infoRun,
-                    min(-ln(freqs[go1]),-ln(freqs[go2])), ig1,ig2] );
+                pairs := append(pairs, [ont, simRun, infoRun, ig1, ig2] );
             od od:
             Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
         od:
-    od:
+    fi od:
 od:
             
 OpenWriting(resFn);

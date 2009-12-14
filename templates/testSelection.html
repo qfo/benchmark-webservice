@@ -37,6 +37,14 @@ orthlogy inference project you would like to compare your predictions
    <input type="checkbox" name="pGO1" class="inputCheckbox" checked />Gene Ontology Test<br/>
    <label for="pGOPrj1">Projects to compare with</label>
    <DVAR name="pGOprojects">
+   
+   <label for=pGOFilExp">Restricted to Evidence codes:</label>
+   <input type="checkbox" name="pGOFilEXP">EXP</input>
+   <input type="checkbox" name="pGOFilIEA">IEA</input>
+   <input type="checkbox" name="pGOFilISS">ISS</input>
+   <label for="pGOMeasure">Similarity Measure</label>
+   <input type="radio" name="pGOMeasure" value="avg Sim">average Lin Similarity</input>
+   <input type="radio" name="pGOMeasure" value="avg Schlicker" selected="selcted">average Schlicker Similarity</input>
   </div>
  </fieldset>
 
