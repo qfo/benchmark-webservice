@@ -116,7 +116,9 @@ for pNr to nP do
                 od:
                 pairs := append(pairs, [ont, simRun, infoRun, ig1, ig2] );
             od od:
-            Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
+            if length(pairs)>0 then
+                Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
+            fi:
         od:
     fi od:
 od:
