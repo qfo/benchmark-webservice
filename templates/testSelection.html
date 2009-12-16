@@ -30,21 +30,47 @@ orthlogy inference project you would like to compare your predictions
  </fieldset>
  
  <fieldset><legend>Function-Based Definition Test</legend>
-  <div class="notes"><h4>Function-Based</h4>
+  <div class="notes"><h4>Function-Based Definition</h4>
    <p>One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
   </div>
   <div>
    <input type="checkbox" name="pGO1" class="inputCheckbox" checked />Gene Ontology Test<br/>
    <label for="pGOPrj1">Projects to compare with</label>
-   <DVAR name="pGOprojects">
+   <DVAR name="GOprojects">
    
-   <label for=pGOFilExp">Restricted to Evidence codes:</label>
-   <input type="checkbox" name="pGOFilEXP">EXP</input>
-   <input type="checkbox" name="pGOFilIEA">IEA</input>
-   <input type="checkbox" name="pGOFilISS">ISS</input>
-   <label for="pGOMeasure">Similarity Measure</label>
-   <input type="radio" name="pGOMeasure" value="avg Sim">average Lin Similarity</input>
-   <input type="radio" name="pGOMeasure" value="avg Schlicker" selected="selcted">average Schlicker Similarity</input>
+   <fieldset><legend>Restricted to Evidence codes</legend>
+    <p>
+    <input type="checkbox" name="pGOFilEXP" checked><span name="hint" title="Inferred from Experiment">EXP</span></input>
+    <input type="checkbox" name="pGOFilIDA" checked><span name="hint" title="Inferred from Direct Assay">IDA</span></input>
+    <input type="checkbox" name="pGOFilIPI" checked><span name="hint" title="Inferred from Physical Interaction">IPI</span></input>
+    <input type="checkbox" name="pGOFilIMP" checked><span name="hint" title="Inferred from Mutant Phenotype">IMP</span></input>
+    <input type="checkbox" name="pGOFilIGI" checked><span name="hint" title="Inferred from Genetic Interaction">IGI</span></input>
+    <input type="checkbox" name="pGOFilIEP" checked><span name="hint" title="Inferred from Expression Pattern">IEP</span></input>
+    </p>
+    <p>
+    <input type="checkbox" name="pGOFilISS"><span name="hint" title="Inferred from Sequence or Structural Similarity">ISS</span></input>
+    <input type="checkbox" name="pGOFilISO"><span name="hint" title="Inferred from Sequence Orthology">ISO</span></input>
+    <input type="checkbox" name="pGOFilISA"><span name="hint" title="Inferred from Sequence Alignment">ISA</span></input>
+    <input type="checkbox" name="pGOFilISM"><span name="hint" title="Inferred from Sequence Model">ISM</span></input>
+    <input type="checkbox" name="pGOFilIGC"><span name="hint" title="Inferred from Genomic Context">IGC</span></input>
+    <input type="checkbox" name="pGOFilIC" ><span name="hint" title="Inferred by Curator">IC </span></input>
+    <input type="checkbox" name="pGOFilRCA"><span name="hint" title="Inferred from Reviewed Computational Analysis">RCA</span></input>
+    <input type="checkbox" name="pGOFilTAS"><span name="hint" title="Traceable Author Statement">TAS</span></input>
+    <input type="checkbox" name="pGOFilNAS"><span name="hint" title="Non-traceable Author Statement">NAS</span></input>
+    </p>
+    <p>
+    <input type="checkbox" name="pGOFilIEA"><span name="hint" title="Inferred from electronic annotation">IEA</span></input>
+    <input type="checkbox" name="pGOFilND" ><span name="hint" title="No biological Data available">ND</span></input>
+    </p>
+   </fieldset>
+   
+   <fieldset><legend>Similarity Measure</legend>
+    <input type="radio" name="pGOMeasure" value="avg Sim">average Lin Similarity</input><br/>
+    <input type="radio" name="pGOMeasure" value="max Sim">maximum Lin Similarity</input><br/>
+    <input type="radio" name="pGOMeasure" value="avg Sim">average information content</input><br/>
+    <input type="radio" name="pGOMeasure" value="avg Sim">maximum information content</input><br/>
+    <input type="radio" name="pGOMeasure" value="avg Schlicker" checked>average Schlicker Similarity</input>
+   </fieldset>
   </div>
  </fieldset>
 

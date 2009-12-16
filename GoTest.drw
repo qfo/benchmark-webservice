@@ -18,6 +18,13 @@ LoadGenomeStartIDs(); # initalizes GSID
 # load the project databases
 nP := length(prj); dbs := CreateArray(1..nP):
 for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
+if not type(dbs, list(database)) then 
+   OpenWriting(resFn);
+   printf('error(''could not open databases'');\n');
+   OpenWriting(previous);
+   CallSystem('rm -f '.lock);
+   quit
+fi:
 
 nGo := 1e5;
 GOparents := CreateArray(1..nGo):
@@ -81,50 +88,61 @@ iList := [op(iSet)]:
 onts := [3674, 5575, 8150]:
 for pNr to nP do 
     DB := dbs[pNr];
-    for i to nProt do if length(GOs[i]) > 0 then
-        oE := If(directMap, i, iSet[i]);
-        eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
+    for i to nProt do 
+        if length(GOs[i]) > 0 then
+            oE := If(directMap, i, iSet[i]);
+            eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
+        
+            vps := ParseLongList(SearchTag('VP', Entry(eNr)));
+            for vp in vps do 
+                if vp<oE then next fi: # uni-directional
+                if not member(vp, iSet) then next fi; # 
+                
+                k := SearchOrderedArray(vp, iList):
+                assert(k>0 and k<=nProt and iList[k]=vp);
+                if length(GOs[k]) = 0 then next fi:
+               
+                pairs := [];
+                for ig1 to length(GOs[i]) do for ig2 to length(GOs[k]) do
+                    go1 := GOs[i,ig1]; go2 := GOs[k,ig2];
+                    ic := intersect( {go1, op(GOparents[go1])},
+                                     {go2, op(GOparents[go2])} );
+                    if length(ic)=0 then next fi: # skip if not same ontology
     
-        vps := ParseLongList(SearchTag('VP', Entry(eNr)));
-        for vp in vps do 
-            if vp<oE then next fi: # uni-directional
-            if not member(vp, iSet) then next fi; # 
-            
-            k := SearchOrderedArray(vp, iList):
-            assert(k>0 and k<nProt and iList[k]=vp);
-            if length(GOs[k]) = 0 then next fi:
-           
-            pairs := [];
-            for ig1 to length(GOs[i]) do for ig2 to length(GOs[k]) do
-                go1 := GOs[i,ig1]; go2 := GOs[k,ig2];
-                ic := intersect( {go1, op(GOparents[go1])},
-                                 {go2, op(GOparents[go2])} );
-                if length(ic)=0 then next fi: # skip if not same ontology
-
-                ont := sum(SearchArray(z, onts),z=ic); # get ontology
-                if ont<1 or ont>3 then next fi:
-
-                 #                     2*ln(prob(interClass[i]))
-                 # similarity   sim = ---------------------------
-                 #                    ln(prob(go1))+ln(prob(go2))
-                simRun := infoRun := -DBL_MAX;
-                for int in ic do
-                    info := -2*ln(freqs[int]);
-                    sim  := If(info=0, 0, -info/(ln(freqs[go1])+ln(freqs[go2])));
-                    if info > infoRun then infoRun := info; infoInt := int fi;
-                    if sim  > simRun  then simRun := sim; simInt := int fi;
-                od:
-                pairs := append(pairs, [ont, simRun, infoRun, ig1, ig2] );
-            od od:
-            if length(pairs)>0 then
-                Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
-            fi:
-        od:
-    fi od:
+                    ont := sum(SearchArray(z, onts),z=ic); # get ontology
+                    if ont<1 or ont>3 then next fi:
+    
+                     #                     2*ln(prob(interClass[i]))
+                     # similarity   sim = ---------------------------
+                     #                    ln(prob(go1))+ln(prob(go2))
+                    simRun := infoRun := -DBL_MAX;
+                    for int in ic do
+                        info := -2*ln(freqs[int]);
+                        sim  := If(info=0, 0, -info/(ln(freqs[go1])+ln(freqs[go2])));
+                        if info > infoRun then infoRun := info; infoInt := int fi;
+                        if sim  > simRun  then simRun := sim; simInt := int fi;
+                    od:
+                    pairs := append(pairs, [ont, simRun, infoRun, ig1, ig2] );
+                od od:
+                if length(pairs)>0 then
+                    Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
+                fi:
+            od:
+        fi;
+	if mod(i,5000)=0 then
+	    OpenWriting(lock);
+	    lprint(getpid());
+	    printf('%.1f%% finished so far\n', 100*((pNr-1)*nProt + i)/ (nProt*nP));
+	    OpenWriting(previous);
+	fi:
+    od:
 od:
             
 OpenWriting(resFn);
 printf('Sims := %A:\nPIDs := %A:\n', Sims, [seq(z['PID'],z=prj)]);
+printf('# filter := %A:\n# measure := %A:\n', filter, measure);
 OpenWriting(previous);
+
+CallSystem('rm -f '.lock);
 done;
 

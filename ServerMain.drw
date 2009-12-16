@@ -661,7 +661,7 @@ end:
 StartGoTest := proc(PID:string, params:list, pnames:list)
     global Sims;
     fnBase := GetPKeyData(PID)['fnBase'];
-    lock  := sprintf('%s.%s.lock',fnBase,king);
+    lock  := sprintf('%s.GO.lock',fnBase);
     vars := table('');
     vars['resheader'] := 'Gene Ontology conservation test';
     exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,ND};
