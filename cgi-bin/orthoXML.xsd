@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="orthoXML">
+    <xs:complexType>
+      <xs:sequence>
+	<xs:element minOccurs="0" ref="notes"/>
+        <xs:element minOccurs="1" maxOccurs="unbounded" ref="species"/>
+        <xs:element ref="scores"/>
+        <xs:element ref="clusters"/>
+      </xs:sequence>
+      <xs:attribute name="origin" use="required" type="xs:string"/>
+      <xs:attribute name="version" use="required" type="xs:decimal"/>
+	  <xs:attribute name="originVersion" use="required" type="xs:decimal"/>
+    </xs:complexType>
+    <xs:key name="geneidKey">
+      <xs:selector xpath="species/database/genes/gene"/>
+      <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="scoreidKey">
+      <xs:selector xpath="scores/scoreDef"/>
+      <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:keyref name="geneidRef" refer="geneidKey">
+      <xs:selector xpath="clusters/cluster/geneRef"/>
+      <xs:field xpath="@id"/>
+    </xs:keyref>
+    <xs:keyref name="scoreidClusterRef" refer="scoreidKey">
+      <xs:selector xpath="clusters/cluster/score"/>
+      <xs:field xpath="@id"/>
+    </xs:keyref>
+    <xs:keyref name="scoreidGeneRef" refer="scoreidKey">
+      <xs:selector xpath="clusters/cluster/geneRef/score"/>
+      <xs:field xpath="@id"/>
+    </xs:keyref>
+    <xs:unique name="uniqueClusterId">
+      <xs:selector xpath="clusters/cluster"/>
+      <xs:field xpath="@id"/>
+    </xs:unique>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="species">
+    <xs:complexType>
+      <xs:sequence>
+	<xs:element minOccurs="1" maxOccurs="unbounded" ref="database"/>
+	<xs:element minOccurs="0" ref="notes"/>
+      </xs:sequence>
+      <xs:attribute name="NCBITaxId" use="required" type="xs:integer"/>
+      <xs:attribute name="id" use="required" type="xs:string"/>
+      <xs:attribute name="name" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="database">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="genes"/>
+      </xs:sequence>
+      <xs:attribute name="geneLink" type="xs:anyURI"/>
+      <xs:attribute name="name" use="required" type="xs:string"/>
+      <xs:attribute name="protLink" type="xs:anyURI"/>
+      <xs:attribute name="version" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="genes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="1" maxOccurs="unbounded" ref="gene"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="gene">
+    <xs:complexType>
+      <xs:attribute name="geneId" use="required" type="xs:string"/>
+      <xs:attribute name="id" use="required" type="xs:integer"/>
+      <xs:attribute name="protId" use="required" type="xs:string"/>
+      <xs:attribute name="transcriptId" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="scores">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="scoreDef"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="clusters">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="cluster"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="cluster">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="score"/>
+        <xs:element minOccurs="1" maxOccurs="unbounded" ref="geneRef"/>
+	<xs:element minOccurs="0" ref="notes"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="geneRef">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="score"/>
+	<xs:element minOccurs="0" ref="notes"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="scoreDef">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="desc" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="score">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="value" use="required" type="xs:decimal"/>
+    </xs:complexType>
+  </xs:element>
+  <!--...............................................................................................-->
+  <xs:element name="notes">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
