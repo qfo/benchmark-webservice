@@ -13,12 +13,16 @@ sub new {
 sub start_element {
     my ($self, $element) = @_;
     
-    if ($element->{Name} eq 'species') {
+    if ($element->{Name} eq "species") {
         my %attr = $element->{Attributes};
 	$curSpecName = $attr->{"longname"};
 	push( @specs, $curSpecName );
     }
-    elsif (){
+    elsif ($element->{Name} eq "protein") {
+        my %attr = $element->{Attributes};
+	my $id  = $attr->{"prot-id"};
+	my $seq = $attr->{"seq"};
+	print $writer 
     }
     
 }
