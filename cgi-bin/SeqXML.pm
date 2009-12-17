@@ -1,12 +1,13 @@
 package SeqXML;
 use base qw(XML::SAX::Base);
 
-my( $writer, $curSpecName, @specs );
+my( $seqFh, $spsFh, $curSpecName, @specs );
 
 
 sub new {
     my $type = shift;
-    $writer = shift;
+    $seqFh = shift;
+    $spsFh = shift;
     return bless {}, $type;
 }
 
@@ -20,17 +21,14 @@ sub start_element {
     }
     elsif ($element->{Name} eq "protein") {
         my %attr = $element->{Attributes};
-	my $id  = $attr->{"prot-id"};
-	my $seq = $attr->{"seq"};
-	print $writer 
+	    my $id  = $attr->{"prot-id"};
+	    my $seq = $attr->{"seq"};
+        print $seqFh "Protein := ['$id','$curSpecName','$seq']:\n";
     }
-    
 }
 
-sub characters {
-
-}
-
-sub end_element {
-
+sub end_document {
+    print $spsFh "SPS := [\n";
+    for my $k (@specs) { print $spsFh "'$k',\n"; }
+    print $spsFh "NULL]:\n";
 }
