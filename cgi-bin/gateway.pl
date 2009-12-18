@@ -24,6 +24,8 @@ use POSIX qw(mkfifo);
 use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use Time::localtime;
+use SeqXML;
+use OrthoXML;
 use strict;
 
 # maximum Post size in bytes 
@@ -278,12 +280,27 @@ sub SeqFasta2Drw{
 
 sub SeqXML2Drw {
     my ($fh, $fnSeq, $fnSps) = @_;
-    die("not yet implemented");
+    
+    open( $seqFh, ">$fnSeq");
+    open( $spsFh, ">$fnSps");
+    my $handler = SeqXML->new($seqFh, $spsFh);
+    my $parser = XML::Parser::Lite->new(Handler => $handler);
+    $parser->parse($fh);
+    close( $seqFh );
+    close( $spsFh );
+    return( $handler->get_nr_of_sequences());
+
 }
 
 sub RelXML2Drw {
     my ($fh, $fn) = @_;
-    die("not yet implemented");
+
+    open( $relFh, ">$fn");
+    my $handler = OrthoXML->new($relFh);
+    my $parser = XML::Parser::Lite->new(Handler => $handler);
+    $parser->parse($fh);
+    close( $relFh );
+    return( $handler->get_nr_of_relations());
 }
 
 sub RelText2Drw {
