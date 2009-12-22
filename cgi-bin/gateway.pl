@@ -281,6 +281,7 @@ sub SeqFasta2Drw{
 sub SeqXML2Drw {
     my ($fh, $fnSeq, $fnSps) = @_;
     
+    my ($seqFh, $spsFh);
     open( $seqFh, ">$fnSeq");
     open( $spsFh, ">$fnSps");
     my $handler = SeqXML->new($seqFh, $spsFh);
@@ -294,7 +295,8 @@ sub SeqXML2Drw {
 
 sub RelXML2Drw {
     my ($fh, $fn) = @_;
-
+    
+    my $relFh;
     open( $relFh, ">$fn");
     my $handler = OrthoXML->new($relFh);
     my $parser = XML::Parser::Lite->new(Handler => $handler);

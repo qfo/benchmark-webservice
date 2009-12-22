@@ -469,34 +469,37 @@ bsMapData := proc(PID:string)
            vars['content'] := 'Still computing';
         else
            # visualize current mapping
-           ReadProgram(seqMapResFn);
+           ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
            prNS := length(MappingComb);
-           tot  := CreateArray(1..prNS);
            cnts := CreateArray(1..prNS,1..NS+1):
            for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
-           for pg to prNS do 
-               tot[pg] := sum( cnts[pg,g], g=1..NS+1 );
-           od:
            
-           t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown">\n'.
-                '<tr><th>extracted species</th><th># protein not mappable at all</th><th>mapped species</th></tr>';
+           t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown" id="species_mapping">\n'.
+                '<tr><th>extracted species</th><th># protein uploaded</th><th>mapped species</th><th># mappable proteins</th></tr>';
+           jsMap := '[';
            for pg to prNS do
-               t := t.sprintf('<tr><td>%a</td><td>%d</td><td><select name="p%04d">\n', 
-                    SPS[pg], cnts[pg,NS+1], pg);
+               t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
+	              '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
+                    SPS[pg], TotProts[pg], pg, pg);
                ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-               t := t.'<option value="n.a.">not mapping</option>\n';
+               t := t.'<option value="n.a.">no mapping</option>\n';
+	       jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
                for p to NS while cnts[pg,ord[p]]>0 do 
                    t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
                           genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
                           GS[genomes[ord[p]],SCINAME]);
+	           jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
                od:
-               t := t.'</select></td></tr>\n';
+               t := t.sprintf('</select></td><td>%d</td></tr>\n', cnts[pg,ord[1]]);
+	       jsMap := jsMap.'}';
            od:
            t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
            t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
                 '<input type="submit" value="Next"/></form>\n';
+           jsMap := jsMap.'];';
                     
            vars['content'] := t;
+	   vars['jsMappingArray'] := jsMap;
         fi;
         return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
     fi:
