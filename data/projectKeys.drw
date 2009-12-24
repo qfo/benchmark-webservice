@@ -1,3 +1,5 @@
 PROJECTS := table(NULL):
 PROJECTS['NE29Yxm5WI9Am5Y'] := PKeyData('NE29Yxm5WI9Am5Y','OMA Oct 2009','/local/BenchmarkService/projects/OMA.Oct2009.1','Tue Dec  8 17:07:18 2009',true,true):
 PROJECTS['SEFQGpXo3xJBH51'] := PKeyData('SEFQGpXo3xJBH51','Ensembl 56','/local/BenchmarkService/projects/Ensembl_56.589','Wed Dec  9 17:51:18 2009',false,false):
+PROJECTS['2QHpQ7sCPXgEB6u'] := PKeyData('2QHpQ7sCPXgEB6u','COG','/local/BenchmarkService/projects/COG.703','Tue Dec 22 16:16:01 2009',false,false):
+PROJECTS['ed2PsBSdzUMa4Pq'] := PKeyData('ed2PsBSdzUMa4Pq','COG','/local/BenchmarkService/projects/COG.119','Tue Dec 22 16:29:10 2009',false,false):

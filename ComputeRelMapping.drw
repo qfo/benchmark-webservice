@@ -41,7 +41,19 @@ end:
 # callback function group data
 GroupRelations := proc(gps:list)
     global VPs;
-    error('not yet implemented');
+    grp := [];
+    for z in gps do
+       i := SearchOrderedArray(z, mapping[1]);
+       if i<=0 or i>NM or mapping[1,i]<>z then next fi:
+       iSetNr := mapping[3,i]; 
+       g := GenomeNrFromENr(iSet[iSetNr]);
+       grp := append(grp, [g,iSetNr]);
+    od:
+    
+    for i to length(grp) do for j to length(grp) do if grp[i,1]<>grp[j,1] then
+       VPs[grp[i,2]] := append(VPs[grp[i,2]], grp[j,2]);
+       VPs[grp[j,2]] := append(VPs[grp[j,2]], grp[i,2]);
+    od:
 end:
 
 

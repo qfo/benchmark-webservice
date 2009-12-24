@@ -79,8 +79,9 @@ else {
         $fnBase = "/local/BenchmarkService/projects/".$fnBase.".".int(1000*rand());
         print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
 	my $nrProt=0; my $nrOrth=0;
+        my $prot2spec = 0;
     
-        foreach my $upFile ( qw(seqs rels) ){
+        foreach my $upFile ( qw(rels seqs) ){
             if (!$req->param($upFile)) {
                print $req->header();
                my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\n";
@@ -92,13 +93,15 @@ else {
             my $fn = "$fnBase.$upFile";
             my $fh = $req->upload($upFile);
             if( $upFile eq "seqs"){
-               if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps");
+               if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
                } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
                } else {die("unknown seqType: ".$req->param("seqType"));}
             }
             else {
                if ($req->param("relType") eq "txt"){ $nrOrth = RelText2Drw($fh,$fn);
                } elsif ($req->param("relType") eq "xml"){ $nrOrth = RelXML2Drw($fh, $fn);
+	       } elsif ($req->param("relType") eq "cog"){ 
+	           ($nrOrth, $prot2spec) = RelCOG2Drw($fh, $fn);
                } else {die("unknown relType: ".$req->param("relType"));}
             }
             print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
@@ -232,7 +235,7 @@ unlink($file.'.alive');
 
 
 sub SeqFasta2Drw{
-    my ($fh, $fnSeq, $fnSps) = @_;
+    my ($fh, $fnSeq, $fnSps, $p2s) = @_;
     
     my %sps = ();
     my $AA = "ACDEFGHIKLMNPQRSTVWXY";
@@ -240,10 +243,12 @@ sub SeqFasta2Drw{
     my $cnt=0; my $err=0;
     while( <$fh> ){
         chomp;
-        if (/^>(\w[\w\.-]*)(.*)/) {
+        if (/^>(\w[\w\.-_]*)(.*)/) {
 	     my $spc = undef;
 	     my $id = $1; my $headRest = $2;
-	     if ($headRest =~ /taxid:(\d+)/i) { $spc=$1;}
+	     
+	     if ($p2s != 0 and defined $p2s->{$id}){ $spc=$p2s->{$id}; }
+	     elsif ($headRest =~ /taxid:(\d+)/i) { $spc=$1;}
              elsif ($headRest =~ /\[(.+)\]/) { $spc=$1; }
 	     elsif ($id =~ /_([A-Z][A-Z0-9]{2,4})/) {$spc=$1; }
              elsif ($id =~ /^([A-Z][A-Z0-9]{4})\d+/){$spc=$1; }
@@ -322,4 +327,55 @@ sub RelText2Drw {
     print F "NULL]):\n";
     close(F);
     return($cnt);
+}
+
+sub RelCOG2Drw {
+    my ($fh, $fn) = @_;
+
+    my $cnts = 0; 
+    my $state = 2;  #1: appending; 2: Ended
+    my %p2s = {};
+    my ($spec, $rowl);
+
+    open(F, ">$fn");
+    while( <$fh> ){
+        chomp;
+	next if ($_ eq '');
+
+	# cog title
+	if (/^\[(\w{1,6})\] (\w+) / and $state == 2){
+	    $state = 1;
+	    $rowl = 0;
+	    print F "GroupRelations([\n";
+        }
+	# species entry
+	elsif (/^ +(\w{3,5}): +(.+)/ and $state == 1){
+	    $spec = $1;
+	    foreach my $l ( split(/\s+/, $2) ){
+                $p2s{$l} = $spec;
+	        print F "'$l',";
+	        print F "\n" if ( (++$rowl % 10)==0); 
+	    }
+	}
+        # delimiter
+	elsif (/\_{5}/ and $state==1){
+	    print F "NULL]);\n";
+	    $state = 2;
+	    $cnts += ($rowl*($rowl-1)/2);
+	}
+	# multiline species
+	elsif( /^\s{7,}(.+)/ ){
+	    foreach my $l (split(/\s+/, $1)){
+	        $p2s{$l} = $spec;
+	        print F "'$l',";
+	        print F "\n" if ( (++$rowl % 10)==0); 
+            }
+	}
+    }
+    close(F);
+    open(F, ">/tmp/p2s.txt");
+    foreach my $k (keys(%p2s)){
+         print F $k." --> ".$p2s{$k}."\n";
+    }
+    return( ($cnts, \%p2s) );
 }

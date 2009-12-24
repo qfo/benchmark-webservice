@@ -53,7 +53,7 @@ sub end_element{
 	}
 	print $relFh " NULL]):\n";
 	my $c = scalar @cluster;
-	$cnts += (c*(c-1)/2);
+	$cnts += ($c*($c-1)/2);
 	@cluster = ();
 	$inCluster--;
     }
