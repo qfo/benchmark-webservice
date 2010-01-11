@@ -53,7 +53,7 @@ GroupRelations := proc(gps:list)
     for i to length(grp) do for j to length(grp) do if grp[i,1]<>grp[j,1] then
        VPs[grp[i,2]] := append(VPs[grp[i,2]], grp[j,2]);
        VPs[grp[j,2]] := append(VPs[grp[j,2]], grp[i,2]);
-    od:
+    fi od od:
 end:
 
 
