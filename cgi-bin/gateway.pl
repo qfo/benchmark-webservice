@@ -24,6 +24,7 @@ use POSIX qw(mkfifo);
 use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use Time::localtime;
+use IO::Zlib;
 use SeqXML;
 use OrthoXML;
 use strict;
@@ -46,7 +47,6 @@ print "Content-type: text/html\n\n" if $debug;
 
 # we first parse the request
 my $req = new CGI;
-my @params = $req->param;
 
 # construct cookies table:
 my %cookies = fetch CGI::Cookie();
@@ -92,6 +92,11 @@ else {
 
             my $fn = "$fnBase.$upFile";
             my $fh = $req->upload($upFile);
+	    if (!$fh && cgi_error) {
+	        print header(-status=>cgi_error);
+	        exit 0;
+	    }
+	    $fh = $fh->handle;
             if( $upFile eq "seqs"){
                if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
                } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
