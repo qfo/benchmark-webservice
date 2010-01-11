@@ -1,25 +1,60 @@
-#
-#
-#
+readVarTag := proc(tag,orit)
+    t := copy(orit);
+    tag_op := '<'.tag.' name="';
+    tag_cl := '">';
+    pos1 := SearchString(tag_op,t);
+    if pos1 = -1 then return(NULL) fi;
+    pos2 := SearchString(tag_cl,t[pos1..-1]);
+    if pos2 = -1 then error('Malformed darwin tag'); fi;
+    return([t[pos1+length(tag_op)+1..pos1+pos2-1],pos1,pos1+pos2+length(tag_cl)]);
+end;
+
 
 GenerateTemplate := proc(file:string,t:table);
-	if not FileExists(file) then error('Missing template file'); fi;
-	f := remember(ReadRawFile(file));
-	tag_op := '<DVAR name="';
-	tag_cl := '">';
-	output := '';
-	do
-    	pos1 := SearchString(tag_op,f);
-		# we are over!
-		if pos1 = -1 then output := output . f; break fi;
-		# still have tags
-		output := output . f[1..pos1];
-		pos2 := SearchString(tag_cl,f[pos1..-1]);
-		if pos2 = -1 then error('Malformed darwin tag'); fi;
-		key := f[pos1+length(tag_op)+1..pos1+pos2-1];
-		if key = unassigned then error('Missing key '.key.' in input table'); fi;
-		output := output . t[key];
-		f := f[pos1+pos2+length(tag_cl)..-1];
-	od;
-	return(output);
+    if length(FileStat(file)) = 0 then
+        error('Missing template file '.file);
+    fi;
+    f := ReadRawFile(file);
+    # regular variables
+    output := '';
+    do
+        tmp := readVarTag('DVAR',f);
+        if tmp = NULL then output := output.f; break; fi;
+        if t[tmp[1]] = 'unassigned' then  
+	    error('Missing key '.tmp[1].' in input table'); 
+	fi;	
+	output := output . f[1..tmp[2]] . string(t[tmp[1]]);
+	f := f[tmp[3]..-1];
+    od;
+    # loops
+    f := output;
+    output := '';
+    do
+        tmp := readVarTag('DLOOP',f);
+        if tmp = NULL then output := output.f; break; fi;
+	if not type(t[tmp[1]],array) then
+	    error('the array for loop '.tmp[1].' is not defined');
+	fi;
+        endloop := '</DLOOP>';
+	p := SearchString(endloop,f);
+	if p = -1 then error('malformed DLOOP syntax'); fi;
+	tout := '';
+	for row in t[tmp[1]] do
+            out2 := '';
+	    f2 := copy(f[tmp[3]..p]);
+            do
+                tmp2 := readVarTag('DLVAR',f2);
+                if tmp2 = NULL then out2 := out2.copy(f2); break; fi;
+                if row[tmp2[1]] = 'unassigned' then  
+                    error('Missing key '.tmp2[1].' in input table'); 
+                fi;	
+                out2 := out2. copy(f2[1..tmp2[2]]) . string(row[tmp2[1]]);
+                f2 := f2[tmp2[3]..-1];
+            od;
+            tout := tout . copy(out2);
+        od;
+        output := output . copy(f[1..tmp[2]]) . tout; 
+        f := f[p+1+length(endloop)..-1];
+    od;
+    return(output);
 end:

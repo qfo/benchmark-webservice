@@ -3,5 +3,6 @@
 <DVAR name="content">
 </div>
 <div class="Graphics">
-<IMG src="<DVAR name="fig">">
+<IMG src="<DVAR name="fig">"><br>
+<span class="hint"><a href="<DVAR name="gp_src">">Download Gnuplot sources</a></span>
 </div>

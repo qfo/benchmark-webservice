@@ -390,6 +390,8 @@ elif funcname = 'MapData' then
     html := traperror(bsMapData(op(params)));
 elif funcname = 'MapRels' then
     html := traperror(bsMapRels(op(params)));
+elif funcname = 'TestSelection' then
+    html := traperror(bsTestSelection(op(params))); 
 elif funcname = 'RunTests' then
     html := traperror(bsRunTests(params,pnames));
 
@@ -532,6 +534,28 @@ bsMapData := proc(PID:string)
     return(html);
 end:
 
+bsTestSelection := proc(PID:string)
+    fnBase := GetPKeyData(PID)['fnBase'];
+    dbFn := fnBase.'.db';
+    if not FileExists(dbFn) then 
+        error('Project "'.GetPKeyData(PID)['Title'].'" was not corretely uploaded');
+    fi:
+
+    vars := table(''):
+    vars['tit'] := GetPKeyData(PID)['Title'];
+    
+    publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
+    vars['hasFungi'] := 'DISABLED';
+    vars['TTprojects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" name="pTTPrj%d" class="inputCheckbox" />%s<br/>',
+                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+    vars['GOprojects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" name="pGOPrj%d" class="inputCheckbox" />%s<br/>',
+                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+    vars['PID'] := PID;
+    return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
+end:
+
 bsMapRels := proc(PID:string)
     global SPS:
     fnBase := GetPKeyData(PID)['fnBase'];
@@ -548,16 +572,7 @@ bsMapRels := proc(PID:string)
            vars['content'] := 'Still computing';
         else
            # provide test selection page:
-           publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
-           vars['hasFungi'] := 'DISABLED';
-           vars['TTprojects'] := ConcatStrings(
-              [seq(sprintf('<input type="checkbox" name="pTTPrj%d" class="inputCheckbox" />%s<br/>',
-                           pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
-           vars['GOprojects'] := ConcatStrings(
-              [seq(sprintf('<input type="checkbox" name="pGOPrj%d" class="inputCheckbox" />%s<br/>',
-                           pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
-           vars['PID'] := PID;
-           return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
+	   return( bsTestSelection(PID) );
         fi:
     fi:
 
@@ -680,7 +695,9 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     filter := intersect(filter, exEv);
     measure := params[ SearchArray('pGOMeasure',pnames) ];
     
-    resFn := sprintf('%s/GO.%a.drw', resdir, hash([projs,filter,measure]) );
+    resBase := sprintf('GO.%a', hash([projs,filter,measure]) );
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
+    resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
     if FileExists(lock) then
         if IsLockProcessAlive(lock) then
 	    t := SplitLines(ReadRawFile(lock));
@@ -704,7 +721,36 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
             for z in Sims do 
 	        tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
 	    od:
+	    if not FileExists(resPlotFn) then
+	        t := table():
+		t['outfile'] := resPlotFn;
+		t['xlabel'] := '# of ortholog predictions';
+		t['ylabel'] := measure.' Similarity';
+		t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+		plotTab := [seq(table(), length(Sims))]:
+		OpenWriting(t['datafile']);
+		for i to length(Sims) do 
+		    printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
+		       Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
+		    plotTab[i,'index'] := i-1; 
+		    plotTab[i,'title'] := Sims[i,Description];
+		    plotTab[i,'style'] := i;
+		od:
+		OpenWriting(previous);
+		t['plot'] := plotTab;
+		cmdFile := sprintf('/tmp/%s.gp', resBase);
+		OpenWriting(cmdFile);
+		prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
+		OpenWriting(previous);
+                
+		CallSystem('gnuplot '.cmdFile);
+		CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+		CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+		CallSystem('mv '.resBase.'.tgz '.rawdir);
+	    fi:
             vars['content'] := HTMLC(tab);
+	    vars['fig'] := imgurl.resBase.'.png';
+	    vars['gp_src'] := rawurl.resBase.'.tgz';
 	fi;
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; filter := %A;'.

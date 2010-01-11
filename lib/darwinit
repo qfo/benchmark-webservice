@@ -6,8 +6,10 @@ else
     wdir := '/local/BenchmarkService/';
     omalib := '/local/oma_lib/':
 fi:
-imgdir := wdir . 'htdocs/img/':
-imgurl := '/img/':
+imgdir := wdir . 'htdocs/imgs/':
+imgurl := '/imgs/':
+rawdir := wdir . 'htdocs/raw/':
+rawurl := '/raw/':
 brwdat := wdir . 'BrwDat/';
 brwrel := 'All.Oct2009';
 omaDBpath := brwdat.brwrel.'/';
