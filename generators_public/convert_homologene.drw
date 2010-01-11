@@ -1,0 +1,157 @@
+##
+#
+#
+##
+
+logfile := TimedCallSystem('date +/tmp/homologene_%y%m%d.log')[2,1..-2]:
+
+# first, check what version is available
+txt := ReadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/'):
+for z in SplitLines(txt) do if SearchMultipleString('Link','current','->',z)<>[] then break fi od:
+off := SearchString('build',z);
+if off<0 then lprint('error on ftp site. no build information found.'); quit fi:
+release := parse(z[off+6..-2]);
+relDate := z[1..SearchString('Link',z)];
+
+
+# define filenames according to release
+rawDir  := sprintf('/tmp/rawHomologene_%d/',release);
+CallSystem('mkdir -p '.rawDir);
+OpenWriting(logfile):
+printf('Current release of homologene is %d from %s\n', release, relDate);
+printf('Store raw date in %s\n', rawDir);
+OpenWriting(previous):
+grpRaw  := rawDir.'homologene.data':
+inpTot  := rawDir.'allProts.data':
+grpDrw  := sprintf('pub_HomoloGene.%d.grps',release):
+seqDrw  := sprintf('pub_HomoloGene.%d.seqs',release):
+spsDrw  := sprintf('pub_HomoloGene.%d.sps',release):
+doDwnld := true:
+# doDwnld := false: 
+uid_url := 'http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?db=protein&sendto=t&dopt=fasta&list_uids=':
+MAX_FETCH := 5:
+
+FileExists := proc(f:string) return(length(FileStat(f))>0) end:
+
+# Function to download sequneces from ncbi
+DownloadSequences := proc(f:string, out:string)
+    verb := Set(printgc=false):
+    cErr := Counter('# of errornous lines in input file');
+    if f[-3..-1]='.gz' then OpenPipe('zcat '.f); else OpenReading(f) fi:
+
+    line := ReadRawLine();
+    OpenWriting(out):
+    uids := prt2sp := missing := []: 
+    MAX_FETCH := 5;
+    while(line<>EOF) do
+        tags := SearchDelim('\t',line);
+        if length(tags)>=5 then 
+            uids := append(uids, tags[5]);
+            prt2sp := append(prt2sp, [tags[5], tags[1]]):
+            if length(uids)>=MAX_FETCH then
+                cmd := sprintf('%s%s', uid_url, ConcatStrings(uids, ','));
+                fasta := traperror(ReadURL(cmd));
+                if fasta=lasterror then
+                    missing := append(missing, [uids, prt2sp]);
+                else 
+                    prints( Fasta2Darwin(fasta, transpose(sort(prt2sp))) );
+                fi:    
+                uids := prt2sps := []:
+            fi:
+        else cErr + 1; lprint('# ERROR: '.line);
+        fi:
+        line := ReadRawLine():
+    od:
+    def_missing := []:
+    for z in missing do
+        cmd := sprintf('%s%s', uid_url, ConcatStrings(z[1], ','));
+        fasta := traperror(ReadURL(cmd)):
+        if fasta=lasterror then def_missing := append(def_missing, op(z[1]));
+        else prints( Fasta2Darwin( fasta, z[2] ) );
+        fi:
+    od:
+    OpenWriting(previous):
+    
+    OpenAppending(logfile);
+    printf('The following proteins could definitely not be retreived:\n');
+    lprint(def_missing);
+    OpenAppending(previous);
+    Set(printgc=verb):
+end:
+
+
+# convert a set of sequences in fasta format to the Fasta := [id, genome, seq] format.
+Fasta2Darwin := proc(fasta:string, tab:matrix)
+    s := '':
+    for z in SplitLines(fasta) do
+        if z[1]='>' then
+	    x := SearchDelim('|', z);
+	    k := SearchOrderedArray(x[4], tab[1]);
+	    assert( k>0 and k<=length(tab[1]) and tab[1,k]=x[4] );
+	    s := sprintf('%s%sFasta := [''%s'',''%s'',''', s, If(s='','',''']:\n'), 
+	                 x[4], TAX2SP[tab[2,k]] );
+	else s := s.z[1..-2] fi:
+    od:
+    if s<>'' then s:=s.''']:\n' fi:
+    return( s )
+end:
+
+ConvertGroupFile2Darwin := proc(f:string, out:string)
+    if f[-3..-1]='.gz' then 
+        OpenPipe('zcat '.f);
+        t := TimedCallSystem('ztail -1 '.f);
+    else 
+        OpenReading(f);
+        t := TimedCallSystem('tail -1 '.f);
+    fi:
+    nrGrps := parse(SearchDelim('\t',t[2])[1]):
+    GRPS := CreateArray(1..nrGrps,[]);
+
+    line := ReadRawLine():
+    while line<>EOF do
+        t := SearchDelim('\t', line[1..-2]):
+        assert( length(t)>=6 );
+        grp := parse(t[1]); id := t[6];
+        assert(nrGrps>=grp);
+        GRPS[grp] := append(GRPS[grp], id);
+        line := ReadRawLine();
+    od:
+    
+    verb:=Set(printgc=false):
+    OpenWriting(out):
+    for i to nrGrps do if GRPS[i] <> [] then 
+        printf('GroupRelations( # %d\n[%A]:\n', i, {op(GRPS[i])} );
+    fi od:
+    OpenWriting(previous):
+    Set(printgc=verb):
+end:
+
+
+    
+
+# check if data files are present or need to be updated.
+t := ReadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/current/build_inputs/taxid_taxname');
+TAX2SP := table(): for l in SplitLines(t) do x:=SearchDelim('\t', l[1..-2]); TAX2SP[x[1]] := x[2]; od:
+if FileExists(inpTot) then
+	OpenAppending(logfile);
+	lprint('download total protein data from website...');
+	OpenAppending(previous);
+	DownloadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/current/build_inputs/all_proteins.data', inpTot);
+fi:
+
+if not FileExists(seqDrw) or FileIsOlder(seqDrw, inpTot) then
+	OpenAppending(logfile);
+	lprint('retreive sequences for all proteins listed in file:', inpTot);
+	lprint('  guess of nr of sequences:', TimedCallSystem('wc -l '.inpTot)[2,1..-2]);
+	OpenAppending(previous);
+	DownloadSequences(inpTot, seqDrw);
+fi:
+if not FileExists(grpRaw) then
+	OpenAppending(logfile);
+	lprint('download group data from website...');
+	OpenAppending(previous);
+	DownloadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/current/homologene.data', grpRaw);
+fi:
+ConvertGroupFile2Darwin(grpRaw, grpDrw);
+quit
+
