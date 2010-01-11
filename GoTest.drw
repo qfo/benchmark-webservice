@@ -8,7 +8,7 @@
 #
 #  in: resFn, filter, projs, lock, measure
 
-Set(printgc=false); Set(gc=5e6):
+Set(printgc=false); Set(gc=5e6): 
 OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 
 prj := [seq(GetPKeyData(z),z=projs)]:
@@ -55,7 +55,7 @@ for p in GOs do for go in p do
     freqs[go] := freqs[go]+1;
     for parent in GOparents[go] do freqs[parent] := freqs[parent]+1; od:
 od od:
-freqs := freqs/cnts;
+if cnts>0 then freqs := freqs/cnts fi:
 
 ComputeSimilarity := proc(data:list; 'method'=(method:string))
     if method='avg Sim' then
