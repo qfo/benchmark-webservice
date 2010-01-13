@@ -545,13 +545,17 @@ bsTestSelection := proc(PID:string)
     vars['tit'] := GetPKeyData(PID)['Title'];
     
     publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
-    vars['hasFungi'] := 'DISABLED';
+#    vars['hasFungi'] := 'DISABLED';
     vars['TTprojects'] := ConcatStrings(
          [seq(sprintf('<input type="checkbox" name="pTTPrj%d" class="inputCheckbox" />%s<br/>',
                        pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
     vars['GOprojects'] := ConcatStrings(
          [seq(sprintf('<input type="checkbox" name="pGOPrj%d" class="inputCheckbox" />%s<br/>',
                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+    vars['ECprojects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" name="pECPrj%d" class="inputCheckbox" />%s<br/>',
+                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+
     vars['PID'] := PID;
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
 end:
@@ -675,9 +679,107 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
+HandleLockFile := proc(lock:string)
+    if IsLockProcessAlive(lock) then
+        t := SplitLines(ReadRawFile(lock));
+        msg := '';
+        if length(t)>1 then 
+            msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+        fi:
+        return( msg.'<p>We are still computing the final result...</p>' );
+    else
+        CallSystem('rm -f '.lock);
+        return('<p>Computation crashed. Try to restart by resubmitting request.</p>'); 
+    fi:
+end:
+
+Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
+        'measure'=((measure='avg Lin'):string) )
+    global Sims;
+    Sims := 0;
+    traperror(ReadProgram(resFn)):
+    if Sims=0 then 
+        vars['content'] := '*** ERROR: An unexpected error occured: '.Sims.
+	                   '<br/>Please contact Adrian Altenhoff '.
+			   '<a href="mailto:adrian.altenhoff@inf.ethz.ch">'.
+			   'adrian.altenhoff@inf.ethz.ch</a>'
+    else 
+        tab := Table( border, gutter=2, ColAlign(l,r,c), 
+            Row('Project','# ortholog relations',measure));
+        for z in Sims do 
+	    tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+	od:
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+	    t := table():
+	    t['outfile'] := resPlotFn;
+	    t['xlabel'] := '# of ortholog predictions';
+	    t['ylabel'] := measure.' Similarity';
+	    t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+	    plotTab := [seq(table(), length(Sims))]:
+	    OpenWriting(t['datafile']);
+	    for i to length(Sims) do 
+	        printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
+	            Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
+	        plotTab[i,'index'] := i-1; 
+	        plotTab[i,'title'] := Sims[i,Description];
+	        plotTab[i,'style'] := i;
+	    od:
+	    OpenWriting(previous);
+	    t['plot'] := plotTab;
+	    cmdFile := sprintf('/tmp/%s.gp', resBase);
+	    OpenWriting(cmdFile);
+	    prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
+	    OpenWriting(previous);
+                
+	    CallSystem('gnuplot '.cmdFile);
+	    CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+	    CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+	    CallSystem('mv '.resBase.'.tgz '.rawdir);
+	fi:
+        vars['content'] := HTMLC(tab);
+	vars['fig'] := imgurl.resBase.'.png';
+	vars['gp_src'] := rawurl.resBase.'.tgz';
+    fi;
+end:
+
+StartEcTest := proc(PID:string, params:list, pnames:list)
+    fnBase := GetPKeyData(PID)['fnBase'];
+    lock  := sprintf('%s.EC.lock',fnBase);
+    vars := table('');
+    vars['resheader'] := 'Enzyme Classification (EC) conservation test';
+    
+    pubPrj := GetPublicProjects();
+
+    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := sort( projs, x->x['Title'] );
+    sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
+    projs := [seq(projs[i,'PID'], i=sel), PID];
+
+    measure := params[ SearchArray('pECMeasure',pnames) ];
+    
+    resBase := sprintf('EC.%a', hash([projs,measure]) );
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
+    if FileExists(lock) then 
+        vars['content'] := HandleLockFile(lock);
+    elif FileExists(resFn) then
+        Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
+
+    else 
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
+	       'projs := %A; lock:=%A; measure:=%A; '.
+	       'ReadProgram(''%s/EcTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, projs, lock, measure, wdir, darwin64);
+        prints(cmd);
+        CallSystem( cmd );
+        WriteLog('started command: '.cmd);
+        vars['content'] := '<p>Computation started...</p>';
+    fi:
+    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
+end:
 
 StartGoTest := proc(PID:string, params:list, pnames:list)
-    global Sims;
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.GO.lock',fnBase);
     vars := table('');
@@ -697,61 +799,10 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     
     resBase := sprintf('GO.%a', hash([projs,filter,measure]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
-    resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
-    if FileExists(lock) then
-        if IsLockProcessAlive(lock) then
-	    t := SplitLines(ReadRawFile(lock));
-	    msg := '';
-	    if length(t)>1 then 
-	        msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
-	    fi:
-            vars['content'] := msg.'<p>We are still computing the final result...</p>';
-        else
-	    CallSystem('rm -f '.lock);
-	    vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
-        fi:
+    if FileExists(lock) then 
+        vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
-        Sims := 0;
-        traperror(ReadProgram(resFn)):
-	if Sims=0 then 
-            vars['content'] := '*** ERROR: An unexpected error occured: '.Sims;
-        else 
-            tab := Table( border, gutter=2, ColAlign(l,r,c), 
-	        Row('Project','# ortholog relations',measure));
-            for z in Sims do 
-	        tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-	    od:
-	    if not FileExists(resPlotFn) then
-	        t := table():
-		t['outfile'] := resPlotFn;
-		t['xlabel'] := '# of ortholog predictions';
-		t['ylabel'] := measure.' Similarity';
-		t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-		plotTab := [seq(table(), length(Sims))]:
-		OpenWriting(t['datafile']);
-		for i to length(Sims) do 
-		    printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
-		       Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
-		    plotTab[i,'index'] := i-1; 
-		    plotTab[i,'title'] := Sims[i,Description];
-		    plotTab[i,'style'] := i;
-		od:
-		OpenWriting(previous);
-		t['plot'] := plotTab;
-		cmdFile := sprintf('/tmp/%s.gp', resBase);
-		OpenWriting(cmdFile);
-		prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
-		OpenWriting(previous);
-                
-		CallSystem('gnuplot '.cmdFile);
-		CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-		CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-		CallSystem('mv '.resBase.'.tgz '.rawdir);
-	    fi:
-            vars['content'] := HTMLC(tab);
-	    vars['fig'] := imgurl.resBase.'.png';
-	    vars['gp_src'] := rawurl.resBase.'.tgz';
-	fi;
+        Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; filter := %A;'.
                'projs := %A; lock:=%A; measure:=%A; ReadProgram(''%s/GoTest.drw''); done;" | nice -n 19 %s &',
@@ -795,6 +846,11 @@ bsRunTests := proc(params:list, pnames:list)
     k := SearchArray('pGO1',pnames);
     if k>0 and params[k]='on' then
         vars['GO'] := StartGoTest(PID, params, pnames)
+    fi:
+
+    k :- SearchArray('pEC1', pnames);
+    if k>0 and params[k]='on' then
+        vars['EC'] := StartEcTest(PID,params, pnames);
     fi:
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:

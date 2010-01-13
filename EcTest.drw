@@ -26,36 +26,41 @@ if not type(dbs, list(database)) then
    quit
 fi:
 
-nGo := 1e5;
-GOparents := CreateArray(1..nGo):
-for i to nGo do GOparents[i] := GOsuperclassR(i) od:
+ReadProgram(datdir.'enzymes.drw'); # assigns EC
 
-# extract important all GO annotations from ServerIndexed.db
-DB := GODB := ReadDb(omaDBpath.'ServerIndexed.db'):
-directMap := evalb(iSet=intersect()):
-nProt := If(directMap,GODB[TotEntries],length(iSet)):
-GOs := CreateArray(1..nProt,[]):
-DB := GODB;
-for i to nProt do 
-    eNr := If(directMap, i, iSet[i]);
-    gos := SearchTag('GO', Entry(eNr));
-    if gos='' then next fi;
-    gos := SearchDelim('; ',gos);
-    
-    gos := [seq(SearchDelim('@',z), z=gos)];
-    for z in gos do if length( intersect({z[2,2..-2]}, filter) )>0 then
-        GOs[i] := append(GOs[i], parse(z[1,4..-1]) );
-    fi od:
-od:
+# get the superclasses for a given EC including the empty class -> any Enzyme.
+ECsuperclassR := proc( c:string )
+    i := SearchAllString('.', c):
+    return( ['', seq(c[1..z-1], z=i), c] );
+end:
 
-# compute GO term frequencies of proteins in iSet;
-freqs := CreateArray(1..nGo): cnts := 0;
-for p in GOs do for go in p do
-    cnts := cnts+1;
-    freqs[go] := freqs[go]+1;
-    for parent in GOparents[go] do freqs[parent] := freqs[parent]+1; od:
-od od:
-if cnts>0 then freqs := freqs/cnts fi:
+ECFreqs := proc( proteins:{set,intersect()} )
+    t := []:
+    direct := evalb(proteins=intersect());
+    for i to If(direct,length(EC),length(proteins)) do
+        z := If(direct,i,proteins[i]);
+        if EC[z]<>0 then for x in EC[z] do 
+            t := append(t, op(ECsuperclassR(x)) ):
+        od fi;
+    od:
+    freqs := transpose( [seq([z,0], z=[op({op(t)})] )] ):
+
+    cnts := 0;
+    for i to If(direct,length(EC),length(proteins)) do
+        z := If(direct, i, proteins[i]);
+        if EC[z]<>0 then for x in EC[z] do 
+            for term in ECsuperclassR(x) do
+                k := SearchOrderedArray(term, freqs[1]):
+                assert(freqs[1,k]=term);
+                freqs[2,k] := freqs[2,k] + 1;
+            od:
+            cnts := cnts + 1;
+        od fi:
+    od:
+    if cnts>0 then freqs[2] := freqs[2] / cnts fi:
+    return(freqs);
+end:
+
 
 ComputeSimilarity := proc(data:list; 'method'=(method:string))
     if method='avg Sim' then
@@ -82,50 +87,45 @@ ComputeSimilarity := proc(data:list; 'method'=(method:string))
     else error('similarity not implemented') fi:
 end:
 
+# Lookup Function to get the OccurenceFreqencey of a given EC term
+freqs := ECFreqs(iSet):
+GetFreq := proc(ec:string)
+    k := SearchOrderedArray(ec,freqs[1]);
+    assert(k>0 and k<=length(freqs[1]) and freqs[1,k]=ec);
+    return( freqs[2,k] );
+end:
 # measure similarities between putative orthologs
 Sims := [seq(Stat(z['Title']), z=prj)];
-iList := [op(iSet)]:
-onts := [3674, 5575, 8150]:
+directMap := evalb(iSet=intersect());
+nProt := If(directMap,length(EC),length(iSet));
 for pNr to nP do 
     DB := dbs[pNr];
     for i to nProt do 
-        if length(GOs[i]) > 0 then
-            oE := If(directMap, i, iSet[i]);
-            eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
-        
+        oE1 := If(directMap,i,iSet[i]);
+        if EC[oE1]<>0 then
+            eNr := If( prj[pNr,'directMap'], oE1, DbEntryNrFromENr(oE1) );
             vps := ParseLongList(SearchTag('VP', Entry(eNr)));
             for vp in vps do 
-                if vp<oE then next fi: # uni-directional
-                if not member(vp, iSet) then next fi; # 
-                
-		if directMap then k := vp; 
-                else 
-		    k := SearchOrderedArray(vp, iList):
-                    assert(k>0 and k<=nProt and iList[k]=vp);
-		fi:
-                if length(GOs[k]) = 0 then next fi:
+                if vp<oE1 then next fi: # uni-directional
+                if not member(vp, iSet) then next fi; # not in intersection set 
+                if EC[vp]=0 then next fi: # ortholog has no EC tag
                
                 pairs := [];
-                for ig1 to length(GOs[i]) do for ig2 to length(GOs[k]) do
-                    go1 := GOs[i,ig1]; go2 := GOs[k,ig2];
-                    ic := intersect( {go1, op(GOparents[go1])},
-                                     {go2, op(GOparents[go2])} );
-                    if length(ic)=0 then next fi: # skip if not same ontology
-    
-                    ont := sum(SearchArray(z, onts),z=ic); # get ontology
-                    if ont<1 or ont>3 then next fi:
-    
+                for ig1 to length(EC[oE1]) do for ig2 to length(EC[vp]) do
+                    ec1 := EC[oE1,ig1]; fec1 := GetFreq(ec1); 
+                    ec2 := EC[vp,ig2];  fec2 := GetFreq(ec2); 
+                    ic := intersect( {op(ECsuperclassR(ec1))}, {op(ECsuperclassR(ec2))} );
                      #                     2*ln(prob(interClass[i]))
                      # similarity   sim = ---------------------------
                      #                    ln(prob(go1))+ln(prob(go2))
                     simRun := infoRun := -DBL_MAX;
                     for int in ic do
-                        info := -2*ln(freqs[int]);
-                        sim  := If(info=0, 0, -info/(ln(freqs[go1])+ln(freqs[go2])));
+                        info := -2*ln(GetFreq(int));
+                        sim  := If(info=0, 0, -info/(ln(fec1)+ln(fec2)));
                         if info > infoRun then infoRun := info; infoInt := int fi;
                         if sim  > simRun  then simRun := sim; simInt := int fi;
                     od:
-                    pairs := append(pairs, [ont, simRun, infoRun, ig1, ig2] );
+                    pairs := append(pairs, [1, simRun, infoRun, ig1, ig2] );
                 od od:
                 if length(pairs)>0 then
                     Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
