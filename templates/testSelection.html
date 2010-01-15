@@ -15,79 +15,87 @@ orthlogy inference project you would like to compare your predictions
 
 <fieldset><legend>Phylogeny-Based Definition Tests</legend>
   <div class="notes"><h4>Phylogeny-Based Definition</h4>
-   <p>According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
+   <p class="last">According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
   </div>
+  
   <div>
-   <label for="pTTEuk">Species Tree Discordance</label>
-    <fieldset>
-     <input type="checkbox" name="pTTEuk1" class="inputCheckbox" <DVAR name="hasEukaryota">/>Eukaryotic <br/>
-     <input type="checkbox" name="pTTFun1" class="inputCheckbox" <DVAR name="hasFungi">/>Fungi <br/>
-     <input type="checkbox" name="pTTBac1" class="inputCheckbox" <DVAR name="hasBacteria">/>Bacteria <br/>
-    </fieldset>
+   <label for="pTTEuk1">Species Tree Discordance</label>
+    <input type="checkbox" name="pTTEuk1" class="inputCheckbox" <DVAR name="hasEukaryota">/>Eukaryotic<br/> 
+    <input type="checkbox" name="pTTFun1" class="inputCheckbox" <DVAR name="hasFungi">/>Fungi<br/> 
+    <input type="checkbox" name="pTTBac1" class="inputCheckbox" <DVAR name="hasBacteria">/>Bacteria<br/> 
    <label for="pTTPrj1">Projects to compare with</label>
-   <DVAR name="TTprojects">
+    <DVAR name="TTprojects">
   </div>
  </fieldset>
  
  <fieldset><legend>Function-Based Definition Test</legend>
   <div class="notes"><h4>Function-Based Definition</h4>
-   <p>One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
+   <p class="last">One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
   </div>
-  <div>
-   <input type="checkbox" name="pGO1" class="inputCheckbox" checked />Gene Ontology Test<br/>
-   <label for="pGOPrj1">Projects to compare with</label>
-   <DVAR name="GOprojects">
+
+  <div class="test_kind">
+   <div class="test">
+    <h4><input type="checkbox" name="pGO1" checked="checked" /><label for="pGO1">Gene Ontology Test</label></h4>
+    <div class="testParam">
+     <label class="test" for="pGOPrj1">Projects to compare with</label>
+      <DVAR name="GOprojects">
    
-   <fieldset><legend>Restricted to Evidence codes</legend>
-    <p>
-    <input type="checkbox" name="pGOFilEXP" checked><span name="hint" title="Inferred from Experiment">EXP</span></input>
-    <input type="checkbox" name="pGOFilIDA" checked><span name="hint" title="Inferred from Direct Assay">IDA</span></input>
-    <input type="checkbox" name="pGOFilIPI" checked><span name="hint" title="Inferred from Physical Interaction">IPI</span></input>
-    <input type="checkbox" name="pGOFilIMP" checked><span name="hint" title="Inferred from Mutant Phenotype">IMP</span></input>
-    <input type="checkbox" name="pGOFilIGI" checked><span name="hint" title="Inferred from Genetic Interaction">IGI</span></input>
-    <input type="checkbox" name="pGOFilIEP" checked><span name="hint" title="Inferred from Expression Pattern">IEP</span></input>
-    </p>
-    <p>
-    <input type="checkbox" name="pGOFilISS"><span name="hint" title="Inferred from Sequence or Structural Similarity">ISS</span></input>
-    <input type="checkbox" name="pGOFilISO"><span name="hint" title="Inferred from Sequence Orthology">ISO</span></input>
-    <input type="checkbox" name="pGOFilISA"><span name="hint" title="Inferred from Sequence Alignment">ISA</span></input>
-    <input type="checkbox" name="pGOFilISM"><span name="hint" title="Inferred from Sequence Model">ISM</span></input>
-    <input type="checkbox" name="pGOFilIGC"><span name="hint" title="Inferred from Genomic Context">IGC</span></input>
-    <input type="checkbox" name="pGOFilIC" ><span name="hint" title="Inferred by Curator">IC </span></input>
-    <input type="checkbox" name="pGOFilRCA"><span name="hint" title="Inferred from Reviewed Computational Analysis">RCA</span></input>
-    <input type="checkbox" name="pGOFilTAS"><span name="hint" title="Traceable Author Statement">TAS</span></input>
-    <input type="checkbox" name="pGOFilNAS"><span name="hint" title="Non-traceable Author Statement">NAS</span></input>
-    </p>
-    <p>
-    <input type="checkbox" name="pGOFilIEA"><span name="hint" title="Inferred from electronic annotation">IEA</span></input>
-    <input type="checkbox" name="pGOFilND" ><span name="hint" title="No biological Data available">ND</span></input>
-    </p>
-   </fieldset>
-   
-   <fieldset><legend>Similarity Measure</legend>
-    <input type="radio" name="pGOMeasure" value="avg Sim">average Lin Similarity</input><br/>
-    <input type="radio" name="pGOMeasure" value="max Sim">maximum Lin Similarity</input><br/>
-    <input type="radio" name="pGOMeasure" value="avg Info">average information content</input><br/>
-    <input type="radio" name="pGOMeasure" value="max Info">maximum information content</input><br/>
-    <input type="radio" name="pGOMeasure" value="avg Schlicker" checked>average Schlicker Similarity</input>
-   </fieldset>
+     <fieldset><legend>Restricted to Evidence codes</legend>
+      <p>
+      <input type="checkbox"  id="pGOFilEXP" name="pGOFilEXP" checked="checked"/><label for="pGOFilEXP"><span title="Inferred from Experiment">EXP</span></label>
+      <input type="checkbox"  id="pGOFilIDA" name="pGOFilIDA" checked="checked"/><label for="pGOFilIDA"><span title="Inferred from Direct Assay">IDA</span></label>
+      <input type="checkbox"  id="pGOFilIPI" name="pGOFilIPI" checked="checked"/><label for="pGOFilIPI"><span title="Inferred from Physical Interaction">IPI</span></label>
+      <input type="checkbox"  id="pGOFilIMP" name="pGOFilIMP" checked="checked"/><label for="pGOFilIMP"><span title="Inferred from Mutant Phenotype">IMP</span></label>
+      <input type="checkbox"  id="pGOFilIGI" name="pGOFilIGI" checked="checked"/><label for="pGOFilIGI"><span title="Inferred from Genetic Interaction">IGI</span></label>
+      <input type="checkbox"  id="pGOFilIEP" name="pGOFilIEP" checked="checked"/><label for="pGOFilIEP"><span title="Inferred from Expression Pattern">IEP</span></label>
+      </p>
+      <p>
+      <input type="checkbox"  id="pGOFilISS" name="pGOFilISS" /><label for="pGOFilISS"><span title="Inferred from Sequence or Structural Similarity">ISS</span></label>
+      <input type="checkbox"  id="pGOFilISO" name="pGOFilISO" /><label for="pGOFilISO"><span title="Inferred from Sequence Orthology">ISO</span></label>
+      <input type="checkbox"  id="pGOFilISA" name="pGOFilISA" /><label for="pGOFilISA"><span title="Inferred from Sequence Alignment">ISA</span></label>
+      <input type="checkbox"  id="pGOFilISM" name="pGOFilISM" /><label for="pGOFilISM"><span title="Inferred from Sequence Model">ISM</span></label>
+      <input type="checkbox"  id="pGOFilIGC" name="pGOFilIGC" /><label for="pGOFilIGC"><span title="Inferred from Genomic Context">IGC</span></label>
+      <input type="checkbox"  id="pGOFilIC"  name="pGOFilIC"  /><label for="pGOFilIC" ><span title="Inferred by Curator">IC </span></label>
+      <input type="checkbox"  id="pGOFilRCA" name="pGOFilRCA" /><label for="pGOFilRCA"><span title="Inferred from Reviewed Computational Analysis">RCA</span></label>
+      <input type="checkbox"  id="pGOFilTAS" name="pGOFilTAS" /><label for="pGOFilTAS"><span title="Traceable Author Statement">TAS</span></label>
+      <input type="checkbox"  id="pGOFilNAS" name="pGOFilNAS" /><label for="pGOFilNAS"><span title="Non-traceable Author Statement">NAS</span></label>
+      </p>
+      <p>
+      <input type="checkbox"  id="pGOFilIEA" name="pGOFilIEA" /><label for="pGOFilIEA"><span title="Inferred from electronic annotation">IEA</span></label>
+      <input type="checkbox"  id="pGOFilND"  name="pGOFilND"  /><label for="pGOFilND"><span title="No biological Data available">ND</span></label>
+      </p>
+     </fieldset>
+     
+     <fieldset><legend>Similarity Measure</legend>
+      <input type="radio" id="pGOMLinA" name="pGOMeasure" value="avg Sim"/><label for="pGOMLinA">average Lin Similarity</label><br/>
+      <input type="radio" id="pGOMLinM" name="pGOMeasure" value="max Sim"/><label for="pGOMLinM">maximum Lin Similarity</label><br/>
+      <input type="radio" id="pGOMInfA" name="pGOMeasure" value="avg Info"/><label for="pGOMInfA">average information content</label><br/>
+      <input type="radio" id="pGOMInfM" name="pGOMeasure" value="max Info"/><label for="pGOMInfM">maximum information content</label><br/>
+      <input type="radio" id="pGOMSchA" name="pGOMeasure" value="avg Schlicker" checked="checked"/><label for="pGOMSchA">average Schlicker Similarity</label>
+     </fieldset>
+    </div>
+   </div>
   </div>
-  <div>
-   <input type="checkbox" name="pEC1" class="inputCheckbox" checked />Enzyme Classification (EC) Test<br/>
-   <label for="pECPrj1">Projects to compare with</label>
-   <DVAR name="ECprojects">
-   
-   <fieldset><legend>Similarity Measure</legend>
-    <input type="radio" name="pECMeasure" value="avg Sim">average Lin Similarity</input><br/>
-    <input type="radio" name="pECMeasure" value="max Sim">maximum Lin Similarity</input><br/>
-    <input type="radio" name="pECMeasure" value="avg Info">average information content</input><br/>
-    <input type="radio" name="pECMeasure" value="max Info">maximum information content</input><br/>
-    <input type="radio" name="pECMeasure" value="avg Schlicker" checked>average Schlicker Similarity</input>
-   </fieldset>
+  
+  <div class="test">
+   <h4><input type="checkbox" name="pEC1" class="inputCheckbox" checked="checked" /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
+   <div class="testParam">
+    <label for="pECPrj1">Projects to compare with</label>
+    <DVAR name="ECprojects">
+    
+    <fieldset><legend>Similarity Measure</legend>
+     <input type="radio" id="pECMLinA" name="pECMeasure" value="avg Sim"/><label for="pECMLinA">average Lin Similarity</label><br/>
+     <input type="radio" id="pECMLinM" name="pECMeasure" value="max Sim"/><label for="pECMLinM">maximum Lin Similarity</label><br/>
+     <input type="radio" id="pECMInfA" name="pECMeasure" value="avg Info"/><label for="pECMInfA">average information content</label><br/>
+     <input type="radio" id="pECMInfM" name="pECMeasure" value="max Info"/><label for="pECMInfM">maximum information content</label><br/>
+     <input type="radio" id="pECMSchA" name="pECMeasure" value="avg Schlicker" checked="checked"/><label for="pECMSchA">average Schlicker Similarity</label>
+    </fieldset>
+   </div>
   </div>
+ </div>
  </fieldset>
 
- <fieldset>
+ <fieldset class="submit">
   <div>
    <input type="hidden" name="f" value="RunTests" />
    <input type="hidden" name="pPID" value="<DVAR name="PID">" />
