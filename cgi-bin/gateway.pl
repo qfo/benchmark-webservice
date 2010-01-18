@@ -10,7 +10,7 @@
 #    f=SearchDb&p1=AATCGCTAAA -> omaSearchDb('AATCGCTAA')
 srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
 my $cook = '';
-my $debug = 1;
+my $debug = 0;
 my $error_log = '/local/BenchmarkService/output';
 my $dbg_log = '/local/BenchmarkService/dbg.log';
 

@@ -546,14 +546,17 @@ bsTestSelection := proc(PID:string)
     
     publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
 #    vars['hasFungi'] := 'DISABLED';
-    vars['TTprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pTTPrj%d" class="inputCheckbox" />%s<br/>',
-                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+    for z in ['Euk','Bac','Fun'] do
+       vars['TT'.z.'Projects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" /><label for="pTT%sPrj%d">%s</label><br/>',
+                       z,pNr,z,pNr,z,pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+       vars['has'.z] := 'checked';
+    od:
     vars['GOprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pGOPrj%d" class="inputCheckbox" />%s<br/>',
+         [seq(sprintf('<input type="checkbox" name="pGOPrj%d" />%s<br/>',
                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
     vars['ECprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pECPrj%d" class="inputCheckbox" />%s<br/>',
+         [seq(sprintf('<input type="checkbox" name="pECPrj%d" />%s<br/>',
                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
 
     vars['PID'] := PID;
@@ -848,7 +851,7 @@ bsRunTests := proc(params:list, pnames:list)
         vars['GO'] := StartGoTest(PID, params, pnames)
     fi:
 
-    k :- SearchArray('pEC1', pnames);
+    k := SearchArray('pEC1', pnames);
     if k>0 and params[k]='on' then
         vars['EC'] := StartEcTest(PID,params, pnames);
     fi:

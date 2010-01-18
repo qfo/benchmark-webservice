@@ -13,18 +13,35 @@ Select from the available benchmarks and against which standard
 orthlogy inference project you would like to compare your predictions
 <form action="gateway.pl" method="post">
 
-<fieldset><legend>Phylogeny-Based Definition Tests</legend>
+ <fieldset><legend>Phylogeny-Based Definition Tests</legend>
   <div class="notes"><h4>Phylogeny-Based Definition</h4>
    <p class="last">According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
   </div>
-  
-  <div>
-   <label for="pTTEuk1">Species Tree Discordance</label>
-    <input type="checkbox" name="pTTEuk1" class="inputCheckbox" <DVAR name="hasEukaryota">/>Eukaryotic<br/> 
-    <input type="checkbox" name="pTTFun1" class="inputCheckbox" <DVAR name="hasFungi">/>Fungi<br/> 
-    <input type="checkbox" name="pTTBac1" class="inputCheckbox" <DVAR name="hasBacteria">/>Bacteria<br/> 
-   <label for="pTTPrj1">Projects to compare with</label>
-    <DVAR name="TTprojects">
+ 
+  <div class="test_kind">
+   <div class="test">
+    <h4><input type="checkbox" id="pTTEuk1" name="pTTEuk1" checked="<DVAR name="hasEuk">"/><label for="pTTEuk1">Eukaryotic Species Tree Discordance Test</label></h4>
+    <div class="testParam">
+     <label class="test" for="pTTEukPrj1">Projects to compare with:</label>
+     <DVAR name="TTEukProjects">
+    </div>
+   </div>
+   
+   <div class="test">
+    <h4><input type="checkbox" id="pTTFun1" name="pTTFun1" checked="<DVAR name="hasFun">"/><label for="pTTFun1">Fungi Species Tree Discordance Test</label></h4>
+    <div class="testParam">
+     <label class="test" for="pTTFunPrj1">Projects to compare with:</label>
+     <DVAR name="TTFunProjects">
+    </div>
+   </div>
+   
+   <div class="test">
+    <h4><input type="checkbox" id="pTTBac1" name="pTTBac1" checked="<DVAR name="hasBac">"/><label for="pTTBac1">Bacteria Species Tree Discordance Test</label></h4>
+    <div class="testParam">
+     <label class="test" for="pTTBacPrj1">Projects to compare with:</label>
+     <DVAR name="TTBacProjects">
+    </div>
+   </div>
   </div>
  </fieldset>
  
@@ -35,7 +52,7 @@ orthlogy inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" name="pGO1" checked="checked" /><label for="pGO1">Gene Ontology Test</label></h4>
+    <h4><input type="checkbox" id="pGO1" name="pGO1" checked="checked" /><label for="pGO1">Gene Ontology Test</label></h4>
     <div class="testParam">
      <label class="test" for="pGOPrj1">Projects to compare with</label>
       <DVAR name="GOprojects">
@@ -78,7 +95,7 @@ orthlogy inference project you would like to compare your predictions
   </div>
   
   <div class="test">
-   <h4><input type="checkbox" name="pEC1" class="inputCheckbox" checked="checked" /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
+   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" checked="checked" /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
    <div class="testParam">
     <label for="pECPrj1">Projects to compare with</label>
     <DVAR name="ECprojects">
@@ -92,7 +109,6 @@ orthlogy inference project you would like to compare your predictions
     </fieldset>
    </div>
   </div>
- </div>
  </fieldset>
 
  <fieldset class="submit">

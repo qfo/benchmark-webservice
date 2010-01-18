@@ -7,9 +7,9 @@
 #   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009  
 #
 #  in: resFn, filter, projs, lock, measure
-
+printlevel := 2;
 Set(printgc=false); Set(gc=5e6): 
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+OpenWriting(lock); lprint(getpid()); lprint('initializing computation'); OpenWriting(previous);
 
 prj := [seq(GetPKeyData(z),z=projs)]:
 iSet := GetProjISets(prj);
