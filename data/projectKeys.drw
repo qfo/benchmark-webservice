@@ -1,4 +1,4 @@
 PROJECTS := table(NULL):
 PROJECTS['NE29Yxm5WI9Am5Y'] := PKeyData('NE29Yxm5WI9Am5Y','OMA Oct 2009','/local/BenchmarkService/projects/OMA.Oct2009.1','Tue Dec  8 17:07:18 2009',true,true):
 PROJECTS['SEFQGpXo3xJBH51'] := PKeyData('SEFQGpXo3xJBH51','Ensembl 56','/local/BenchmarkService/projects/Ensembl_56.589','Wed Dec  9 17:51:18 2009',true,false):
-PROJECTS['zYRdeMHV3ZiUIdu'] := PKeyData('zYRdeMHV3ZiUIdu','OrthoMCL v3','/local/BenchmarkService/projects/pub_OrthoMCL.475','Mon Jan 11 10:45:30 2010',false,false):
+PROJECTS['zYRdeMHV3ZiUIdu'] := PKeyData('zYRdeMHV3ZiUIdu','OrthoMCL v3','/local/BenchmarkService/projects/pub_OrthoMCL.475','Mon Jan 11 10:45:30 2010',true,false):
