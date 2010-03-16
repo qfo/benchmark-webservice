@@ -84,6 +84,15 @@ OpenAppending(previous);
 end:
 
 #######################################
+# general Error message handler       #
+#######################################
+UNEXPECTED_ERROR_MSG := proc(fun:string, var:string)
+   msg := sprintf('*** An unexpected Error occured in %s (%s). '.
+          'Please report to adrian.altenhoff@inf.ethz.ch. Thanks', fun, var);
+   WriteLog(msg);
+   return(msg);
+end:
+#######################################
 # Page to display in case of an error #
 #######################################
 ErrorPage := proc(filename:string,msg:string)
@@ -116,253 +125,6 @@ OpenWriting(previous);
 TimedCallSystem('cat '.filename.'tmp >>'.filename,10);
 CallSystem('rm '.filename.'tmp');
 end:
-
-###########################################
-# Function to create links to other pages.#
-###########################################
-
-# if an ID contains several IDs, extract the first one
-#TrimID := proc(id_:string)
-#id := id_;
-#while id[1]=' ' do id := id[2..-1] od:
-#p1 :=  SearchString(';',id);
-#p2 :=  SearchString(' ',id);
-#p3 :=  SearchString('.repet',id);
-#p4 :=  SearchString(' {',id);
-#if max(p1,p2,p3,p4)>0 then
-#    p := min(op({p1,p2,p3,p4} minus {-1}));
-#    return(id[1..p])
-#else
-#    return(id)
-#fi;
-#end:
-#
-#EntryHref := proc(id:{posint,string}, text:string)
-## we add leading zeros for the MAlignments to look ok
-#if type(id,string) then
-#    nr := id
-#else
-#    nr := sprintf('%07d',id)
-#fi;
-#tooltip := '';
-#if length(text)>5 and member(text[1..5],genomes) then
-#    sp := text[1..5];
-#    tooltip := ' title="'.GS[sp,SCINAME];
-#    cn := GS[sp,COMMONNAME];
-#    if cn<>'' then tooltip := tooltip.' ('.cn.')' fi;
-#    tooltip := tooltip.'"';
-#fi;
-#t:=sprintf('<a href="gateway.pl?f=DisplayEntry&amp;p1=%s"%s>%s</a>',
-#                nr,tooltip,text);
-#return(t);
-#end:
-#
-#GroupHref := proc(nr:{0,posint}, text:string)
-#if nr=0 then return('-') fi;
-#t:=sprintf('<a href="gateway.pl?f=DisplayGroup&amp;p1=%d">%s</a>',nr,text);
-#return(t);
-#end:
-#
-#OSHref := proc(os:string, text:string)
-#t:=sprintf('<a href="gateway.pl?f=DisplayOS&amp;p1=%s">%s</a>',os,text);
-#return(t);
-#end:
-#
-#MSAHref := proc(og:posint, text:string)
-#t:=sprintf('<a href="gateway.pl?f=DisplayMSA&amp;p1=%d">%s</a>',og,text);
-#return(t);
-#end:
-#
-#CloseGroupsHref := proc(og:posint, text:string)
-#t:=sprintf('<a href="gateway.pl?f=DisplayCloseGroups&amp;p1=%d">%s</a>',og,text);
-#return(t);
-#end:
-#
-#RelatedHref := proc(og:posint, text:string)
-#t:=sprintf('<a href="gateway.pl?f=DisplayRelated&amp;p1=%d">%s</a>',og,text);
-#return(t);
-#end:
-#
-#OntoHref := proc(og:posint, text:string)
-#t:=sprintf('<a href="gateway.pl?f=DisplayOnto&amp;p1=%d">%s</a>',og,text);
-#return(t);
-#end:
-#
-#DloadHref := proc(og:posint, text:string; form:{'fasta','darwin'})
-#t:= '<a href="gateway.pl?f=GroupDownload&amp;p1='.string(og);
-#if assigned(form) then
-#    t := t.'&amp;p2='.form;
-#fi;
-#t:= t.'">'.text.'</a>';
-#return(t);
-#end:
-#
-#HelpLink := proc(fname:string)
-#return('<a href="javascript:help(''/help/'.fname.''')"><sup>?</sup></a>');
-#end:
-#
-#Kingdom := proc(os:string)
-#k := GS[os,'KINGDOM'][1]:
-#if k='E' then return('<span class="Eukaryota">[E]</span>')
-#elif k='B' then return('<span class="Bacteria">[B]</span>')
-#else return('<span class="Archaea">[A]</span>') fi;
-#end:
-#
-## Hrefs to external sources are in a lib file
-#ReadProgram(wdir.'/lib/XternalHrefs.drw');
-#
-#######################################
-## Keywords for OMA groups         #
-## based on ID and DE tags         #
-#######################################
-#Keywords := proc(og:posint)
-#if assigned(KeywordT) then return(KeywordT[og]) fi;
-#res := {op(Orthologous[og])} minus {0};
-## first step: try to find a repeated id
-## this tries to find the common gene name
-#ids := table(0);
-#for nr in res do
-#    e := Entry(nr);
-#    id := SearchTag('ID',e);
-#    if length(id)>450 then id := id[1..450] fi;
-#    p := SearchString('.repet',id);
-#    if p>-1 then id := id[1..p] fi;
-#    ids[id] := ids[id]+1;
-#od:
-#maxc := 0;
-#for z in Indices(ids) do
-#    if ids[z]>maxc then maxc:=ids[z]; maxid := z fi;
-#od:
-##if maxc>1 then cid := maxid else cid := '-' fi;
-#if maxc>1 then cid:=maxid else cid := '-' fi;
-## second step: make a list of all words in DE
-## that appear more than once
-#kws := table(0);
-#des := []:
-#for nr in res do
-#    kwe := table(0);
-#    e := Entry(nr);
-#    de := lowercase(SearchTag('DE',e));
-#    des := append(des,de);
-#    ws := SearchDelim(' ',de);
-#    for w in ws do
-#    if member(w,['',' ']) then next fi;
-#    if w[1]=' ' then w2 := w[2..-1] else w2:=w fi;
-#    if w[-1]=',' then w2 := w2[1..-2] fi;
-#    if member(w2,['',' ']) then next fi;
-#    if length(w2)>4 and w2[1..5]='[goid' then next fi;
-#    if length(w2)>7 and (w2[-1]=']' or w2[-2..-1]='];') then next fi;
-#    if length(w2)>8 and w2[1..3]='sp|' then next fi;
-#    if length(w2)=7 and w2[1]='y' and    # YEAST IDs, e.g. YER169W 
-#        SearchString('Saccharomyces cerevisiae',de)>-1 then next fi;
-#    if w2[1]='y' and w2[-1]='c' then next fi;
-#    if w2[-1]='%' then next fi;
-#    kwe[w2] := 1;
-#    od:
-#    kws := kws+kwe;
-#od:
-#w2 := []:
-#s2 := {};
-#for z in Indices(kws) do
-#    if kws[z]>1 then 
-#    w2 := append(w2,z);
-#    s2 := s2 union {[z,kws[z]]};
-#    fi;
-#od:
-#if w2=[] then return(cid) fi;
-#w2 := {op(w2)};
-## third step: try to make seqs of words
-## that appear more than once
-## score = # of words * # of occurences
-#len := 1;
-#s2cur := s2;
-#while s2cur<>{} do
-#    s2new := {};
-#    newD := [seq(false,i=1..length(des))]:
-#    len := len+1;
-#    for w in w2 do for s in s2cur do
-#    c := s[1].' '.w;
-#    n := 0;
-#    for i to length(des) do
-#        if SearchString(c,des[i])>-1 then
-#        n := n+1;
-#        newD[i] := true;
-#        fi;
-#    od:
-#    if n>1 then
-#        s2new := s2new union {[c,len*n]}    
-#    fi;
-#    od od;
-#    s2 := s2 union s2new;
-#    s2cur := s2new;
-#    des := [seq(If(newD[i],des[i],NULL),i=1..length(des))];
-#od:
-#s2 := sort(s2,x->-x[2]);
-## make sure best KW is not a no-go
-#kw := '';
-#for i to length(s2) do
-#    if length(s2[i,1])<2 then next fi;
-#    if not member(s2[i,1],NoGos) then kw := s2[i,1]; break fi;
-#od:
-#if kw='' then return(cid) fi;
-## find a case
-#for nr in res do
-#    e := Entry(nr);
-#    de := SearchTag('DE',e);
-#    p := SearchString(kw,de);
-#    if p>-1 then break fi;
-#od:
-#printf('KW%d: %s\n',og,de[p+1..p+length(kw)]);
-#return(de[p+1..p+length(kw)]);
-#end:
-#
-######################################
-## Get the OG number for a PersGrID  #
-######################################
-#GetGroupNr := proc(og:{posint,string,0})
-#global DB,SeqsDB,IndDB;
-## 1st: if an int then it is the number
-#if type(og, integer) then return(og) fi;
-## 2nd: try ID index, display corresponding group
-#nr := FindEntryNr(og);
-#if nr>0 and nr<=DB[TotEntries] then
-#   og_ := SearchTag('OG',Entry(nr));
-#   if og_='0' then return('singleton') fi;
-#   if og_<>'' then return(parse(og_)) fi;
-#fi;
-## 3rd: find fingerprint in seq. DB
-#if length(og)<4 then return(0) fi;
-#DB := SeqsDB;
-#pes := SearchSeqDb(uppercase(og));
-#if pes[1,2]-pes[1,1]=-1 then return(0) fi;
-#print(Entry(pes));
-#es := [seq(GetEntryNumber(e),e=[Entry(pes)])];
-#DB := IndDB;
-#print(es);
-#ogs := {seq(SearchTag('OG',Entry(en)),en=es)};
-#print(ogs);
-#if length(ogs)=1 then
-#    return(parse(ogs[1]));
-#elif length(es)=0 then 
-#    return(0);
-#else
-#    return('ambiguous');
-#fi;
-#end:
-
-# Consistant display of species name
-SpeciesName := proc(os:string)
-K := GS[os,KINGDOM];
-if K='Eukaryota' then K := '<span class="Eukaryota">[E]</span>&nbsp;'
-elif K='Archaea' then K := '<span class="Archaea">[A]</span>&nbsp;'
-else K := '<span class="Bacteria">[B]</span>&nbsp;' fi;
-N := '<b>'.GS[os,SCINAME];
-p := SearchString('(',N);
-if p>-1 then N := N[1..p].'</b>'.N[p+1..-1]
-else N := N.'</b>' fi;
-return(K.'<span class="species">'.N.'</span>');
-end:
-
 # --------------- Server Functions -------------------------------
 
 
@@ -481,19 +243,19 @@ bsMapData := proc(PID:string)
            jsMap := '[';
            for pg to prNS do
                t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
-	              '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
+                  '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
                     SPS[pg], TotProts[pg], pg, pg);
                ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
                t := t.'<option value="n.a.">no mapping</option>\n';
-	       jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
+           jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
                for p to NS while cnts[pg,ord[p]]>0 do 
                    t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
                           genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
                           GS[genomes[ord[p]],SCINAME]);
-	           jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
+               jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
                od:
                t := t.sprintf('</select></td><td>%d</td></tr>\n', cnts[pg,ord[1]]);
-	       jsMap := jsMap.'}';
+           jsMap := jsMap.'}';
            od:
            t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
            t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
@@ -501,7 +263,7 @@ bsMapData := proc(PID:string)
            jsMap := jsMap.'];';
                     
            vars['content'] := t;
-	   vars['jsMappingArray'] := jsMap;
+       vars['jsMappingArray'] := jsMap;
         fi;
         return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
     fi:
@@ -535,6 +297,7 @@ bsMapData := proc(PID:string)
 end:
 
 bsTestSelection := proc(PID:string)
+    global ReconciledTrees;
     fnBase := GetPKeyData(PID)['fnBase'];
     dbFn := fnBase.'.db';
     if not FileExists(dbFn) then 
@@ -545,13 +308,28 @@ bsTestSelection := proc(PID:string)
     vars['tit'] := GetPKeyData(PID)['Title'];
     
     publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
-#    vars['hasFungi'] := 'DISABLED';
-    for z in ['Euk','Bac','Fun'] do
-       vars['TT'.z.'Projects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" /><label for="pTT%sPrj%d">%s</label><br/>',
-                       z,pNr,z,pNr,z,pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
-       vars['has'.z] := 'checked';
+    ReadProgram(datdir.'ReconciledTrees.drw'); # assigns ReconciledTrees
+    refPhyloProbs := []; for i in Indices(ReconciledTrees) do 
+        refPhyloProbs := append(refPhyloProbs, ReconciledTrees[i]) 
     od:
+
+    for z in ['Euk','Bac','Fun'] do
+        vars['TT'.z.'Projects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" />'.
+	              '<label for="pTT%sPrj%d">%s</label><br/>',
+                       z,pNr,z,pNr,z,pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+        vars['has'.z] := 'checked';
+    od:
+    
+    vars['RefPhyloProjects'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" name="pRefPhyloPrj%d" />%s<br/>',
+                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+    vars['RefPhyloProblems'] := ConcatStrings(
+         [seq(sprintf('<input type="checkbox" name="pRefPhyloProb%s" checked="checked" />'.
+	              '<span title="%s">%s</span> <br/>',
+                      z['Name'],z['Reference'],z['Name']), z=refPhyloProbs)],'\n');
+    vars['RefPhyloProb1_id'] := 'RefPhyloProb'.refPhyloProbs[1,'Name'];
+    
     vars['GOprojects'] := ConcatStrings(
          [seq(sprintf('<input type="checkbox" name="pGOPrj%d" />%s<br/>',
                       pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
@@ -579,7 +357,7 @@ bsMapRels := proc(PID:string)
            vars['content'] := 'Still computing';
         else
            # provide test selection page:
-	   return( bsTestSelection(PID) );
+       return( bsTestSelection(PID) );
         fi:
     fi:
 
@@ -647,29 +425,29 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     resFn := sprintf('%s/TreeTest.%s.%a.drw', resdir, king, hash(projs) );
     if FileExists(lock) then
         if IsLockProcessAlive(lock) then
-	    t := SplitLines(ReadRawFile(lock));
-	    msg := '';
-	    if length(t)>1 then 
-	        msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
-	    fi:
+            t := SplitLines(ReadRawFile(lock));
+            msg := '';
+            if length(t)>1 then 
+                msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+            fi:
             vars['content'] := msg.'<p>We are still computing the final result...</p>';
         else
-	    CallSystem('rm -f '.lock);
-	    vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
+            CallSystem('rm -f '.lock);
+            vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
         fi:
     elif FileExists(resFn) then
         RFstat := 0;
         traperror(ReadProgram(resFn)):
-	if RFstat=0 then 
-            vars['content'] := '*** ERROR: An unexpected error occured: '.RFstat;
+        if RFstat=0 then 
+            vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
         else 
             tab := Table( border, gutter=2, ColAlign(l,r,c), 
-	        Row('Project','# trees','avg RF distance genetree - speciestree'));
+                   Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
             for z in RFstat do 
-	        tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-	    od:
+                tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+            od:
             vars['content'] := HTMLC(tab);
-	fi;
+        fi;
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
                'projs := %A; lock:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
@@ -696,55 +474,114 @@ HandleLockFile := proc(lock:string)
     fi:
 end:
 
+Handle2dROCFiles := proc(resFn:string, resBase:string, 
+        cases:list(string), PIDs:list(string), vars:table;
+        'aggregate'=((aggregate='sample variance'):string) )
+    global FPR, TPR;
+    FPR := TPR := 0;
+    traperror(ReadProgram(resFn));
+    if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
+             or length(FPR[1])<>length(PIDs) then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
+    else
+        prjNames := [seq(GetPKeyData(z)['Name'], z=PIDs)];
+        tab := Table( border, gutter=2, ColAlign(l,c,c),
+	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR')) );
+        for c to length(cases) do for i to length(prjNames) do 
+	    tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
+	          If(FPR[c,i]<>0, sprintf('%g +- %g', op(FPR[c,i])), 'n.a.' ),
+	          If(TPR[c,i]<>0, sprintf('%g +- %g', op(TPR[c,i])), 'n.a.' )) );
+	od: tab:=append(tab,Rule); od:
+
+        vars['content'] := HTMLC(tab);
+    fi:
+end:
+
 Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
         'measure'=((measure='avg Lin'):string) )
     global Sims;
     Sims := 0;
     traperror(ReadProgram(resFn)):
     if Sims=0 then 
-        vars['content'] := '*** ERROR: An unexpected error occured: '.Sims.
-	                   '<br/>Please contact Adrian Altenhoff '.
-			   '<a href="mailto:adrian.altenhoff@inf.ethz.ch">'.
-			   'adrian.altenhoff@inf.ethz.ch</a>'
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
     else 
         tab := Table( border, gutter=2, ColAlign(l,r,c), 
-            Row('Project','# ortholog relations',measure));
+            Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure)));
         for z in Sims do 
-	    tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-	od:
+            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+        od:
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
-	    t := table():
-	    t['outfile'] := resPlotFn;
-	    t['xlabel'] := '# of ortholog predictions';
-	    t['ylabel'] := measure.' Similarity';
-	    t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-	    plotTab := [seq(table(), length(Sims))]:
-	    OpenWriting(t['datafile']);
-	    for i to length(Sims) do 
-	        printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
-	            Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
-	        plotTab[i,'index'] := i-1; 
-	        plotTab[i,'title'] := Sims[i,Description];
-	        plotTab[i,'style'] := i;
-	    od:
-	    OpenWriting(previous);
-	    t['plot'] := plotTab;
-	    cmdFile := sprintf('/tmp/%s.gp', resBase);
-	    OpenWriting(cmdFile);
-	    prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
-	    OpenWriting(previous);
-                
-	    CallSystem('gnuplot '.cmdFile);
-	    CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-	    CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-	    CallSystem('mv '.resBase.'.tgz '.rawdir);
-	fi:
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := '# of ortholog predictions';
+            t['ylabel'] := measure.' Similarity';
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(Sims))]:
+            OpenWriting(t['datafile']);
+            for i to length(Sims) do 
+                printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
+                    Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := Sims[i,Description];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['plot'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
         vars['content'] := HTMLC(tab);
-	vars['fig'] := imgurl.resBase.'.png';
-	vars['gp_src'] := rawurl.resBase.'.tgz';
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
     fi;
+end:
+
+StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
+    fnBase := GetPKeyData(PID)['fnBase'];
+    lock  := sprintf('%s.RefPhyl.lock',fnBase);
+    vars := table('');
+    vars['resheader'] := 'Agreement with Reference Phylogeny - Test';
+    
+    pubPrj := GetPublicProjects();
+
+    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := sort( projs, x->x['Title'] );
+    sel := [seq(If(length(z)>11 and z[1..11]='pRefPhylPrj', parse(z[12..-1]), NULL), z=pnames)];
+    projs := [seq(projs[i,'PID'], i=sel), PID];
+    
+    k := SearchArray('pRefPhylAggMeas',pnames);
+    measure := If(k>0,params[k],'sample variance');
+
+    problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', parse(z[14..-1]), NULL), z=pnames)];
+    lprint('DEBUG stmt');
+
+    
+    resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems]) );
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
+    if FileExists(lock) then 
+        vars['content'] := HandleLockFile(lock);
+    elif FileExists(resFn) then
+        Handle2dROCFiles(resFn, resBase, problems, projs, vars, 'measure'=measure);
+    else 
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
+           'projs := %A; lock:=%A; problems := %A; '.
+           'ReadProgram(''%s/RefPhyloTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, projs, lock, problems, wdir, darwin64);
+        prints(cmd);
+        CallSystem( cmd );
+        WriteLog('started command: '.cmd);
+        vars['content'] := '<p>Computation started...</p>';
+    fi:
+    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
 StartEcTest := proc(PID:string, params:list, pnames:list)
@@ -771,8 +608,8 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
 
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
-	       'projs := %A; lock:=%A; measure:=%A; '.
-	       'ReadProgram(''%s/EcTest.drw''); done;" | nice -n 19 %s &',
+           'projs := %A; lock:=%A; measure:=%A; '.
+           'ReadProgram(''%s/EcTest.drw''); done;" | nice -n 19 %s &',
                wdir, resFn, projs, lock, measure, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
@@ -842,8 +679,14 @@ bsRunTests := proc(params:list, pnames:list)
 
     k := SearchArray('pTTBac1', pnames);
     if k>0 and params[k]='on' then 
-        vars['TTBac1'] := StartTreeTest(PID,'Bacteria',params, pnames);
         # do bacteria tree test
+        vars['TTBac1'] := StartTreeTest(PID,'Bacteria',params, pnames);
+    fi;
+
+    k := SearchArray('pRefPhylo1', pnames);
+    if k>0 and params[k]='on' then
+        # do reference phylogeney based test
+        vars['RefPhyl'] := StartRefPhyloTest(PID, params, pnames);
     fi;
 
     k := SearchArray('pGO1',pnames);
@@ -855,6 +698,7 @@ bsRunTests := proc(params:list, pnames:list)
     if k>0 and params[k]='on' then
         vars['EC'] := StartEcTest(PID,params, pnames);
     fi:
+
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:
 

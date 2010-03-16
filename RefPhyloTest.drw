@@ -69,7 +69,6 @@ end:
 #  - set to list [fpr, var(fpr)] once data is stored
 fpr  := CreateArray(1..nrProb,1..nP,0);
 tpr  := CreateArray(1..nrProb,1..nP,0);
-avgFPR := CreateArray(1..nP,
 DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
 for prNr to nrProb do 
     tree := ReconciledTrees[problems[prNr],'Tree'];
@@ -113,8 +112,11 @@ for prNr to nrProb do
     fi:
 od:
 
-OpenWriting(resFn);
 
+OpenWriting(resFn);
+printf('# created on %s\n# Projects: %A\n# Problems: %A\n', date(),
+       [seq(z[Name], z=prj)], problems);
+printf('FPR := %A:\nTPR := %A:\n', FPR, TPR);
 OpenWriting(previous);
 
 CallSystem('rm -f '.lock);
