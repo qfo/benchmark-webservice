@@ -642,7 +642,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
 
     projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>6 and z[1..6]='pTTPrj', parse(z[7..-1]), NULL), z=pnames)];
+    sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
     resFn := sprintf('%s/TreeTest.%s.%a.drw', resdir, king, hash(projs) );
     if FileExists(lock) then
