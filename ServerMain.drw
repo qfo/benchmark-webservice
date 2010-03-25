@@ -484,16 +484,55 @@ Handle2dROCFiles := proc(resFn:string, resBase:string,
              or length(FPR[1])<>length(PIDs) then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
     else
-        prjNames := [seq(GetPKeyData(z)['Name'], z=PIDs)];
-        tab := Table( border, gutter=2, ColAlign(l,c,c),
+        prjNames := [seq(GetPKeyData(z)['Title'], z=PIDs)];
+        tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
 	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR')) );
-        for c to length(cases) do for i to length(prjNames) do 
-	    tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[c,i]<>0, sprintf('%g +- %g', op(FPR[c,i])), 'n.a.' ),
-	          If(TPR[c,i]<>0, sprintf('%g +- %g', op(TPR[c,i])), 'n.a.' )) );
-	od: tab:=append(tab,Rule); od:
+        for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
+	    for i to length(prjNames) do 
+	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
+	          If(FPR[c,i]<>0, sprintf('%g +- %g', FPR[c,i,1], 1.96*sqrt(FPR[c,i,2])), 'n.a.' ),
+	          If(TPR[c,i]<>0, sprintf('%g +- %g', TPR[c,i,1], 1.96*sqrt(TPR[c,i,2])), 'n.a.' )) );
+	    od: 
+        od:
+print(tab);
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := 'false positive rate (1 - specificity';
+            t['ylabel'] := 'true positive rate (sensitivity)';
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(prjNames))]:
+            OpenWriting(t['datafile']);
+            for i to length(prjNames) do 
+	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
+	        avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
+	        stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+	        avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
+	        stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+                printf('# %s\n%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
+                    avgFPR, avgTPR, stdFPR, stdTPR);
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := prjNames[i];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['plot'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/2droc_multi.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
 
         vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
     fi:
 end:
 
@@ -555,14 +594,15 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
 
     projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>11 and z[1..11]='pRefPhylPrj', parse(z[12..-1]), NULL), z=pnames)];
+    sel := [seq(If(length(z)>12 and z[1..12]='pRefPhyloPrj', parse(z[13..-1]), NULL), z=pnames)];
+    lprint('sel:', sel);
     projs := [seq(projs[i,'PID'], i=sel), PID];
     
     k := SearchArray('pRefPhylAggMeas',pnames);
     measure := If(k>0,params[k],'sample variance');
 
     problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', parse(z[14..-1]), NULL), z=pnames)];
-    lprint('DEBUG stmt');
+    print('Do RefPhyloTest with those projects:',projs);
 
     
     resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems]) );
@@ -570,7 +610,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
-        Handle2dROCFiles(resFn, resBase, problems, projs, vars, 'measure'=measure);
+        Handle2dROCFiles(resFn, resBase, problems, projs, vars, 'aggregate'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
            'projs := %A; lock:=%A; problems := %A; '.
@@ -581,6 +621,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
+    print(vars);
     return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
@@ -686,7 +727,7 @@ bsRunTests := proc(params:list, pnames:list)
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then
         # do reference phylogeney based test
-        vars['RefPhyl'] := StartRefPhyloTest(PID, params, pnames);
+        vars['RefPhylo'] := StartRefPhyloTest(PID, params, pnames);
     fi;
 
     k := SearchArray('pGO1',pnames);

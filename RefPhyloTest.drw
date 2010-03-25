@@ -115,8 +115,8 @@ od:
 
 OpenWriting(resFn);
 printf('# created on %s\n# Projects: %A\n# Problems: %A\n', date(),
-       [seq(z[Name], z=prj)], problems);
-printf('FPR := %A:\nTPR := %A:\n', FPR, TPR);
+       [seq(z['Title'], z=prj)], problems);
+printf('FPR := %A:\nTPR := %A:\n', fpr, tpr);
 OpenWriting(previous);
 
 CallSystem('rm -f '.lock);
