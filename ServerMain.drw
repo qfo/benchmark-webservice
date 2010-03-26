@@ -422,7 +422,8 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
-    resFn := sprintf('%s/TreeTest.%s.%a.drw', resdir, king, hash(projs) );
+    resBase := sprintf('TreeTest.%s.%a', king, hash(projs));
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
     if FileExists(lock) then
         if IsLockProcessAlive(lock) then
             t := SplitLines(ReadRawFile(lock));
@@ -436,18 +437,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
             vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
         fi:
     elif FileExists(resFn) then
-        RFstat := 0;
-        traperror(ReadProgram(resFn)):
-        if RFstat=0 then 
-            vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
-        else 
-            tab := Table( border, gutter=2, ColAlign(l,r,c), 
-                   Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
-            for z in RFstat do 
-                tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-            od:
-            vars['content'] := HTMLC(tab);
-        fi;
+        HandleBoxRFFiles(resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
                'projs := %A; lock:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
@@ -494,7 +484,6 @@ Handle2dROCFiles := proc(resFn:string, resBase:string,
 	          If(TPR[c,i]<>0, sprintf('%g +- %g', TPR[c,i,1], 1.96*sqrt(TPR[c,i,2])), 'n.a.' )) );
 	    od: 
         od:
-print(tab);
         
 	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
@@ -534,6 +523,57 @@ print(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
     fi:
+end:
+
+HandleBoxRFFiles := proc(resFn:string, resBase:string, vars:table)
+    global RFstat;
+    RFstat := 0;
+    traperror(ReadProgram(resFn)):
+    if RFstat=0 then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
+    else 
+        tab := Table( border, gutter=2, ColAlign(l,r,c), 
+               Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
+        for z in RFstat do 
+            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+        od:
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := '# of ortholog predictions';
+            t['ylabel'] := 'avg RF distance';
+	    t['nSeries'] := length(RFstat);
+	    t['xtics'] := ConcatStrings([seq(
+	        sprintf('"%s" %.2f', RFstat[i,Description],i),
+		i=1..length(RFstat))],', ');
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(RFstat))]:
+            OpenWriting(t['datafile']);
+            for i to length(RFstat) do 
+                printf('# %s\n%d\t%f\t%f\n\n\n', RFstat[i,Description], 
+                    i, RFstat[i,Mean], RFstat[i,StdErr]);
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := RFstat[i,Description];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['series'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/barchartmulti.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
+        vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
+    fi;
 end:
 
 Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
@@ -584,6 +624,7 @@ Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
     fi;
 end:
 
+
 StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.RefPhyl.lock',fnBase);
@@ -621,7 +662,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    print(vars);
+    if DEBUG then print(vars) fi:
     return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
@@ -657,6 +698,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
+    if DEBUG then print(vars) fi:
     return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
 end:
 
