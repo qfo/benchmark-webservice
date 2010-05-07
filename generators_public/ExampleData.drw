@@ -1,0 +1,54 @@
+#
+#
+#
+# echo "Matrix := '/home/darwin/Orthologues/Matrix/Special842582936May06'; fname := XXX; ReadProgram('ExampleData.drw');" | ldarwin
+
+# to be run from BenchmarkService Root directory
+ReadProgram('lib/darwinit');
+
+dbp := '/home/darwin/DB/genomes/';
+ReadProgram(Matrix);
+
+outdir := wdir.'htdocs/examples/';
+fasta := outdir.fname.'.faa'; rel := outdir.fname.'.txt';
+xml := outdir.fname.'.seq.xml'; ortho := outdir.fname.'.rels.xml';
+IDS := CreateArray(1..length(genomes),[]):
+
+CallSystem('rm -f '.fasta.' '.xml);
+for gNr to length(genomes) do
+    gfn := dbp.genomefilenames[gNr];
+    DB := ReadDb(gfn);
+    sci := GenomeSummary(DB)[SCINAME];
+    IDS[gNr] := CreateArray(1..DB[TotEntries]):
+
+    verb := Set(quiet=true);
+    OpenAppending(fasta);
+    for i to DB[TotEntries] do
+        e := Entry(i);
+        id := SearchTag('ID', e);
+        k := SearchString('{', id);
+        if k>0 and id[-1]='}' then id := id[SearchString(':',id)+2..-2] fi:
+        IDS[gNr,i] := id;
+
+        s := SearchTag('SEQ', e); len := length(s);
+        printf('>%s [%s]\n',id, sci);
+        for j to len by 80 do
+            printf('%s\n',s[j..min(len, j+79)]);
+        od:
+    od:
+    OpenAppending(previous);
+    Set(quiet=verb);
+od:
+
+verb := Set(quiet=true);
+OpenAppending(rel);
+for og in Orthologous do
+    prts := [seq(If(og[i]>0,IDS[i,og[i]],NULL), i=1..length(og))];
+    for i to length(prts) do for j from i+1 to length(prts) do
+        printf('%s\t%s\n', prts[i], prts[j]);
+    od od:
+od:
+OpenAppending(previous);
+Set(quiet=verb);
+
+
