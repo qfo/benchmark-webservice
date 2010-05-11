@@ -156,7 +156,9 @@ elif funcname = 'TestSelection' then
     html := traperror(bsTestSelection(op(params))); 
 elif funcname = 'RunTests' then
     html := traperror(bsRunTests(params,pnames));
-
+elif funcname = 'CheckResults' then
+    lprint(params);
+    html := traperror(bsCheckResults(params[1]));
 elif funcname = 'Service' then
     html := traperror(bsService());
 # cookies/settings
@@ -307,35 +309,51 @@ bsTestSelection := proc(PID:string)
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
     
-    publicProjects := {seq(z['Title'], z=GetPublicProjects())} minus {GetPKeyData(PID)['Title']};
-    ReadProgram(datdir.'ReconciledTrees.drw'); # assigns ReconciledTrees
-    refPhyloProbs := []; for i in Indices(ReconciledTrees) do 
+    t := transpose(sort([seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), z=GetPublicProjects())])):
+    pubPID := t[2]; publicProjects := t[1]; Npub := length(pubPID):
+    
+    # load the cases for reconciled trees from publications
+    if not assigned(ReconciledTrees) then 
+        ReadProgram(datdir.'ReconciledTrees.drw'); # assigns ReconciledTrees
+    fi;
+    refPhyloProbs := []; 
+    for i in Indices(ReconciledTrees) do 
         refPhyloProbs := append(refPhyloProbs, ReconciledTrees[i]) 
     od:
 
     for z in ['Euk','Bac','Fun'] do
         vars['TT'.z.'Projects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" />'.
+         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
 	              '<label for="pTT%sPrj%d">%s</label><br/>',
-                       z,pNr,z,pNr,z,pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+                       z,pNr,z,pNr,If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 
+	                              'checked="checked"','disabled="disabled"'),
+		       z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
         vars['has'.z] := 'checked';
     od:
     
+    stub := 'pRefPhyloPrj';
     vars['RefPhyloProjects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pRefPhyloPrj%d" />%s<br/>',
-                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+	              '<label for="%s%d">%s</label><br/>',
+                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
+    stub := 'pRefPhyloProb';
     vars['RefPhyloProblems'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pRefPhyloProb%s" checked="checked" />'.
-	              '<span title="%s">%s</span> <br/>',
-                      z['Name'],z['Reference'],z['Name']), z=refPhyloProbs)],'\n');
+         [seq(sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+                      stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['Name']), z=refPhyloProbs)],'\n');
     vars['RefPhyloProb1_id'] := 'RefPhyloProb'.refPhyloProbs[1,'Name'];
     
+    stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pGOPrj%d" />%s<br/>',
-                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
+	              '<label for="%s%d">%s</label><br/>',
+                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
+    
+    stub := 'pECPrj';
     vars['ECprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" name="pECPrj%d" />%s<br/>',
-                      pNr,publicProjects[pNr]), pNr=1..length(publicProjects))],'\n');
+         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
+	              '<label for="%s%d">%s</label><br/>',
+                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
 
     vars['PID'] := PID;
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
@@ -393,20 +411,6 @@ bsMapRels := proc(PID:string)
     return(html);
 end:
 
-IsLockProcessAlive := proc(lock:string)
-    if not FileExists(lock) then error('lockfile not present') fi:
-    
-    # wait for result page but also check, whether job is still running
-    lockOldAndEmpty := FileStat(lock)['st_size']=0 and UTCTime()-FileStat(lock)['st_mtime']>60;
-    procDeath := false;
-    if FileStat(lock)['st_size']>0 then 
-        pid := SplitLines(ReadRawFile(lock))[1];
-        t := TimedCallSystem('ps -eo pid | grep -w '.pid,4);
-        procDeath := evalb(t[1]<>0);
-    fi:
-    return( not(lockOldAndEmpty or procDeath) );
-end:
-
 
 StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     global RFstat;
@@ -424,19 +428,11 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     projs := [seq(projs[i,'PID'], i=sel), PID];
     resBase := sprintf('TreeTest.%s.%a', king, hash(projs));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
     if FileExists(lock) then
-        if IsLockProcessAlive(lock) then
-            t := SplitLines(ReadRawFile(lock));
-            msg := '';
-            if length(t)>1 then 
-                msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
-            fi:
-            vars['content'] := msg.'<p>We are still computing the final result...</p>';
-        else
-            CallSystem('rm -f '.lock);
-            vars['content'] := '<p>Computation crashed. Try to restart by resubmitting request.</p>'; 
-        fi:
+        vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
+        isRunning := false;
         HandleBoxRFFiles(resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
@@ -447,183 +443,8 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
+    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
-
-HandleLockFile := proc(lock:string)
-    if IsLockProcessAlive(lock) then
-        t := SplitLines(ReadRawFile(lock));
-        msg := '';
-        if length(t)>1 then 
-            msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
-        fi:
-        return( msg.'<p>We are still computing the final result...</p>' );
-    else
-        CallSystem('rm -f '.lock);
-        return('<p>Computation crashed. Try to restart by resubmitting request.</p>'); 
-    fi:
-end:
-
-Handle2dROCFiles := proc(resFn:string, resBase:string, 
-        cases:list(string), PIDs:list(string), vars:table;
-        'aggregate'=((aggregate='sample variance'):string) )
-    global FPR, TPR;
-    FPR := TPR := 0;
-    traperror(ReadProgram(resFn));
-    if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
-             or length(FPR[1])<>length(PIDs) then 
-        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
-    else
-        prjNames := [seq(GetPKeyData(z)['Title'], z=PIDs)];
-        tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
-	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR')) );
-        for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
-	    for i to length(prjNames) do 
-	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[c,i]<>0, sprintf('%g +- %g', FPR[c,i,1], 1.96*sqrt(FPR[c,i,2])), 'n.a.' ),
-	          If(TPR[c,i]<>0, sprintf('%g +- %g', TPR[c,i,1], 1.96*sqrt(TPR[c,i,2])), 'n.a.' )) );
-	    od: 
-        od:
-        
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
-        if not FileExists(resPlotFn) then
-            t := table():
-            t['outfile'] := resPlotFn;
-            t['xlabel'] := 'false positive rate (1 - specificity';
-            t['ylabel'] := 'true positive rate (sensitivity)';
-            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-            plotTab := [seq(table(), length(prjNames))]:
-            OpenWriting(t['datafile']);
-            for i to length(prjNames) do 
-	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
-	        avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
-	        stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
-	        avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
-	        stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
-                printf('# %s\n%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
-                    avgFPR, avgTPR, stdFPR, stdTPR);
-                plotTab[i,'index'] := i-1; 
-                plotTab[i,'title'] := prjNames[i];
-                plotTab[i,'style'] := i;
-            od:
-            OpenWriting(previous);
-            t['plot'] := plotTab;
-            cmdFile := sprintf('/tmp/%s.gp', resBase);
-            OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2droc_multi.gp', t) );
-            OpenWriting(previous);
-                    
-            CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-            CallSystem('mv '.resBase.'.tgz '.rawdir);
-        fi:
-
-        vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
-        vars['gp_src'] := rawurl.resBase.'.tgz';
-    fi:
-end:
-
-HandleBoxRFFiles := proc(resFn:string, resBase:string, vars:table)
-    global RFstat;
-    RFstat := 0;
-    traperror(ReadProgram(resFn)):
-    if RFstat=0 then 
-        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
-    else 
-        tab := Table( border, gutter=2, ColAlign(l,r,c), 
-               Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
-        for z in RFstat do 
-            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-        od:
-        
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
-        if not FileExists(resPlotFn) then
-            t := table():
-            t['outfile'] := resPlotFn;
-            t['xlabel'] := '# of ortholog predictions';
-            t['ylabel'] := 'avg RF distance';
-	    t['nSeries'] := length(RFstat);
-	    t['xtics'] := ConcatStrings([seq(
-	        sprintf('"%s" %.2f', RFstat[i,Description],i),
-		i=1..length(RFstat))],', ');
-            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-            plotTab := [seq(table(), length(RFstat))]:
-            OpenWriting(t['datafile']);
-            for i to length(RFstat) do 
-                printf('# %s\n%d\t%f\t%f\n\n\n', RFstat[i,Description], 
-                    i, RFstat[i,Mean], RFstat[i,StdErr]);
-                plotTab[i,'index'] := i-1; 
-                plotTab[i,'title'] := RFstat[i,Description];
-                plotTab[i,'style'] := i;
-            od:
-            OpenWriting(previous);
-            t['series'] := plotTab;
-            cmdFile := sprintf('/tmp/%s.gp', resBase);
-            OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/barchartmulti.gp', t) );
-            OpenWriting(previous);
-                    
-            CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-            CallSystem('mv '.resBase.'.tgz '.rawdir);
-        fi:
-        vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
-        vars['gp_src'] := rawurl.resBase.'.tgz';
-    fi;
-end:
-
-Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
-        'measure'=((measure='avg Lin'):string) )
-    global Sims;
-    Sims := 0;
-    traperror(ReadProgram(resFn)):
-    if Sims=0 then 
-        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
-    else 
-        tab := Table( border, gutter=2, ColAlign(l,r,c), 
-            Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure)));
-        for z in Sims do 
-            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
-        od:
-        
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
-        if not FileExists(resPlotFn) then
-            t := table():
-            t['outfile'] := resPlotFn;
-            t['xlabel'] := '# of ortholog predictions';
-            t['ylabel'] := measure.' Similarity';
-            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-            plotTab := [seq(table(), length(Sims))]:
-            OpenWriting(t['datafile']);
-            for i to length(Sims) do 
-                printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
-                    Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
-                plotTab[i,'index'] := i-1; 
-                plotTab[i,'title'] := Sims[i,Description];
-                plotTab[i,'style'] := i;
-            od:
-            OpenWriting(previous);
-            t['plot'] := plotTab;
-            cmdFile := sprintf('/tmp/%s.gp', resBase);
-            OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
-            OpenWriting(previous);
-                    
-            CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-            CallSystem('mv '.resBase.'.tgz '.rawdir);
-        fi:
-        vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
-        vars['gp_src'] := rawurl.resBase.'.tgz';
-    fi;
-end:
-
 
 StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     fnBase := GetPKeyData(PID)['fnBase'];
@@ -636,21 +457,21 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>12 and z[1..12]='pRefPhyloPrj', parse(z[13..-1]), NULL), z=pnames)];
-    lprint('sel:', sel);
     projs := [seq(projs[i,'PID'], i=sel), PID];
     
     k := SearchArray('pRefPhylAggMeas',pnames);
     measure := If(k>0,params[k],'sample variance');
 
     problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', parse(z[14..-1]), NULL), z=pnames)];
-    print('Do RefPhyloTest with those projects:',projs);
-
+    if DEBUG then print('Do RefPhyloTest with those projects:',projs) fi;
     
     resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
+        isRunning := false;
         Handle2dROCFiles(resFn, resBase, problems, projs, vars, 'aggregate'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
@@ -663,7 +484,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
         vars['content'] := '<p>Computation started...</p>';
     fi:
     if DEBUG then print(vars) fi:
-    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
+    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartEcTest := proc(PID:string, params:list, pnames:list)
@@ -683,9 +504,11 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     
     resBase := sprintf('EC.%a', hash([projs,measure]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
+        isRunning := false;
         Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
 
     else 
@@ -698,8 +521,8 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    if DEBUG then print(vars) fi:
-    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
+    if DEBUG then print('ECTestvars',vars) fi:
+    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartGoTest := proc(PID:string, params:list, pnames:list)
@@ -722,9 +545,11 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     
     resBase := sprintf('GO.%a', hash([projs,filter,measure]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
+        isRunning := false;
         Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; filter := %A;'.
@@ -735,7 +560,8 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( GenerateTemplate(wdir.'templates/secResult.htmlc', vars) );
+    if DEBUG then print('GOtestvars:',vars) fi:
+    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars),isRunning] );
 end:
 
 #################################
@@ -744,44 +570,76 @@ end:
 bsRunTests := proc(params:list, pnames:list)
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
+    
+    h := string(hash( [params, pnames] ));
+    OpenWriting( sessiondir.h );
+    printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
+    OpenWriting(previous);
+    return('Location: gateway.pl?f=CheckResults&p1='.h.'\n\n'); 
+end:
 
+bsCheckResults := proc(sessionkey)
+    global __SessionParams, __SessionPnames; 
+    __SessionParams := __SessionPnames := 0;
+    fn := sessiondir.string(sessionkey);
+    lprint(fn);
+    traperror(ReadProgram( fn ));
+    if __SessionParams=0 or __SessionPnames=0 then
+        lprint(__SessionParams,__SessionParams,lasterror);
+        error('could not load session information') fi;
+
+    pnames := __SessionPnames; params := __SessionParams;
     PID := params[SearchArray('pPID',pnames)];
     vars := table('');
     vars['tit'] := GetPKeyData(PID)['Title'];
+    refresh := false;
     k := SearchArray('pTTEuk1', pnames);
     if k>0 and params[k]='on' then
         # do eukaryotic tree test
-        vars['TTEuk1'] := StartTreeTest(PID,'Eukaryota',params, pnames);
+	t := StartTreeTest(PID,'Eukaryota',params, pnames);
+        vars['TTEuk1'] := t[1]; 
+	if t[2]=true then refresh := true fi:
     fi;
 
     k := SearchArray('pTTFun1', pnames);
     if k>0 and params[k]='on' then
         # do fungi tree test
-        vars['TTFun1'] := StartTreeTest(PID,'Fungi',params, pnames);
+	t :=  StartTreeTest(PID,'Fungi',params, pnames);
+        vars['TTFun1'] := t[1];
+	if t[2]=true then refresh := true fi:
     fi;
 
     k := SearchArray('pTTBac1', pnames);
     if k>0 and params[k]='on' then 
         # do bacteria tree test
-        vars['TTBac1'] := StartTreeTest(PID,'Bacteria',params, pnames);
+        t := StartTreeTest(PID,'Bacteria',params, pnames);
+        vars['TTBac1'] := t[1]; 
+	if t[2]=true then refresh := true fi:
     fi;
 
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then
         # do reference phylogeney based test
-        vars['RefPhylo'] := StartRefPhyloTest(PID, params, pnames);
+        t := StartRefPhyloTest(PID, params, pnames);
+	vars['RefPhylo'] := t[1]; 
+	if t[2]=true then refresh := true fi:
     fi;
 
     k := SearchArray('pGO1',pnames);
     if k>0 and params[k]='on' then
-        vars['GO'] := StartGoTest(PID, params, pnames)
+        t := StartGoTest(PID, params, pnames);
+	vars['GO'] := t[1]; 
+	if t[2]=true then refresh := true fi:
     fi:
 
     k := SearchArray('pEC1', pnames);
     if k>0 and params[k]='on' then
-        vars['EC'] := StartEcTest(PID,params, pnames);
+        t := StartEcTest(PID,params, pnames);
+	vars['EC'] := t[1];
+	if t[2]=true then refresh := true fi:
     fi:
-
+    
+    if refresh then vars['refreshin'] := 20 fi;
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:
 
@@ -800,7 +658,7 @@ end:
 printlevel := 2;
 if DEBUG then 
     Cookies := table(NULL);
-    printlevel := 4;
+    printlevel := 10;
 else
     lprint('Server started, pid =',getpid());
     RunServer() 

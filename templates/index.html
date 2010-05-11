@@ -8,12 +8,20 @@
 </head>
 <body> 
 <div id="main">
-<!-- <img src="<DVAR name="logo">" alt="Ortholog Benchmarking Service" width="299" height="134"/><br/> -->
+<p><center><img src="/imgs/logo.png" alt="Ortholog Benchmarking Webservice" width="300" height="114"/></center></p>
 
+<p>Provide us with your own ortholog inference data. After uploading your predictions, you will be able to 
+compare the quality of your predictions against other orthology inference efforts using different tests.</p>
+<p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
  <fieldset><legend>Protein Sequence Data</legend>
   <div class="notes"><h4>Protein Sequence Data</h4>
-   <p>Please provid us with your own orthology inference data.</p>
+   <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
+   orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
+   proteins are mapped to each other.</p>
+   <p>Currently, we support <a href="http://www.orthoxml.org/">SeqXML</a> and Fasta sequence formats.
+   For Fasta it is expected that each label starts with a unique ID and the species is somehow encoded.</p>
+   <p><B>Due to recent changes on the SeqXML and OrthoXML schema, those formats are currently disabled.</B></p>
   </div>
   <div>
    <label for="seqs">Protein Sequences:</label>
@@ -21,14 +29,17 @@
   </div>
   <div>
    <label for="seqType">Format:</label> 
-   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked />Fasta
-   <input type="radio" name="seqType" value="xml" class="inputRadio"/>XML
+   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" />Fasta
+   <input type="radio" name="seqType" value="xml" class="inputRadio" disabled="disabled"/>XML
   </div>
+  <div><p>A small example dataset comprising 7 Bacteria genomes in Fasta format: <a href="/examples/BacExample.faa">BacExample.faa</a><p>
  </fieldset>
  
  <fieldset><legend>Ortholog Relation Data</legend>
   <div class="notes"><h4>Ortholog Relation Data</h4>
-   <p>Please provid us with your own orthology inference data.</p>
+   <p>The most general form of specifying orthology is a pairwise listing of orthologous proteins. Therefore, we encourage 
+   to upload your prediction in the pairwise format, a simple text file with two tab-separated columns of orthologous 
+   protein ids.</p>
   </div>
   <div>
    <label for="rels">Ortholog Relations:</label>
@@ -36,14 +47,15 @@
   </div>
   <div>
    <label for="relType">Format:</label> 
-   <input type="radio" name="relType" value="txt" class="inputRadio" checked />Text
-   <input type="radio" name="relType" value="xml" class="inputRadio"/>XML
-   <input type="radio" name="relType" value="cog" class="inputRadio"/>COG groups format
+   <input type="radio" name="relType" value="txt" class="inputRadio" checked="checked" />Text (pairwise orthologs)
+   <input type="radio" name="relType" value="xml" class="inputRadio" disabled="disabled"/>XML
+<!--   <input type="radio" name="relType" value="cog" class="inputRadio"/>COG groups format -->
   </div>
+  <div><p>An example file of the predicted orthologs among the 7 Bacteria genomes in the pairwise text format: <a href="/examples/BacExample.txt">BacExample.txt</a><p>
  </fieldset>
 
- <fieldset><legend>General Project Infos</legend>
- <div class="notes"><h4>General Infos</h4>
+ <fieldset><legend>General Project Informations</legend>
+ <div class="notes"><h4>General Informations</h4>
   <p>This information will be used for displaying the results</p>
  </div>
  <div>
@@ -53,16 +65,15 @@
  </fieldset>
 
  <fieldset>
-  <input type="hidden" name="f" value="UploadData">
+  <input type="hidden" name="f" value="UploadData"/>
   <input type="submit" value="Submit &raquo;" class="inputSubmit"/>
  </fieldset>
 </form>
-<p>Or try out the webservice on the bases of the <a href="http://www.omabrowser.org">OMA predictions</a> and 
-see all the implemented tests that are available also to you. <br/>
-<a href="gateway.pl?f=TestSelection&pPID=NE29Yxm5WI9Am5Y">try existing example (OMA)</a>.</p>
+<p>Or try out the webservice on the basis of the <a href="http://www.omabrowser.org">OMA predictions</a> and 
+see all the implemented tests that are available also to your data.<br/>
+<a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">try existing example (OMA)</a>.</p>
 
-<p><em>&copy;2009, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em><p>
-</small>
+<p><em>&copy;2009, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em></p>
 </div>
 </body>
 </html>

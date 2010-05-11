@@ -132,14 +132,14 @@ end:
 # check if data files are present or need to be updated.
 t := ReadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/current/build_inputs/taxid_taxname');
 TAX2SP := table(): for l in SplitLines(t) do x:=SearchDelim('\t', l[1..-2]); TAX2SP[x[1]] := x[2]; od:
-if FileExists(inpTot) then
+if not FileExists(inpTot) then
 	OpenAppending(logfile);
 	lprint('download total protein data from website...');
 	OpenAppending(previous);
 	DownloadURL('ftp://ftp.ncbi.nih.gov/pub/HomoloGene/current/build_inputs/all_proteins.data', inpTot);
 fi:
 
-if not FileExists(seqDrw) or FileIsOlder(seqDrw, inpTot) then
+if not FileExists(seqDrw) then
 	OpenAppending(logfile);
 	lprint('retreive sequences for all proteins listed in file:', inpTot);
 	lprint('  guess of nr of sequences:', TimedCallSystem('wc -l '.inpTot)[2,1..-2]);

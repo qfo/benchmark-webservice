@@ -14,6 +14,7 @@ brwdat := wdir . 'BrwDat/';
 brwrel := 'All.Oct2009';
 omaDBpath := brwdat.brwrel.'/';
 datdir := wdir . '/data/';
+sessiondir := wdir . '/sessions/';
 resdir := wdir . '/results/';
 
 ReadProgram(omalib.'darwinit');
@@ -43,4 +44,14 @@ GetPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPKeyData));
 GetPublicProjects := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPublicProjects));
 GetProjISets := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', GetProjISets));
 
+TestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',TestProperty));
+GetTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',GetTestProperty));
+AddTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',AddTestProperty));
+
+IsLockProcessAlive := noeval(ReadLibrary(wdir.'lib/LockFileOperations', IsLockProcessAlive));
+HandleLockFile := noeval(ReadLibrary(wdir.'lib/LockFileOperations', HandleLockFile));
+
+Handle2dROCFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dROCFiles));
+HandleBoxRFFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', HandleBoxRFFiles));
+Handle2dSimFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dSimFiles));
 

@@ -1,0 +1,165 @@
+
+Handle2dROCFiles := proc(resFn:string, resBase:string, 
+        cases:list(string), PIDs:list(string), vars:table;
+        'aggregate'=((aggregate='sample variance'):string) )
+    global FPR, TPR;
+    FPR := TPR := 0;
+    traperror(ReadProgram(resFn));
+    if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
+             or length(FPR[1])<>length(PIDs) then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
+    else
+        prjNames := [seq(GetPKeyData(z)['Title'], z=PIDs)];
+        tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
+	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR')) );
+        for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
+	    for i to length(prjNames) do 
+	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
+	          If(FPR[c,i]<>0, sprintf('%g +- %g', FPR[c,i,1], 1.96*sqrt(FPR[c,i,2])), 'n.a.' ),
+	          If(TPR[c,i]<>0, sprintf('%g +- %g', TPR[c,i,1], 1.96*sqrt(TPR[c,i,2])), 'n.a.' )) );
+	    od: 
+        od:
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := 'false positive rate (1 - specificity';
+            t['ylabel'] := 'true positive rate (sensitivity)';
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(prjNames))]:
+            OpenWriting(t['datafile']);
+            for i to length(prjNames) do 
+	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
+		if nrSamp>0 then
+    	            avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
+    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+    	            avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
+    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+                    printf('# %s\n%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
+                         avgFPR, avgTPR, stdFPR, stdTPR);
+	        else printf('# %s\n?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
+
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := prjNames[i];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['plot'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/2droc_multi.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
+
+        vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
+    fi:
+end:
+
+HandleBoxRFFiles := proc(resFn:string, resBase:string, vars:table)
+    global RFstat;
+    RFstat := 0;
+    traperror(ReadProgram(resFn)):
+    if RFstat=0 then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
+    else 
+        tab := Table( border, gutter=2, ColAlign(l,r,c), 
+               Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
+        for z in RFstat do 
+            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+        od:
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := '# of ortholog predictions';
+            t['ylabel'] := 'avg RF distance';
+	    t['nSeries'] := length(RFstat);
+	    t['xtics'] := ConcatStrings([seq(
+	        sprintf('"%s" %.2f', RFstat[i,Description],i),
+		i=1..length(RFstat))],', ');
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(RFstat))]:
+            OpenWriting(t['datafile']);
+            for i to length(RFstat) do 
+                printf('# %s\n%d\t%f\t%f\n\n\n', RFstat[i,Description], 
+                    i, RFstat[i,Mean], RFstat[i,StdErr]);
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := RFstat[i,Description];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['series'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/barchartmulti.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
+        vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
+    fi;
+end:
+
+Handle2dSimFiles := proc(resFn:string, resBase:string, vars:table;
+        'measure'=((measure='avg Lin'):string) )
+    global Sims;
+    Sims := 0;
+    traperror(ReadProgram(resFn)):
+    if Sims=0 then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
+    else 
+        tab := Table( border, gutter=2, ColAlign(l,r,c), 
+            Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure)));
+        for z in Sims do 
+            tab := append(tab, Row(z[Description], z[Number], z[MeanVar]));
+        od:
+        
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            t := table():
+            t['outfile'] := resPlotFn;
+            t['xlabel'] := '# of ortholog predictions';
+            t['ylabel'] := measure.' Similarity';
+            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            plotTab := [seq(table(), length(Sims))]:
+            OpenWriting(t['datafile']);
+            for i to length(Sims) do 
+                printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
+                    Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
+                plotTab[i,'index'] := i-1; 
+                plotTab[i,'title'] := Sims[i,Description];
+                plotTab[i,'style'] := i;
+            od:
+            OpenWriting(previous);
+            t['plot'] := plotTab;
+            cmdFile := sprintf('/tmp/%s.gp', resBase);
+            OpenWriting(cmdFile);
+            prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
+            OpenWriting(previous);
+                    
+            CallSystem('gnuplot '.cmdFile);
+            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+            CallSystem('mv '.resBase.'.tgz '.rawdir);
+        fi:
+        vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
+    fi;
+end:
+
+

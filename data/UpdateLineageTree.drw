@@ -52,4 +52,28 @@ printf('speciestree := %A:\n', speciestree);
 printf('missThreshold := %d:\n', missThreshold);
 OpenWriting(previous);
 
+
+EvaluateTestProperty := proc(p:PKeyData, prop:TestProperty)
+    global catBins;
+    if p['directMap'] then return(true) fi:
+ 
+    ReadProgram(prop[Args,1]);
+    lookup := []:
+    for cNr to length(catBins) do for g in catBins[cNr] do lookup := append(lookup,[g,cNr]) od od:
+    lookup := transpose(sort(lookup)); lenLU := length(lookup[1]);
+ 
+    iSet := GetProjISets([p]);
+    cat := CreateArray(1..length(catBins)):
+    for i to length(iSet) do 
+        g := GenomeCodeFromENr(iSet[i]);
+        k := SearchOrderedArray(g,lookup[1]);
+        if k<=0 or k>lenLU or lookup[1,k]<>g then next fi:
+        cat[lookup[2,k]] := cat[lookup[2,k]]+1;
+	if mod(i,20)=0 and product(cat)>0 then return(true) fi:
+    od:
+    
+    return( sum(If(z=0,1,0),z=cat) <= prop['Args',2] );
+end:
+
+AddTestProperty('TreeTest_'.dataset,EvaluateTestProperty,[fn,1],FileStat(fn)['st_mtime']);
 done

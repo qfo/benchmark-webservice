@@ -52,7 +52,10 @@ my $req = new CGI;
 my %cookies = fetch CGI::Cookie();
 my $cook = 'cookies=table([{';
 foreach my $c (keys %cookies) {
-    $cook .= "['" . $c . "',['" . $cookies{$c}->value() . "']],";
+    my $val=$cookies{$c}->value();
+    $c =~ s/'/''/g; 
+    $val =~ s/'/''/g;
+    $cook .= "['$c',['$val']],";
 }
 $cook .= 'NULL';
 
@@ -221,7 +224,10 @@ while (<IN>) {
     # first we have to make sure that darwin is ALIVE
     if ($l =~/^EOF/) { last; }
     else {
-        if (not $sent_header and ($l =~/<.*html/i)) {
+        if (not $sent_header and ($l =~/^Location: /)) {
+            $sent_header = 1;
+	}
+        elsif (not $sent_header and ($l =~/<.*html/i)) {
             print "Content-type: text/html; charset=iso-8859-1\n\n";
             $sent_header = 1;
         }
@@ -266,6 +272,7 @@ sub SeqFasta2Drw{
              print F "Protein := ['$id','$spc','";
              $cnt++;
         }
+	elsif (/^;/) {} # ignore comments 
         else { 
             uc;           # uppercase letters
 	    s/\*$//;      # remove stop-codon symbol

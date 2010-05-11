@@ -1,5 +1,5 @@
 PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, 
-                 isPublic:boolean, directMap:boolean)
+                 isPublic:boolean, directMap:boolean, props:table)
    noeval(procname(args)):
 end:
 CompleteClass(PKeyData):
@@ -8,11 +8,13 @@ AddPKeyData := proc(tit:string, fnbase:string)
     global PROJECTS;
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
-    pr := PKeyData(id, tit, fnbase, date(), false, false);
+    pr := PKeyData(id, tit, fnbase, date(), false, false, table());
 
+    verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');
     printf('PROJECTS[%A] := %A:\n', id, pr);
     OpenAppending(previous);
+    Set(quiet=verb);
     
     ReadProgram(datdir.'projectKeys.drw');
  
@@ -61,3 +63,31 @@ GetProjISets := proc(prjs:list)
     od:
     return(iSet);
 end:
+
+ProjMetProperty := proc( PID:string, Prop:TestProperty )
+    pKey := GetPKeyData(PID);
+    p := pKey['props'];
+    nam := Prop['Name'];
+    if p[nam]=unassigned or Prop['YoungerThan']>p[nam,2] then
+        # recompute whether property is met
+	res := Prop['Evaluator'](pKey, Prop);
+	p[nam] := [res, UTCTime()];
+	pKey['props'] := p:
+
+	t := ReadRawFile(datdir.'projectKeys.drw');
+	querry := 'PROJECTS['''.PID.'''] := ';
+	off1 := SearchString(querry, t);
+	k := SearchString(':\n',t[off1..-1]);
+	t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',querry, pKey),t);
+	
+	# store new PKeyData in file
+	verb := Set(quiet=true);
+	OpenWriting(datdir.'projectKeys.drw');
+	prints(t2):
+	OpenWriting(previous);
+        Set(quiet=verb);
+    fi:
+    return(p[nam,1]);
+end:
+
+

@@ -244,6 +244,9 @@ div.test h4 {
 div.testParam {
   margin-left: 50px ;
 }
+div.testParam div.testParamList {
+  margin-left: 30px;
+}
 
 div.testParam fieldset {
   clear: none;

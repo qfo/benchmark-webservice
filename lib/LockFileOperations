@@ -1,0 +1,32 @@
+#
+# checks if the process created the lock-file is still alive
+IsLockProcessAlive := proc(lock:string)
+    if not FileExists(lock) then error('lockfile not present') fi:
+    
+    # wait for result page but also check, whether job is still running
+    lockOldAndEmpty := FileStat(lock)['st_size']=0 and UTCTime()-FileStat(lock)['st_mtime']>60;
+    procDeath := false;
+    if FileStat(lock)['st_size']>0 then 
+        pid := SplitLines(ReadRawFile(lock))[1];
+        t := TimedCallSystem('ps -eo pid | grep -w '.pid,4);
+        procDeath := evalb(t[1]<>0);
+    fi:
+    return( not(lockOldAndEmpty or procDeath) );
+end:
+
+# creates a message about the status of the process created the lock file.
+HandleLockFile := proc(lock:string)
+    if IsLockProcessAlive(lock) then
+        t := SplitLines(ReadRawFile(lock));
+        msg := '';
+        if length(t)>1 then 
+            msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+        fi:
+        return( msg.'<p>We are still computing the final result...</p>' );
+    else
+        CallSystem('rm -f '.lock);
+        return('<p>Computation crashed. Try to restart by resubmitting request.</p>'); 
+    fi:
+end:
+
+

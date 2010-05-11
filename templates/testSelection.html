@@ -10,7 +10,7 @@
 <div id="main">
 <h2>Benchmark Selection for <DVAR name="tit"></h2>
 Select from the available benchmarks and against which standard 
-orthlogy inference project you would like to compare your predictions
+orthology inference project you would like to compare your predictions
 <form action="gateway.pl" method="post">
 
  <fieldset><legend>Phylogeny-Based Definition Tests</legend>
@@ -22,8 +22,8 @@ orthlogy inference project you would like to compare your predictions
    <div class="test">
     <h4><input type="checkbox" id="pTTEuk1" name="pTTEuk1" checked="<DVAR name="hasEuk">"/><label for="pTTEuk1">Eukaryotic Species Tree Discordance Test</label></h4>
     <div class="testParam">
-     <label class="test" for="pTTEukPrj1">Projects to compare with:</label>
-     <DVAR name="TTEukProjects">
+     <label class="test" for="pTTEukPrj1">Projects to compare with:</label><br/>
+     <div class="testParamList"><DVAR name="TTEukProjects"></div>
     </div>
    </div>
    
@@ -31,7 +31,7 @@ orthlogy inference project you would like to compare your predictions
     <h4><input type="checkbox" id="pTTFun1" name="pTTFun1" checked="<DVAR name="hasFun">"/><label for="pTTFun1">Fungi Species Tree Discordance Test</label></h4>
     <div class="testParam">
      <label class="test" for="pTTFunPrj1">Projects to compare with:</label>
-     <DVAR name="TTFunProjects">
+     <div class="testParamList"><DVAR name="TTFunProjects"></div>
     </div>
    </div>
    
@@ -39,19 +39,19 @@ orthlogy inference project you would like to compare your predictions
     <h4><input type="checkbox" id="pTTBac1" name="pTTBac1" checked="<DVAR name="hasBac">"/><label for="pTTBac1">Bacteria Species Tree Discordance Test</label></h4>
     <div class="testParam">
      <label class="test" for="pTTBacPrj1">Projects to compare with:</label>
-     <DVAR name="TTBacProjects">
+     <div class="testParamList"><DVAR name="TTBacProjects"></div>
     </div>
    </div>
   </div>
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" checked="checked" /><label for="pRefPhylo1">Agreement with Reference Phylogenys</label></h4>
+    <h4><input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" checked="checked" /><label for="pRefPhylo1">Agreement with Reference Phylogenies</label></h4>
     <div class="testParam">
-     <label class="test" for="pRefPhyloPrj1">Projects to compare with</label>
-     <div><DVAR name="RefPhyloProjects"></div>
-     <label class="test" for="<DVAR name="RefPhyloProb1_id">">Reference Phylogenys:</label>
-     <DVAR name="RefPhyloProblems">
+     <label class="test" for="pRefPhyloPrj1">Projects to compare with:</label>
+     <div class="testParamList"><DVAR name="RefPhyloProjects"></div>
+     <label class="test" for="<DVAR name="RefPhyloProb1_id">">Reference Phylogenies:</label>
+     <div class="testParamList"><DVAR name="RefPhyloProblems"></div>
     </div>
    </div>
   </div>
@@ -67,7 +67,7 @@ orthlogy inference project you would like to compare your predictions
     <h4><input type="checkbox" id="pGO1" name="pGO1" checked="checked" /><label for="pGO1">Gene Ontology Test</label></h4>
     <div class="testParam">
      <label class="test" for="pGOPrj1">Projects to compare with</label>
-      <DVAR name="GOprojects">
+     <div class="testParamList"><DVAR name="GOprojects"></div>
    
      <fieldset><legend>Restricted to Evidence codes</legend>
       <p>
@@ -110,7 +110,7 @@ orthlogy inference project you would like to compare your predictions
    <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" checked="checked" /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
    <div class="testParam">
     <label for="pECPrj1">Projects to compare with</label>
-    <DVAR name="ECprojects">
+    <div class="testParamList"><DVAR name="ECprojects"></div>
     
     <fieldset><legend>Similarity Measure</legend>
      <input type="radio" id="pECMLinA" name="pECMeasure" value="avg Sim"/><label for="pECMLinA">average Lin Similarity</label><br/>
