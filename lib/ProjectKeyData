@@ -1,14 +1,43 @@
 PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, 
-                 isPublic:boolean, directMap:boolean, props:table)
+                 isPublic:boolean, directMap:boolean, 
+		 NSeqSub:posint, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
+		 OrgsCovered:{set,intersect()},
+		 props:table)
    noeval(procname(args)):
 end:
 CompleteClass(PKeyData):
 
-AddPKeyData := proc(tit:string, fnbase:string)
+UpdatePKeyDataPermanent := proc(pKey:PKeyData)
+    PID := pKey['PID'];
+    
+    # find the line in the file that holds this project
+    t := ReadRawFile(datdir.'projectKeys.drw');
+    querry := 'PROJECTS['''.PID.'''] := ';
+    off1 := SearchString(querry, t);
+    k := SearchString(':\n',t[off1..-1]);
+    t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',querry, pKey),t);
+	
+    # store new PKeyData in file
+    verb := Set(quiet=true);
+    OpenWriting(datdir.'projectKeys.drw');
+    prints(t2):
+    OpenWriting(previous);
+    Set(quiet=verb);
+end:
+
+
+AddPKeyData := proc(tit:string, fnbase:string ; 
+   'NSeqSub'=((NSeqSub=0):{0,posint}),
+   'NOrthSub'=((NOrthSub=0):{0,posint}),
+   'NSeqMap'=((NSeqMap=-1):integer),
+   'NOrthMap'=((NOrthMap=-1):integer) )
     global PROJECTS;
+
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
-    pr := PKeyData(id, tit, fnbase, date(), false, false, table());
+    pr := PKeyData( id, tit, fnbase, date(), false, false, 
+                    NSeqSub, NOrthSub, NSeqMap, NOrthMap, 
+		    {}, table() );
 
     verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');
@@ -73,19 +102,7 @@ ProjMetProperty := proc( PID:string, Prop:TestProperty )
 	res := Prop['Evaluator'](pKey, Prop);
 	p[nam] := [res, UTCTime()];
 	pKey['props'] := p:
-
-	t := ReadRawFile(datdir.'projectKeys.drw');
-	querry := 'PROJECTS['''.PID.'''] := ';
-	off1 := SearchString(querry, t);
-	k := SearchString(':\n',t[off1..-1]);
-	t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',querry, pKey),t);
-	
-	# store new PKeyData in file
-	verb := Set(quiet=true);
-	OpenWriting(datdir.'projectKeys.drw');
-	prints(t2):
-	OpenWriting(previous);
-        Set(quiet=verb);
+        UpdatePKeyDataPermanent(pKey);
     fi:
     return(p[nam,1]);
 end:

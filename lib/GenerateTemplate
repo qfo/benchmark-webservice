@@ -14,9 +14,24 @@ GenerateTemplate := proc(file:string,t:table);
     if length(FileStat(file)) = 0 then
         error('Missing template file '.file);
     fi;
-    f := ReadRawFile(file);
-    # regular variables
+    f := ReadRawFile(file); 
+    # boolean constructs
     output := '';
+    do 
+        tmp := readVarTag('DBOOL',f);
+	if tmp=NULL then output := output.f; break; fi;
+	if not type(t[tmp[1]],boolean) then
+	    error('Missing boolean key '.tmp[1].' in input table');
+	fi:
+	endbool := '</DBOOL>';
+	p := SearchString(endbool, f); assert(p>tmp[3]);
+	output := output . f[1..tmp[2]] . If(t[tmp[1]], f[tmp[3]..p], '');
+	f := f[p+length(endbool)+1..-1];
+    od:
+
+ 
+    # regular variables
+    f := output; output := '';
     do
         tmp := readVarTag('DVAR',f);
         if tmp = NULL then output := output.f; break; fi;

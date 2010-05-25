@@ -1,33 +1,4 @@
 PROJECTS := table(0):
-PROJECTS['NE29Yxm5WI9Am5Y'] := PKeyData('NE29Yxm5WI9Am5Y','OMA Oct 2009','/local/BenchmarkService/projects/OMA.Oct2009.1','Tue Dec  8 17:07:18 2009',true,true,table([{['TreeTest_Bac', [[true, 1273577653.5972]]],['TreeTest_Euk', [[true, 1273577647.5097]]],['TreeTest_Fun', [[true, 1273577658.7643]]]}],unassigned)):
-PROJECTS['SEFQGpXo3xJBH51'] := PKeyData('SEFQGpXo3xJBH51','Ensembl 56','/local/BenchmarkService/projects/Ensembl_56.589','Wed Dec  9 17:51:18 2009',true,false,table([{['TreeTest_Bac', [[false, 1273577871.8834]]],['TreeTest_Euk', [[true, 1273577868.1814]]],['TreeTest_Fun', [[false, 1273577875.1808]]]}],unassigned)):
-PROJECTS['zYRdeMHV3ZiUIdu'] := PKeyData('zYRdeMHV3ZiUIdu','OrthoMCL v3','/local/BenchmarkService/projects/pub_OrthoMCL.475','Mon Jan 11 10:45:30 2010',true,false,table([{['TreeTest_Bac', [[true, 1273577655.4472]]],['TreeTest_Euk', [[true, 1273577649.8622]]],['TreeTest_Fun', [[true, 1273577660.0234]]]}],unassigned)):
-PROJECTS['gnbXmmhAl6mjOqV'] := PKeyData('gnbXmmhAl6mjOqV','Bacteria Example','/local/BenchmarkService/projects/Bacteria_Example.194','Thu May  6 19:17:02 2010',false,false,table([],unassigned)):
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-PROJECTS['cpTJd2VfUsuTmPL'] := PKeyData('cpTJd2VfUsuTmPL','Test','/local/BenchmarkService/projects/Test.131','Tue May 11 14:39:16 2010',false,false,table([],unassigned)):
+PROJECTS['NE29Yxm5WI9Am5Y'] := PKeyData('NE29Yxm5WI9Am5Y','OMA Oct 2009','/local/BenchmarkService/projects/OMA.Oct2009.1','Tue Dec  8 17:07:18 2009',true,true,4175870,211978598,4175870,211978598,intersect(),table([{['TreeTest_Bac', [[true, 1273577653.5972]]],['TreeTest_Euk', [[true, 1273577647.5097]]],['TreeTest_Fun', [[true, 1273577658.7643]]]}],unassigned)):
+PROJECTS['SEFQGpXo3xJBH51'] := PKeyData('SEFQGpXo3xJBH51','Ensembl 56','/local/BenchmarkService/projects/Ensembl_56.589','Wed Dec  9 17:51:18 2009',true,false,767323,11978778,1123780,17242057,{ANOCA,BOVIN,CAEEL,CANFA,CAVPO,CHICK,CHOHO,CIOIN,CIOSA,DANRE,DASNO,DIPOR,DROME,ECHTE,ERIEU,FELCA,FUGRU,GASAC,GORGO,HORSE,HUMAN,LAMPA,LOXAF,MACEU,MACMU,MICMU,MONDO,MOUSE,MYOLU,OCHPR,ORNAN,ORYLA,OTOGA,PANTR,PONAB,PROCA,PTEVA,RABIT,RATNO,SORAR,SPETR,TAEGU,TARSY,TETNG,TUPGB,TURTR,XENTR,YEAST},table([{['TreeTest_Bac', [[false, 1273577871.8834]]],['TreeTest_Euk', [[true, 1273577868.1814]]],['TreeTest_Fun', [[false, 1273577875.1808]]]}],unassigned)):
+PROJECTS['zYRdeMHV3ZiUIdu'] := PKeyData('zYRdeMHV3ZiUIdu','OrthoMCL v3','/local/BenchmarkService/projects/pub_OrthoMCL.475','Mon Jan 11 10:45:30 2010',true,false,1171899,22046408,614844,7162119,{AEDAE,AGRT5,ANOGA,APIME,AQUAE,ARATH,ARCFU,ASHGO,ASPFU,BACAN,BRUSU,BURMA,BURP1,CAEBR,CAEEL,CALMQ,CAMJE,CANFA,CANGA,CHICK,CHLPN,CHLTE,CIOIN,CLOBM,CLOP1,COXBU,CRYNE,CRYPV,DANRE,DEBHA,DEHE1,DEIRA,DICDI,DROME,ECOLI,ENCCU,FRAT1,FUGRU,GEOSL,GIALA,GUITH,HALSA,HALWD,HUMAN,HYPBU,IGNH4,KLULA,KORCO,LACBI,LEIIN,LEIMA,LISMO,MAGGR,METJA,METMP,METS3,METS5,MONDO,MOUSE,MYCTA,NANEQ,NEMVE,NITMS,ORNAN,ORYSA,PANTR,PICST,PLAF7,RALSO,RATNO,RHOBA,RICPR,RICTY,SALTI,SCHPO,SHIFL,STAAM,STAMF,STRPN,SULSO,SYNPX,TETNG,THEMA,THEVO,TREPA,TRYBB,VIBCH,WOLSU,YARLI,YEAST,YERE8,YERPE},table([{['TreeTest_Bac', [[true, 1273577655.4472]]],['TreeTest_Euk', [[true, 1273577649.8622]]],['TreeTest_Fun', [[true, 1273577660.0234]]]}],unassigned)):

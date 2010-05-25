@@ -5,29 +5,23 @@
 <meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
 <meta http-equiv="refresh" content="<DVAR name="reloadin">">
 <title>Ortholog Benchmarking Webservice</title>
-<script src="/scripts.js" type="text/javascript"></script>
 </head>
 <body style="margin: 0px;">
+<div class="main">
 <center>
 <p>&nbsp;</p>
 <!-- <img src="<DVAR name="logo">" alt="Ortholog Benchmarking Service" width="299" height="134"/><br/> -->
 
-<h1>Data <DVAR name="tit"></h1>
-<p>Thank you for uploading your data. The dataset contains
-<UL>
- <LI>protein sequences: <DVAR name="nrProt"> entries</LI>
- <LI>pairwise orthologous relations: <DVAR name="nrOrth"> entries</LI>
-</UL>
-
-<p>We have started to compute the mapping of the sequences.<br/>
+<h1>Orthology Relation Mapping for <DVAR name="tit"></h1>
+<p>We have started to compute the mapping of the orthologous relations.</p>
 <DVAR name="mappingStatus">
-</p>
 
 <span class="small">This page gets reloaded automatically every <DVAR name="reloadin">sec or after pressing the reload button.</span>
 <form action="gateway.pl" name="formular">
-     <input type="hidden" name="f" value="MapData">
+     <input type="hidden" name="f" value="CheckRelMap">
      <input type="hidden" name="p1" value="<DVAR name="PID">">
      <input type="submit" value="Refresh"/>
 </form>
+</div>
 </body>
 </html>

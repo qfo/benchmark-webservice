@@ -152,6 +152,8 @@ elif funcname = 'MapData' then
     html := traperror(bsMapData(op(params)));
 elif funcname = 'MapRels' then
     html := traperror(bsMapRels(op(params)));
+elif funcname = 'CheckRelMap' then
+    html := traperror(bsCheckRelMap(params[1]));
 elif funcname = 'TestSelection' then
     html := traperror(bsTestSelection(op(params))); 
 elif funcname = 'RunTests' then
@@ -209,94 +211,144 @@ end:
 # Upload Data                      #
 ####################################
 bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth)
-    id := AddPKeyData(tit,fnBase):
-    vars := table('');
-    vars['tit'] := tit;
-    vars['nrProt'] := nrProts;
-    vars['nrOrth'] := nrOrth;
-    vars['PID'] := id;
-    return(GenerateTemplate(wdir.'templates/uploaded.html',vars));
+    lprint(args);
+    id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth):
+    return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 
 #################################
 # MapData                       #
 #################################
 bsMapData := proc(PID:string)
-    fnBase := GetPKeyData(PID)['fnBase'];
+    pKey := GetPKeyData(PID);
+    fnBase := pKey['fnBase'];
     seqMapResFn := fnBase.'.seqmap';
     lock := fnBase.'.lock';
 
     vars := table(''):
-    vars['tit'] := GetPKeyData(PID)['Title'];
+    vars['tit'] := pKey['Title'];
+    vars['nrOrth'] := pKey['NOrthSub'];
+    vars['nrProt'] := pKey['NSeqSub'];
+    vars['reloadin'] := 10;
+    vars['PID'] := PID;
 
-    if FileExists(seqMapResFn) then
-        if FileExists(lock) and UTCTime()-FileStat(seqMapResFn)['st_mtime'] < 10 then
-           # still computing
-           vars['content'] := 'Still computing';
-        else
-           # visualize current mapping
-           ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
-           prNS := length(MappingComb);
-           cnts := CreateArray(1..prNS,1..NS+1):
-           for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
-           
-           t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown" id="species_mapping">\n'.
-                '<tr><th>extracted species</th><th># protein uploaded</th><th>mapped species</th><th># mappable proteins</th></tr>';
-           jsMap := '[';
-           for pg to prNS do
-               t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
-                  '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
-                    SPS[pg], TotProts[pg], pg, pg);
-               ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-               t := t.'<option value="n.a.">no mapping</option>\n';
-           jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
-               for p to NS while cnts[pg,ord[p]]>0 do 
-                   t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
-                          genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
-                          GS[genomes[ord[p]],SCINAME]);
-               jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
-               od:
-               t := t.sprintf('</select></td><td>%d</td></tr>\n', cnts[pg,ord[1]]);
-           jsMap := jsMap.'}';
-           od:
-           t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
-           t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
-                '<input type="submit" value="Next"/></form>\n';
-           jsMap := jsMap.'];';
-                    
-           vars['content'] := t;
-       vars['jsMappingArray'] := jsMap;
-        fi;
-        return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
-    fi:
-
-    # check if mapping process is already running
     if FileExists(lock) then
-        if IsLockProcessAlive(lock) then
-            # still computing
-            vars['content'] := '<p>Still computing...</p>';
-        else
-            # error page: mapping crashed
-            vars['content'] := '<p>Mapping crashed</p>';
-        fi;
+        vars['mappingStatus'] := HandleLockFile(lock);
+	return( GenerateTemplate(wdir.'templates/uploaded.html',vars) );
+    elif FileExists(seqMapResFn) then
+        # visualize current mapping
+        ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
+        prNS := length(MappingComb);
+        cnts := CreateArray(1..prNS,1..NS+1):
+        for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
+        
+        t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown" id="species_mapping">\n'.
+             '<tr><th>extracted species</th><th># protein uploaded</th><th>mapped species</th><th># mappable proteins</th></tr>';
+        jsMap := '[';
+        for pg to prNS do
+            t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
+               '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
+                 SPS[pg], TotProts[pg], pg, pg);
+            ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
+            t := t.'<option value="n.a.">no mapping</option>\n';
+        jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
+            for p to NS while cnts[pg,ord[p]]>0 do 
+                t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
+                       genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
+                       GS[genomes[ord[p]],SCINAME]);
+            jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
+            od:
+            t := t.sprintf('</select></td><td>%d</td></tr>\n', cnts[pg,ord[1]]);
+        jsMap := jsMap.'}';
+        od:
+        t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
+        t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
+             '<input type="submit" value="Next"/></form>\n';
+        jsMap := jsMap.'];';
+                 
+        vars['content'] := t;
+        vars['jsMappingArray'] := jsMap;
         return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
     fi:
-
+    
     # the mapping did not start. start it! :-)
     CallSystem('touch '.lock);
-    # start MSA as background process
     cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); spListFn:=''%s''; seqFn := ''%s''; '.
-                  'resFn := ''%s''; lock:=''%s''; ReadProgram(''%s/ComputeSeqMapping.drw''); done" '.
+                  'resFn := ''%s''; lock:=''%s''; PID := ''%s''; '.
+		  'ReadProgram(''%s/ComputeSeqMapping.drw''); done" '.
                   '| nice -n 19 %s &',
-                  wdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, wdir, darwin64);
+                  wdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, wdir, darwin64);
     WriteLog('started command: '.cmd);
     prints(cmd);
 
     CallSystem( cmd );
-    vars['content'] := 'Start computing mapping';
-    html := GenerateTemplate(wdir.'templates/sequenceMapping.html',vars);
+    vars['content'] := 'Started computing sequence mapping...';
+    html := GenerateTemplate(wdir.'templates/uploaded.html',vars);
     return(html);
 end:
+
+bsCheckRelMap := proc(PID:string)
+    pKey := GetPKeyData(PID);
+    fnBase := pKey['fnBase'];
+    dbFn := fnBase.'.db';
+    lock := fnBase.'.rel.lock';
+    
+    vars := table(''):
+    vars['tit'] := GetPKeyData(PID)['Title'];
+    vars['reloadin'] := 10;
+    vars['PID'] := PID;
+
+    if FileExists(lock) then
+        vars['mappingStatus'] := HandleLockFile(lock);
+	return( GenerateTemplate(wdir.'templates/checkRelMapping.html',vars) );
+    elif FileExists(dbFn) then
+        return(bsTestSelection(PID));
+    else error('RelMapping not started for '.PID) fi:
+end:
+
+bsMapRels := proc(PID:string)
+    global SPS:
+    fnBase := GetPKeyData(PID)['fnBase'];
+    dbFn := fnBase.'.db';
+    seqMapFn := fnBase.'.seqmap';
+    lock := fnBase.'.rel.lock';
+
+    vars := table(''):
+    vars['tit'] := GetPKeyData(PID)['Title'];
+
+    # in general, this should not be the case!
+    if FileExists(dbFn) then
+        # provide test selection page:
+	WriteLog('Strange program flow! Attack?');
+        return( bsTestSelection(PID) );
+    fi:
+
+    # check if mapping process is already running
+    if FileExists(lock) and IsLockProcessAlive(lock) then
+        vars['content'] := '<p>Still computing...</p>';
+	WriteLog('DOS-ATTACK?'); sleep(5);
+    else 
+
+        # the mapping did not start. start it! :-)
+        CallSystem('touch '.lock);
+        SPS := 0; ReadProgram(fnBase.'.sps'); assert(SPS<>0);
+        if nargs<=length(SPS) then error('too few arguments received') fi;
+        orgMap := [seq( SearchArray(z, genomes), z=[args[2..length(SPS)+1]] )];
+    
+        # start computation as background process
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resDBfn:=''%s''; seqmapfn:= ''%s''; '.
+                      'relsinfn := ''%s''; lock:=''%s''; orgMap := %A; PID := ''%s''; '.
+                      'ReadProgram(''%s/ComputeRelMapping.drw''); done;" | nice -n 19 %s &',
+                      wdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, wdir, darwin64);
+        WriteLog('started command: '.cmd);
+        if printlevel>2 then prints(cmd) fi;
+    
+        CallSystem( cmd );
+    fi:
+    return('Location: gateway.pl?f=CheckRelMap&p1='.PID.'\n\n');
+    return(html);
+end:
+
 
 bsTestSelection := proc(PID:string)
     global ReconciledTrees;
@@ -308,6 +360,7 @@ bsTestSelection := proc(PID:string)
 
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
+    
     
     t := transpose(sort([seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), z=GetPublicProjects())])):
     pubPID := t[2]; publicProjects := t[1]; Npub := length(pubPID):
@@ -322,13 +375,16 @@ bsTestSelection := proc(PID:string)
     od:
 
     for z in ['Euk','Bac','Fun'] do
-        vars['TT'.z.'Projects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
-	              '<label for="pTT%sPrj%d">%s</label><br/>',
-                       z,pNr,z,pNr,If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 
-	                              'checked="checked"','disabled="disabled"'),
-		       z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
-        vars['has'.z] := 'checked';
+        if ProjMetProperty(PID, GetTestProperty('TreeTest_'.z)) then
+            vars['TT'.z.'Projects'] := ConcatStrings(
+              [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
+	                   '<label for="pTT%sPrj%d">%s</label><br/>',
+                            z,pNr,z,pNr,If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 
+	                                  'checked="checked"','disabled="disabled"'),
+		           z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
+	vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
+	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
+        fi:
     od:
     
     stub := 'pRefPhyloPrj';
@@ -358,59 +414,6 @@ bsTestSelection := proc(PID:string)
     vars['PID'] := PID;
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
 end:
-
-bsMapRels := proc(PID:string)
-    global SPS:
-    fnBase := GetPKeyData(PID)['fnBase'];
-    dbFn := fnBase.'.db';
-    seqMapFn := fnBase.'.seqmap';
-    lock := fnBase.'.lock';
-
-    vars := table(''):
-    vars['tit'] := GetPKeyData(PID)['Title'];
-
-    if FileExists(dbFn) then
-        if FileExists(lock) and UTCTime()-FileStat(dbFn)['st_mtime'] < 10 then
-           # still computing
-           vars['content'] := 'Still computing';
-        else
-           # provide test selection page:
-       return( bsTestSelection(PID) );
-        fi:
-    fi:
-
-    # check if mapping process is already running
-    if FileExists(lock) then
-        if IsLockProcessAlive(lock) then
-            # still computing
-            vars['content'] := '<p>Still computing...</p>';
-        else 
-            # error page: mapping crashed
-            vars['content'] := '<p>Mapping crashed</p>';
-        fi;
-        return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
-    fi:
-
-    # the mapping did not start. start it! :-)
-    CallSystem('touch '.lock);
-    SPS := 0; ReadProgram(fnBase.'.sps'); assert(SPS<>0);
-    if nargs<=length(SPS) then error('too few arguments received') fi;
-    orgMap := [seq( SearchArray(z, genomes), z=[args[2..length(SPS)+1]] )];
-
-    # start computation as background process
-    cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resDBfn:=''%s''; seqmapfn:= ''%s''; '.
-                  'relsinfn := ''%s''; lock:=''%s''; orgMap := %A; '.
-                  'ReadProgram(''%s/ComputeRelMapping.drw''); done;" | nice -n 19 %s &',
-                  wdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, wdir, darwin64);
-    WriteLog('started command: '.cmd);
-    prints(cmd);
-
-    CallSystem( cmd );
-    vars['content'] := 'Start computing mapping';
-    html := GenerateTemplate(wdir.'templates/sequenceMapping.html',vars);
-    return(html);
-end:
-
 
 StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     global RFstat;

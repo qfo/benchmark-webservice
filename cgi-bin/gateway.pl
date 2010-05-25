@@ -330,7 +330,7 @@ sub RelText2Drw {
     print F "PairRelations([\n";
     while( <$fh> ){
         chomp;
-    if ( /([\w.-]*)\s([\w.-]*)/ ){
+    if ( /([\w.-]*)\t([\w.-]*)/ ){
        print F "['$1','$2'],\n";
        $cnt++;
        if ($cnt % 50000 == 0){ print F "NULL]):\nPairRelations([\n";}

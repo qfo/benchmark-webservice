@@ -1,8 +1,8 @@
 #
-# this script receives resDBfn, relsinfn, seqmapfn, orgMap, lock
+# this script receives resDBfn, relsinfn, seqmapfn, orgMap, lock, PID
 #
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
-ReadProgram('/local/BenchmarkService/lib/darwinit');
+WriteLock(lock,'initializing computation');
+#ReadProgram('/local/BenchmarkService/lib/darwinit');
 
 GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
     global MappingComb;
@@ -22,20 +22,33 @@ GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
     return(mapping, pset);
 end:
 
+UpdateRemainingTime := proc()
+    remTime := time()/relDone * (pKey['NOrthSub']-relDone);
+    unit := 'sec';
+    if remTime>120 then remTime := remTime/60; unit:='min'; fi:
+    WriteLock(lock, sprintf(
+        '%d/%d (%.1f%%) relations mapped. Estimated remaining time:%.0f%s\n',
+	 relDone, pKey['NOrthSub'], 100*relDone/pKey['NOrthSub'], remTime, unit));
+end:
 
 # callback function pairwise data
 PairRelations := proc(rel:list)
-    global VPs;
+    global VPs, relDone, t0, relMapped;
     for z in rel do
         i1 := SearchOrderedArray(z[1], mapping[1]);
-        if i1<=0 or i1>NM or mapping[1,i1]<>z[1] then next fi;
+        if i1<=0 or i1>NM or mapping[1,i1]<>z[1] then lprint('missing',z); next fi;
         i2 := SearchOrderedArray(z[2], mapping[1]);
-        if i2<=0 or i2>NM or mapping[1,i2]<>z[2] then next fi;
+        if i2<=0 or i2>NM or mapping[1,i2]<>z[2] then lprint('missing',z); next fi;
         p1 := mapping[3,i1]; p2 := mapping[3,i2];
 
         VPs[p1] := append(VPs[p1], p2); 
-        VPs[p2] := append(VPs[p2], p1); 
+        VPs[p2] := append(VPs[p2], p1);
+	relMapped := relMapped+1;
     od:
+    relDone := relDone + length(rel);
+    if not assigned(t0) or time()-t0>5 then 
+        UpdateRemainingTime(); t0 := time(); 
+    fi:
 end:
 
 # callback function group data
@@ -74,14 +87,24 @@ WriteDB := proc(fn:string, VPs, mapping)
     Set(printgc=verb);
 end:
 
+# to break at error
+to 1 do
+    pKey := GetPKeyData(PID);
+    t := GenerateProteinMapping(seqmapfn, orgMap):
+    mapping := t[1]; iSet := t[2]:
+    NM := length(iSet):
+    VPs := CreateArray(1..NM,[]);
+    relDone := relMapped := 0;
+    ReadProgram(relsinfn);
+    WriteLock(lock, 'Storing final project data');
+    WriteDB(resDBfn, VPs, mapping);
+    ReadDb(resDBfn);
 
-t := GenerateProteinMapping(seqmapfn, orgMap):
-mapping := t[1]; iSet := t[2]:
-NM := length(iSet):
-VPs := CreateArray(1..NM,[]);
-ReadProgram(relsinfn);
-WriteDB(resDBfn, VPs, mapping);
-ReadDb(resDBfn);
+    pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
+    orgs := {seq(GenomeCodeFromENr(z),z=iSet)}:
+    pKey['OrgsCovered'] := orgs:
+    UpdatePKeyDataPermanent(pKey);
 
-CallSystem('rm -f '.lock);
+    CallSystem('rm -f '.lock);
+od:
 done

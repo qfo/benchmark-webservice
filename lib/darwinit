@@ -39,10 +39,12 @@ Nr2SEQ := noeval(ReadLibrary( wdir.'lib/EntryNav', Nr2SEQ));
 DbEntryNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', DbEntryNrFromENr));
 
 PKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',PKeyData));
+UpdatePKeyDataPermanent := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',UpdatePKeyDataPermanent));
 AddPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',AddPKeyData));
 GetPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPKeyData));
 GetPublicProjects := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPublicProjects));
 GetProjISets := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', GetProjISets));
+ProjMetProperty := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', ProjMetProperty));
 
 TestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',TestProperty));
 GetTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',GetTestProperty));
@@ -50,6 +52,7 @@ AddTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',AddTestProperty
 
 IsLockProcessAlive := noeval(ReadLibrary(wdir.'lib/LockFileOperations', IsLockProcessAlive));
 HandleLockFile := noeval(ReadLibrary(wdir.'lib/LockFileOperations', HandleLockFile));
+WriteLock := noeval(ReadLibrary(wdir.'lib/LockFileOperations', WriteLock));
 
 Handle2dROCFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dROCFiles));
 HandleBoxRFFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', HandleBoxRFFiles));

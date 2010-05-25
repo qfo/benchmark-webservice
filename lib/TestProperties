@@ -1,0 +1,31 @@
+TestProperty := proc(Name:string, Evaluator:procedure, Args:list, YoungerThan:nonnegative)
+    noeval(procname(args));
+end:
+CompleteClass(TestProperty);
+
+AddTestProperty := proc(Name:string, Evaluator:procedure, Args:list; ValidAfter:nonnegative)
+    global TESTPROPERTIES:
+    
+    verb := Set(quiet=true);
+    valid := If(assigned(ValidAfter),ValidAfter,UTCTime());
+    p := TestProperty(Name,op(Evaluator),Args,valid);
+    print(p);
+
+    OpenAppending(datdir.'testProperties.drw');
+    printf('TESTPROPERTIES[%A] := %A:\n', Name, p);
+    OpenAppending(previous);
+    Set(quiet=verb);
+
+    ReadProgram(datdir.'testProperties.drw');
+end:
+
+GetTestProperty := proc(Name:string)
+    global TESTPROPERTIES:
+    if not assigned(TESTPROPERTIES) then ReadProgram(datdir.'testProperties.drw') fi:
+
+    p := TESTPROPERTIES[Name];
+    if p=0 then error('TestProperty '.Name.' is unknown'); fi:
+    
+    return(p);
+end:
+

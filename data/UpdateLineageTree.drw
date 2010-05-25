@@ -53,23 +53,19 @@ printf('missThreshold := %d:\n', missThreshold);
 OpenWriting(previous);
 
 
-EvaluateTestProperty := proc(p:PKeyData, prop:TestProperty)
+EvaluateTestProperty := proc(p_:{PKeyData,list(PKeyData)}, prop:TestProperty)
     global catBins;
-    if p['directMap'] then return(true) fi:
+    pKeys := If( type(p_,PKeyData),[p_],p_ );
  
     ReadProgram(prop[Args,1]);
-    lookup := []:
-    for cNr to length(catBins) do for g in catBins[cNr] do lookup := append(lookup,[g,cNr]) od od:
-    lookup := transpose(sort(lookup)); lenLU := length(lookup[1]);
  
-    iSet := GetProjISets([p]);
+    orgs := intersect(): 
+    for pKey in pKeys do orgs := intersect(orgs, pKey['OrgsCovered']) od:
+    if orgs=intersect() then return(true) fi:
+    
     cat := CreateArray(1..length(catBins)):
-    for i to length(iSet) do 
-        g := GenomeCodeFromENr(iSet[i]);
-        k := SearchOrderedArray(g,lookup[1]);
-        if k<=0 or k>lenLU or lookup[1,k]<>g then next fi:
-        cat[lookup[2,k]] := cat[lookup[2,k]]+1;
-	if mod(i,20)=0 and product(cat)>0 then return(true) fi:
+    for i to length(catBins) do 
+        cat[i] := length(intersect(catBins[i], orgs)): 
     od:
     
     return( sum(If(z=0,1,0),z=cat) <= prop['Args',2] );

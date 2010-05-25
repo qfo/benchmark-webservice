@@ -25,7 +25,7 @@ for gNr to length(genomes) do
     OpenAppending(fasta);
     for i to DB[TotEntries] do
         e := Entry(i);
-        id := SearchTag('ID', e);
+        id := SearchDelim('; ',SearchTag('ID', e))[1];
         k := SearchString('{', id);
         if k>0 and id[-1]='}' then id := id[SearchString(':',id)+2..-2] fi:
         IDS[gNr,i] := id;

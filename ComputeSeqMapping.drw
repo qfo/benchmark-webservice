@@ -1,8 +1,8 @@
 #
-#  this script receives spListFn, seqFn, omaDBpath, resFn, lock
+#  this script receives spListFn, seqFn, omaDBpath, resFn, lock, PID
 #
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
-ReadProgram('/local/BenchmarkService/lib/darwinit');
+WriteLock(lock,'initializing computation');
+#ReadProgram('/local/BenchmarkService/lib/darwinit');
 SeqDB := DB := ReadDb(omaDBpath.'ServerSeqs.db');
 printlevel := 2;
 
@@ -64,7 +64,9 @@ LoadGenomeStartIDs();
 MappingComb := CreateArray(1..NSPS, 1..NS+1, []):
 totProts := CreateArray(1..NSPS):
 id2nr := CreateArray(1..DB[TotEntries],[]);
+pKey := GetPKeyData(PID):
 to 1 do
+   t0 := time();
    OpenReading(seqFn);
    cnt := 0;
    do 
@@ -85,6 +87,14 @@ to 1 do
 	   od:
        else
            MappingComb[og,NS+1] := append(MappingComb[og,NS+1], Protein[1]):
+       fi:
+       if time()-t0>1 and pKey['NSeqSub']>cnt then
+           remTime := time()/cnt * (pKey['NSeqSub']-cnt); unit_time := 'sec';
+           if remTime > 120 then remTime := remTime/60; unit_time := 'min'; fi:
+           WriteLock(lock, sprintf(
+	       '%d of %d (%.1f%%) sequences mapped. Estimated remaining time: %.0f%s\n',
+	       cnt, pKey['NSeqSub'], 100*cnt/pKey['NSeqSub'], remTime, unit_time));
+	   t0 := time();
        fi:
    od:
 od:

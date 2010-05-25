@@ -29,4 +29,11 @@ HandleLockFile := proc(lock:string)
     fi:
 end:
 
+# writes a message in the lockfile (after storing process id)
+WriteLock := proc(lock:string, msg:string)
+    OpenWriting(lock):
+    lprint(getpid());
+    lprint(msg);
+    OpenWriting(previous);
+end:
 
