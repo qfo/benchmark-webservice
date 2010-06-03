@@ -74,9 +74,10 @@ GetPublicProjects := proc()
     return(p);
 end:
 
-GetProjISets := proc(prjs:list)
+GetProjISets := proc(prjs_:{string,PKeyData,list})
     global ISET:
     iSet := intersect();
+    prjs := If(not type(prjs_,list), [prjs_], prjs_):
     for z in prjs do 
         if type(z,PKeyData) then
             PKobj := z;
@@ -107,4 +108,13 @@ ProjMetProperty := proc( PID:string, Prop:TestProperty )
     return(p[nam,1]);
 end:
 
-
+ProjSpeciesOverlap := proc( p:{list(string), set(string), list(PKeyData)} )
+    if type(p[1], string) then
+       pKeys := [seq(GetPKeyData(z), z=p)];
+    else pKeys := p fi;
+    
+    overlap := intersect():
+    for z in pKeys do overlap := intersect(overlap, z['OrgsCovered']) od:
+    if overlap=intersect() then overlap := {op(KnownSpecies())} fi: 
+    return(overlap):
+end:

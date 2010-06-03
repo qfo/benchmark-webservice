@@ -32,11 +32,11 @@ GenomeCodeFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeCodeFromENr)
 ENrFromLabel := noeval(ReadLibrary( wdir.'lib/EntryNav', ENrFromLabel));
 GenomeRange := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeRange));
 GenomeNrFromCode := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromCode));
-ParseLongList := noeval(ReadLibrary( wdir.'lib/EntryNav', ParseLongList));
-
 ENr2Label := noeval(ReadLibrary( wdir.'lib/EntryNav', ENr2Label));
 Nr2SEQ := noeval(ReadLibrary( wdir.'lib/EntryNav', Nr2SEQ));
 DbEntryNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', DbEntryNrFromENr));
+ParseLongList := noeval(ReadLibrary( wdir.'lib/EntryNav', ParseLongList));
+KnownSpecies := noeval(ReadLibrary( wdir.'lib/EntryNav', KnownSpecies));
 
 PKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',PKeyData));
 UpdatePKeyDataPermanent := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',UpdatePKeyDataPermanent));
@@ -45,10 +45,13 @@ GetPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPKeyData));
 GetPublicProjects := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPublicProjects));
 GetProjISets := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', GetProjISets));
 ProjMetProperty := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', ProjMetProperty));
+ProjSpeciesOverlap := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', ProjSpeciesOverlap));
 
 TestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',TestProperty));
 GetTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',GetTestProperty));
 AddTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',AddTestProperty));
+EvaluateTreeTestProperty := noeval(ReadLibrary(wdir.'lib/TestProperties',EvaluateTreeTestProperty)):
+EvaluateRefPhyloTestProperty := noeval(ReadLibrary(wdir.'lib/TestProperties',EvaluateRefPhyloTestProperty)):
 
 IsLockProcessAlive := noeval(ReadLibrary(wdir.'lib/LockFileOperations', IsLockProcessAlive));
 HandleLockFile := noeval(ReadLibrary(wdir.'lib/LockFileOperations', HandleLockFile));
@@ -58,3 +61,6 @@ Handle2dROCFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dROCFile
 HandleBoxRFFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', HandleBoxRFFiles));
 Handle2dSimFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dSimFiles));
 
+RecTreeCase := noeval(ReadLibrary(wdir.'lib/Definitions', RecTreeCase));
+
+ParseStrategy := noeval(ReadLibrary(wdir.'lib/Parsing', ParseStrategy));

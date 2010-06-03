@@ -1,0 +1,13 @@
+##############
+# Parses the comparison strategy and checks for attacks
+ParseStrategy := proc(pnames:list, params:list)
+    k := SearchArray('pTestStrategy', pnames);
+    if k<=0 then error('TestStrategy not defined') fi:
+    
+    meth := uppercase(params[k]):
+    if not member(meth, {'PAIRWISE','INTERSECT'}) then
+        error('TestStrategy not allowed: '.meth);
+    fi:
+    return(meth);
+end:
+

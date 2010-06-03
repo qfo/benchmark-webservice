@@ -1,0 +1,100 @@
+# 
+# This file precomputes the mapping of the reference phylogenetic trees to 
+# the EntryNumbers and stores those files in data/ReconciledTrees.drw
+#
+ReadProgram('lib/darwinit');
+outfile := datdir.'ReconciledTrees.drw':
+overwrite := true:
+IDIndex := ReadDb(omaDBpath.'IDIndex.db');
+DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
+
+MatchID := proc(id:string)
+    oE := SearchIndex(id,IDIndex);
+    if oE<>NULL then return(oE) fi:
+
+    k := SearchString('_',id);
+    oE := SearchIndex(id[1..k], IDIndex);
+    if k=6 and oE<>NULL then return(oE); # we have an uniprot-id -> accession
+    elif oE<>NULL and length(id[k+2..-1])=5 then
+         # double-check if species is the same
+         if GenomeCodeFromENr(oE)=id[k+2..-1] then return(oE) fi:
+    else lprint('can''t map id:',id);
+    fi:
+    return(NULL);
+end:
+
+ExtractPairRelR := proc(t:Tree)
+    global __PWR;
+    if type(t, Leaf) then
+        oE := MatchID(t[Label],IDIndex):
+        return( If(oE=NULL,NULL,{oE}) );
+    else
+        tL := ExtractPairRelR(t[Left]);
+        tR := ExtractPairRelR(t[Right]);
+        if tL=NULL then return(tR);
+        elif tR=NULL then return(tL);
+        else
+            if intersect(tL,tR)<>{} then
+                lprint('intersect not empty:'.string(intersect(tL,tR)).' '.t[4]);
+                tL := minus(tL, tR);
+            fi;
+            for p1 in tL do for p2 in tR do
+                assert(__PWR[{p1,p2}]=unassigned);
+		if member(t['xtra'], DUPL) then ev := 'D';
+		elif member(t['xtra'], SPEC) then ev := 'S';
+		else lprint('dubious event: ',t['xtra']); ev := t['xtra']; fi:
+                __PWR[{p1,p2}] := ev;
+            od od:
+            return( union(tL,tR) );
+        fi:
+    fi:
+end:
+
+ExtractPairwiseRel := proc(t:Tree)
+    global __PWR; __PWR := table();
+    prots := ExtractPairRelR(t):
+    return( [prots, __PWR] );
+end:
+
+#EvaluateTestProperty := proc(p_:{PKeyData,list(PKeyData)}, prop:TestProperty)
+#    global ReconciledTrees:
+#    if not type(ReconciledTrees,table) then 
+#        ReadProgram(datdir.'ReconciledTrees.drw'):
+#    fi:
+#    p := If(type(p_,PKeyData),[copy(p_)],copy(p_));
+#    iSet := GetProjISets(p);
+#    mapped := ReconciledTrees[prop['Args',1],'MappedProts'];
+#    lprint( intersect(mapped,iSet) ):
+#    return( length(intersect(mapped, iSet)) > 5 ); 
+#end:
+
+if overwrite=true then
+    OpenWriting(outfile);
+    printf('ReconciledTrees := table():\n');
+    OpenWriting(previous);
+fi:
+
+
+to 1 do
+##############################################
+# PFAM 962 rectree of Engelhardt et al. (2006)
+t := ReadRawFile(datdir.'raw/reconciled-PF00962.nex');
+label:= 'Eukaryotic Tree of PFam 962';
+name := 'PF00962';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Engelhardt BE, Jordan MI, Brenner SE (2006) A graphical model for '
+      . 'predicting protein molecular function. In: Cohen WW, Moore A, editors. '
+      . 'ICML 2006: Proceedings of the 23th International Conference on Machine '
+      . 'Learning. ACM. pp. 297-304.');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+
+
+od:
+lprint('lasterror:',lasterror);
+

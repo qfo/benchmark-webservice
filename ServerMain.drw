@@ -1,7 +1,7 @@
 ##############################################
-# Backend for the OMA browser.             #
-# Reads the 'Din' pipe and executes the      #
-# commands.                     #
+# Backend for the BenchmarkWebservice        #
+# Reads the 'BSin' pipe and executes the     #
+# commands.                                  #
 ##############################################
 if not assigned(DEBUG) then DEBUG := false fi:
 if not assigned(RUNLOCAL) then RUNLOCAL := true fi:
@@ -364,6 +364,7 @@ bsTestSelection := proc(PID:string)
     
     t := transpose(sort([seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), z=GetPublicProjects())])):
     pubPID := t[2]; publicProjects := t[1]; Npub := length(pubPID):
+    pairwiseOverlap := [seq( ProjSpeciesOverlap([PID,z]), z=pubPID)];
     
     # load the cases for reconciled trees from publications
     if not assigned(ReconciledTrees) then 
@@ -378,9 +379,9 @@ bsTestSelection := proc(PID:string)
         if ProjMetProperty(PID, GetTestProperty('TreeTest_'.z)) then
             vars['TT'.z.'Projects'] := ConcatStrings(
               [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
-	                   '<label for="pTT%sPrj%d">%s</label><br/>',
-                            z,pNr,z,pNr,If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 
-	                                  'checked="checked"','disabled="disabled"'),
+	                   '<label for="pTT%sPrj%d">%s</label><br/>', z,pNr,z,pNr,
+			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)) and 
+			      length(pairwiseOverlap[pNr])>5,'checked="checked"','disabled="disabled"'),
 		           z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
 	vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
 	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
@@ -389,15 +390,23 @@ bsTestSelection := proc(PID:string)
     
     stub := 'pRefPhyloPrj';
     vars['RefPhyloProjects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-	              '<label for="%s%d">%s</label><br/>',
-                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
+         [seq(If( length(pairwiseOverlap[pNr])>1,
+	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+	                  '<label for="%s%d">%s</label><br/>',
+                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
+	          ''), pNr=1..Npub)],'\n');
     stub := 'pRefPhyloProb';
     vars['RefPhyloProblems'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+         [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
+	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
 	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
-                      stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['Name']), z=refPhyloProbs)],'\n');
+                      stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
+		  ''), 
+		  z=refPhyloProbs)],'\n');
     vars['RefPhyloProb1_id'] := 'RefPhyloProb'.refPhyloProbs[1,'Name'];
+    vars['hasRefPhylo'] := SearchString('<input',vars['RefPhyloProjects'])>=0 and 
+                           SearchString('<input',vars['RefPhyloProblems'])>=0;
+    vars['styleRefPhylo'] := If(vars['hasRefPhylo'],'checked="checked"', 'disabled="disabled"');
     
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
@@ -415,7 +424,7 @@ bsTestSelection := proc(PID:string)
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
 end:
 
-StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
+StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     global RFstat;
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.%s.lock',fnBase,king);
@@ -429,7 +438,9 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
-    resBase := sprintf('TreeTest.%s.%a', king, hash(projs));
+    meth := If(length(projs)=2,'PAIRWISE',ParseStrategy(pnames,params));
+
+    resBase := sprintf('TreeTest.%s.%a', king, hash([projs,meth]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -439,8 +450,8 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list)
         HandleBoxRFFiles(resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
-               'projs := %A; lock:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, datdir, king, projs, lock, wdir, darwin64);
+               'projs := %A; lock:=''%s''; meth:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, datdir, king, projs, lock, meth, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -642,7 +653,8 @@ bsCheckResults := proc(sessionkey)
 	if t[2]=true then refresh := true fi:
     fi:
     
-    if refresh then vars['refreshin'] := 20 fi;
+    if refresh then vars['reloadin'] := 20 fi;
+    vars['refresh'] := refresh;
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:
 

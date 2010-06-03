@@ -52,24 +52,5 @@ printf('speciestree := %A:\n', speciestree);
 printf('missThreshold := %d:\n', missThreshold);
 OpenWriting(previous);
 
-
-EvaluateTestProperty := proc(p_:{PKeyData,list(PKeyData)}, prop:TestProperty)
-    global catBins;
-    pKeys := If( type(p_,PKeyData),[p_],p_ );
- 
-    ReadProgram(prop[Args,1]);
- 
-    orgs := intersect(): 
-    for pKey in pKeys do orgs := intersect(orgs, pKey['OrgsCovered']) od:
-    if orgs=intersect() then return(true) fi:
-    
-    cat := CreateArray(1..length(catBins)):
-    for i to length(catBins) do 
-        cat[i] := length(intersect(catBins[i], orgs)): 
-    od:
-    
-    return( sum(If(z=0,1,0),z=cat) <= prop['Args',2] );
-end:
-
-AddTestProperty('TreeTest_'.dataset,EvaluateTestProperty,[fn,1],FileStat(fn)['st_mtime']);
+AddTestProperty('TreeTest_'.dataset[1..3],EvaluateTreeTestProperty,[fn,1],FileStat(fn)['st_mtime']);
 done

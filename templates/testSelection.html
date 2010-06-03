@@ -12,6 +12,16 @@
 Select from the available benchmarks and against which standard 
 orthology inference project you would like to compare your predictions
 <form action="gateway.pl" method="post">
+ <fieldset><legend>Test Strategy</legend>
+  <div class="notes"><h4>Select your strategy of testing</h4>
+   <p>Performing the <b>pairwise tests</b> allows you to compare the quality of your predicted orthologs against each selected project independently. Comparisons across the different reference projects are not valid, as the set of proteins in general differs.</p>
+   <p class="last">Tests on the <b>intersection of several projects</b> allow for a ranking among all the selected projects. Since all the tests are based on the set of common proteins, the power of the test is more and more reduced as the space of possible orthologs gets smaller and smaller the more projects are selected.</p>
+  </div>
+  <div class="test">
+   <input type="radio" id="pPairwise" name="pTestStrategy" value="pairwise" checked="checked"><label for="pPairwise">Pairwise Comparisons of each selected project against <DVAR name="tit"></label> <br/>
+   <input type="radio" id="pIntersect" name="pTestStrategy" value="intersect"><label for="pIntersect">Protein intersection set of selected projects and <DVAR name="tit"></label>
+  </div>
+ </fieldset>
 
  <fieldset><legend>Phylogeny-Based Definition Tests</legend>
   <div class="notes"><h4>Phylogeny-Based Definition</h4>

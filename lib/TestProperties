@@ -3,12 +3,45 @@ TestProperty := proc(Name:string, Evaluator:procedure, Args:list, YoungerThan:no
 end:
 CompleteClass(TestProperty);
 
+
+EvaluateTreeTestProperty := proc(p_:{PKeyData,list(PKeyData)}, prop:TestProperty)
+    global catBins; 
+    pKeys := If( type(p_,PKeyData),[p_],p_ ); 
+  
+    ReadProgram(prop[Args,1]); 
+  
+    orgs := intersect():  
+    for pKey in pKeys do orgs := intersect(orgs, pKey['OrgsCovered']) od: 
+    if orgs=intersect() then return(true) fi: 
+     
+    cat := CreateArray(1..length(catBins)): 
+    for i to length(catBins) do  
+        cat[i] := length(intersect(catBins[i], orgs)):  
+    od: 
+     
+    return( sum(If(z=0,1,0),z=cat) <= prop['Args',2] );
+end:
+
+EvaluateRefPhyloTestProperty := proc(p:{PKeyData,list(PKeyData)}, prop:TestProperty)
+    global ReconciledTrees:
+    if not type(ReconciledTrees,table) then
+        ReadProgram(datdir.'ReconciledTrees.drw'):
+    fi:
+    iSet := GetProjISets(p);
+    mapped := ReconciledTrees[prop['Args',1],'MappedProts'];
+    lprint( intersect(mapped,iSet) ):
+    return( length(intersect(mapped, iSet)) > 4 );
+end:
+
+
+
+
 AddTestProperty := proc(Name:string, Evaluator:procedure, Args:list; ValidAfter:nonnegative)
     global TESTPROPERTIES:
     
     verb := Set(quiet=true);
     valid := If(assigned(ValidAfter),ValidAfter,UTCTime());
-    p := TestProperty(Name,op(Evaluator),Args,valid);
+    p := TestProperty(Name,Evaluator,Args,valid);
     print(p);
 
     OpenAppending(datdir.'testProperties.drw');

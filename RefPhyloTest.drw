@@ -3,9 +3,7 @@
 #
 #  in: resFn, problems, projs, lock
 Set(printgc=false):
-
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
-
+WriteLock(lock, 'initializing computation');
 IDIndex := ReadDb(omaDBpath.'IDIndex.db');
 
 prj := [seq(GetPKeyData(z),z=projs)]:
@@ -19,51 +17,6 @@ for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 ReadProgram(datdir.'ReconciledTrees.drw'); #Assigns ReconciledTrees (a table)
 nrProb := length(problems);
 
-MatchID := proc(id:string)
-    oE := SearchIndex(id,IDIndex);
-    if oE<>NULL then return(oE) fi:
-    
-    k := SearchString('_',id);
-    oE := SearchIndex(id[1..k], IDIndex); 
-    if k=6 and oE<>NULL then return(oE); # we have an uniprot-id -> accession
-    elif oE<>NULL and length(id[k+2..-1])=5 then
-         # double-check if species is the same
-         if GenomeCodeFromENr(oE)=id[k+2..-1] then return(oE) fi:
-    else lprint('can''t map id:',id);
-    fi:
-    return(NULL);
-end:
-ExtractPairwiseRel := proc(t:Tree)
-    global __PWR; __PWR := table();
-    prots := ExtractPairRelR(t):
-    return( [prots, __PWR] );
-end:
-ExtractPairRelR := proc(t:Tree)
-    global __PWR;
-    if type(t, Leaf) then 
-        oE := MatchID(t[Label],IDIndex):
-    if oE=369230 then lprint(t[Label],'-->',oE) fi;
-    return( If(oE=NULL,NULL,{oE}) );
-    else
-        
-        tL := ExtractPairRelR(t[Left]);
-    tR := ExtractPairRelR(t[Right]);
-    if tL=NULL then return(tR);
-    elif tR=NULL then return(tL);
-    else 
-        if intersect(tL,tR)<>{} then 
-            lprint('intersect not empty:'.string(intersect(tL,tR)).' '.t[4]); 
-        tL := minus(tL, tR);
-        fi;
-        for p1 in tL do for p2 in tR do 
-            assert(__PWR[{p1,p2}]=unassigned);
-            __PWR[{p1,p2}] := t[4];
-        od od:
-        return( union(tL,tR) );
-    fi:
-    fi:
-end:
-
 # false positive and true positive rates.
 #  - set to 0 to indicate no data
 #  - set to list [fpr, var(fpr)] once data is stored
@@ -71,13 +24,12 @@ fpr  := CreateArray(1..nrProb,1..nP,0);
 tpr  := CreateArray(1..nrProb,1..nP,0);
 DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
 for prNr to nrProb do 
-    tree := ReconciledTrees[problems[prNr],'Tree'];
-    tmp := ExtractPairwiseRel(tree);
-    rels := tmp[2];
-    prts := intersect(tmp[1],iSet); 
+    rels := ReconciledTrees[problems[prNr],'Relations']: 
+    prts := intersect(iSet, ReconciledTrees[problems[prNr],'MappedProts']); 
     nProt := length(prts);
     if nProt>5 then 
-    
+        t := prNr/(nrProb+1);
+        WriteLock(lock,sprintf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)*time()));
         dups := table({}); specs := table({});
         for p1 in prts do for p2 in prts do 
             ev := rels[{p1,p2}];
