@@ -27,7 +27,7 @@ UpdateRemainingTime := proc()
     unit := 'sec';
     if remTime>120 then remTime := remTime/60; unit:='min'; fi:
     WriteLock(lock, sprintf(
-        '%d/%d (%.1f%%) relations mapped. Estimated remaining time:%.0f%s\n',
+        '%d/%d (%.1f%%) relations processed. Estimated remaining time:%.0f%s\n',
 	 relDone, pKey['NOrthSub'], 100*relDone/pKey['NOrthSub'], remTime, unit));
 end:
 

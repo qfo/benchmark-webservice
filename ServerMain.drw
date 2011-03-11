@@ -148,6 +148,8 @@ if funcname = 'Index' then
     html := traperror(bsIndex(op(params)));
 elif funcname = 'UploadData' then 
     html := traperror(bsUploadData(op(params)));
+elif funcname = 'RedoProjectMapping' and length(params)=4 then
+    html := traperror(bsUploadData(op(params)));
 elif funcname = 'MapData' then
     html := traperror(bsMapData(op(params)));
 elif funcname = 'MapRels' then
@@ -250,15 +252,17 @@ bsMapData := proc(PID:string)
                '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
                  SPS[pg], TotProts[pg], pg, pg);
             ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-            t := t.'<option value="n.a.">no mapping</option>\n';
-        jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
+            hasDefaultSpec := evalb( cnts[pg,ord[1]]/TotProts[pg] > 0.3 );
+            t := t.sprintf('<option value="n.a." %s>no mapping</option>\n', 
+	                   If(hasDefaultSpec,'','selected="selected"'));
+            jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
             for p to NS while cnts[pg,ord[p]]>0 do 
                 t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
-                       genomes[ord[p]], If(p=1,' selected="selected"',''),genomes[ord[p]],
-                       GS[genomes[ord[p]],SCINAME]);
+                       genomes[ord[p]], If(p=1 and hasDefaultSpec,' selected="selected"',''),
+		       genomes[ord[p]], GS[genomes[ord[p]],SCINAME]);
             jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
             od:
-            t := t.sprintf('</select></td><td>%d</td></tr>\n', cnts[pg,ord[1]]);
+            t := t.sprintf('</select></td><td>%d</td></tr>\n', If(hasDefaultSpec, cnts[pg,ord[1]],0));
         jsMap := jsMap.'}';
         od:
         t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
@@ -410,15 +414,25 @@ bsTestSelection := proc(PID:string)
     
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
-	              '<label for="%s%d">%s</label><br/>',
-                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
-    
+         [seq(If( length(pairwiseOverlap[pNr])>1,
+                  sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
+                          '<label for="%s%d">%s</label><br/>',
+                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
+	          ''), 
+		  pNr=1..Npub)],'\n');
+    vars['hasGO'] := SearchString('<input',vars['GOprojects'])>=0;
+    vars['styleGO'] := If(vars['hasGO'], 'checked="checked"', 'disabled="disabled"');
+
     stub := 'pECPrj';
     vars['ECprojects'] := ConcatStrings(
-         [seq(sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
-	              '<label for="%s%d">%s</label><br/>',
-                      stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
+         [seq(If( length(pairwiseOverlap[pNr])>1,
+                  sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
+	                  '<label for="%s%d">%s</label><br/>',
+                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
+	          ''),
+		  pNr=1..Npub)],'\n');
+    vars['hasEC'] := SearchString('<input',vars['ECprojects'])>=0;
+    vars['styleEC'] := If(vars['hasEC'], 'checked="checked"', 'disabled="disabled"');
 
     vars['PID'] := PID;
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
@@ -431,6 +445,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     vars := table('');
     vars['case'] := king;
     vars['resheader'] := 'Species Tree Discordance Test - Dataset '.king;
+    vars['resFigReady'] := false;
     
     pubPrj := GetPublicProjects();
 
@@ -438,7 +453,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
-    meth := If(length(projs)=2,'PAIRWISE',ParseStrategy(pnames,params));
+    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
 
     resBase := sprintf('TreeTest.%s.%a', king, hash([projs,meth]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
@@ -447,7 +462,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
         isRunning := false;
-        HandleBoxRFFiles(resFn, resBase, vars);
+        HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
                'projs := %A; lock:=''%s''; meth:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
@@ -465,6 +480,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     lock  := sprintf('%s.RefPhyl.lock',fnBase);
     vars := table('');
     vars['resheader'] := 'Agreement with Reference Phylogeny - Test';
+    vars['resFigReady'] := false;
     
     pubPrj := GetPublicProjects();
 
@@ -475,23 +491,24 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     
     k := SearchArray('pRefPhylAggMeas',pnames);
     measure := If(k>0,params[k],'sample variance');
+    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
 
     problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', parse(z[14..-1]), NULL), z=pnames)];
     if DEBUG then print('Do RefPhyloTest with those projects:',projs) fi;
     
-    resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems]) );
+    resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
         isRunning := false;
-        Handle2dROCFiles(resFn, resBase, problems, projs, vars, 'aggregate'=measure);
+        Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 'aggregate'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
-           'projs := %A; lock:=%A; problems := %A; '.
+           'projs := %A; lock := %A; problems := %A; measure := %A; meth := %A;'.
            'ReadProgram(''%s/RefPhyloTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, projs, lock, problems, wdir, darwin64);
+               wdir, resFn, projs, lock, problems, measure, meth, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -506,6 +523,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     lock  := sprintf('%s.EC.lock',fnBase);
     vars := table('');
     vars['resheader'] := 'Enzyme Classification (EC) conservation test';
+    vars['resFigReady'] := false;
     
     pubPrj := GetPublicProjects();
 
@@ -515,21 +533,21 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
     measure := params[ SearchArray('pECMeasure',pnames) ];
-    
-    resBase := sprintf('EC.%a', hash([projs,measure]) );
+    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
+        
+    resBase := sprintf('EC.%a', hash([projs,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
         isRunning := false;
-        Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
-
+        Handle2dSimFiles(meth, resFn, resBase, vars, 'measure'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
-           'projs := %A; lock:=%A; measure:=%A; '.
+           'projs := %A; lock:=%A; measure:=%A; meth:=%A; '.
            'ReadProgram(''%s/EcTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, projs, lock, measure, wdir, darwin64);
+               wdir, resFn, projs, lock, measure, meth, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -544,7 +562,8 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     lock  := sprintf('%s.GO.lock',fnBase);
     vars := table('');
     vars['resheader'] := 'Gene Ontology conservation test';
-    exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,ND};
+    vars['resFigReady'] := false;
+    exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,NR};
     
     pubPrj := GetPublicProjects();
 
@@ -556,19 +575,21 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', parse(z[7..-1]),NULL), z=pnames)};
     filter := intersect(filter, exEv);
     measure := params[ SearchArray('pGOMeasure',pnames) ];
+    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
     
-    resBase := sprintf('GO.%a', hash([projs,filter,measure]) );
+    resBase := sprintf('GO.%a', hash([projs,filter,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
         isRunning := false;
-        Handle2dSimFiles(resFn, resBase, vars, 'measure'=measure);
+        Handle2dSimFiles(meth, resFn, resBase, vars, 'measure'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; filter := %A;'.
-               'projs := %A; lock:=%A; measure:=%A; ReadProgram(''%s/GoTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, filter, projs, lock, measure, wdir, darwin64);
+               'projs := %A; lock:=%A; measure:=%A; meth := %A; '.
+	       'ReadProgram(''%s/GoTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, filter, projs, lock, measure, meth, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -606,6 +627,7 @@ bsCheckResults := proc(sessionkey)
     PID := params[SearchArray('pPID',pnames)];
     vars := table('');
     vars['tit'] := GetPKeyData(PID)['Title'];
+    vars['sessionkey'] := string(sessionkey);
     refresh := false;
     k := SearchArray('pTTEuk1', pnames);
     if k>0 and params[k]='on' then

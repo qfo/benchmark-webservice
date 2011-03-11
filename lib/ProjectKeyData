@@ -1,3 +1,9 @@
+module external PKeyData, UpdatePKeyDataPermanent, AddPKeyData, GetPKeyData, GetPublicProjects, 
+                ProjSpeciesOverlap, ProjMetProperty, GetProjISets:
+
+fn := datdir.'projectKeys.drw';
+                
+
 PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, 
                  isPublic:boolean, directMap:boolean, 
 		 NSeqSub:posint, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
@@ -7,19 +13,27 @@ PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
 end:
 CompleteClass(PKeyData):
 
+LoadPKeyData := proc()
+    global PROJECTS, __LOADEDLASTTIME;
+    if not assigned(PROJECTS) or FileStat(fn)['st_mtime']>__LOADEDLASTTIME then
+        ReadProgram(fn):
+        __LOADEDLASTTIME := UTCTime();
+    fi:
+end:
+
 UpdatePKeyDataPermanent := proc(pKey:PKeyData)
     PID := pKey['PID'];
     
     # find the line in the file that holds this project
     t := ReadRawFile(datdir.'projectKeys.drw');
-    querry := 'PROJECTS['''.PID.'''] := ';
-    off1 := SearchString(querry, t);
+    query := 'PROJECTS['''.PID.'''] := ';
+    off1 := SearchString(query, t);
     k := SearchString(':\n',t[off1..-1]);
-    t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',querry, pKey),t);
+    t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',query, pKey),t);
 	
     # store new PKeyData in file
     verb := Set(quiet=true);
-    OpenWriting(datdir.'projectKeys.drw');
+    OpenWriting(fn);
     prints(t2):
     OpenWriting(previous);
     Set(quiet=verb);
@@ -31,7 +45,6 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'NOrthSub'=((NOrthSub=0):{0,posint}),
    'NSeqMap'=((NSeqMap=-1):integer),
    'NOrthMap'=((NOrthMap=-1):integer) )
-    global PROJECTS;
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
@@ -45,26 +58,21 @@ AddPKeyData := proc(tit:string, fnbase:string ;
     OpenAppending(previous);
     Set(quiet=verb);
     
-    ReadProgram(datdir.'projectKeys.drw');
+    LoadPKeyData();
  
     return(id);
 end:
 
-GetPKeyData := proc(id:string)
-    global PROJECTS;
-    if not assigned(PROJECTS) or PROJECTS[id]=0 then 
-        ReadProgram(datdir.'projectKeys.drw') 
-    fi:
 
+GetPKeyData := proc(id:string)
+    LoadPKeyData();
     p := PROJECTS[id];
     if p=0 then error('invalid project id') fi:
     return(p);
 end:
 
 GetPublicProjects := proc()
-    global PROJECTS;
-    if not assigned(PROJECTS) then ReadProgram(datdir.'projectKeys.drw') fi;
-
+    LoadPKeyData();
     p := [];
     for id in Indices(PROJECTS) do
         if PROJECTS[id, isPublic] then
@@ -118,3 +126,5 @@ ProjSpeciesOverlap := proc( p:{list(string), set(string), list(PKeyData)} )
     if overlap=intersect() then overlap := {op(KnownSpecies())} fi: 
     return(overlap):
 end:
+
+end: #module

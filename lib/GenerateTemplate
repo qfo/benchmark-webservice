@@ -21,7 +21,7 @@ GenerateTemplate := proc(file:string,t:table);
         tmp := readVarTag('DBOOL',f);
 	if tmp=NULL then output := output.f; break; fi;
 	if not type(t[tmp[1]],boolean) then
-	    error('Missing boolean key '.tmp[1].' in input table');
+	    error('Missing boolean key '''.tmp[1].''' in input table');
 	fi:
 	endbool := '</DBOOL>';
 	p := SearchString(endbool, f); assert(p>tmp[3]);
@@ -36,7 +36,7 @@ GenerateTemplate := proc(file:string,t:table);
         tmp := readVarTag('DVAR',f);
         if tmp = NULL then output := output.f; break; fi;
         if t[tmp[1]] = 'unassigned' then  
-	    error('Missing key '.tmp[1].' in input table'); 
+	    error('Missing key '''.tmp[1].''' in input table'); 
 	fi;	
 	output := output . f[1..tmp[2]] . string(t[tmp[1]]);
 	f := f[tmp[3]..-1];

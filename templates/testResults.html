@@ -29,5 +29,14 @@
 <DVAR name="EC">
 <div class="reset"></div>
 </div>
+
+<DBOOL name="refresh">
+<span class="small">This page gets reloaded automatically every <DVAR name="reloadin">sec or after pressing the reload button.</span>
+<form action="gateway.pl" name="formular">
+     <input type="hidden" name="f" value="CheckResults">
+     <input type="hidden" name="p1" value="<DVAR name="sessionkey">">
+     <input type="submit" value="Refresh"/>
+</form>
+</DBOOL>
 </body>
 </html>

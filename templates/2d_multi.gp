@@ -1,8 +1,8 @@
-set terminal png medium size 640,480
+set terminal png medium size 640,480 enhanced
 set output '<DVAR name="outfile">'
-set format y "%3.2f"
-set xlabel '<DVAR name="xlabel">'
-set ylabel '<DVAR name="ylabel">'
+set format y "%4.3f"
+set xlabel "<DVAR name="xlabel">"
+set ylabel "<DVAR name="ylabel">"
 set key outside bottom center
 
 plot \

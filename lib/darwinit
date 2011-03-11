@@ -11,7 +11,7 @@ imgurl := '/imgs/':
 rawdir := wdir . 'htdocs/raw/':
 rawurl := '/raw/':
 brwdat := wdir . 'BrwDat/';
-brwrel := 'All.Oct2009';
+brwrel := 'All.May2010';
 omaDBpath := brwdat.brwrel.'/';
 datdir := wdir . '/data/';
 sessiondir := wdir . '/sessions/';
@@ -60,6 +60,8 @@ WriteLock := noeval(ReadLibrary(wdir.'lib/LockFileOperations', WriteLock));
 Handle2dROCFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dROCFiles));
 HandleBoxRFFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', HandleBoxRFFiles));
 Handle2dSimFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dSimFiles));
+RatioOfRandVars  := noeval(ReadLibrary(wdir.'lib/ResultHandler', RatioOfRandVars));
+RelativeDifference := noeval(ReadLibrary(wdir.'lib/ResultHandler', RelativeDifference));
 
 RecTreeCase := noeval(ReadLibrary(wdir.'lib/Definitions', RecTreeCase));
 

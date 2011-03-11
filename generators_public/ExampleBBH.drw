@@ -1,0 +1,99 @@
+# 
+# This program generates a test data set with the BBH hits (Smith-Watermann scores) 
+# for the Benchmark Server.
+#
+#                                         Adrian Altenhoff, June 2010
+#
+# echo "orgs := [HUMAN,PANTR,MOUSE,DANRE,DROME,CAEEL,MONDO,YEAST,ARATH]; name := 'EukBBH'; ReadProgram('generators_public/ExampleBBH.drw');" | ldarwin
+
+Set(printgc=false);
+pairFn := 'htdocs/examples/'.name.'.txt';
+seqFn :=  'htdocs/examples/'.name.'.faa';
+
+ReadProgram('lib/darwinit');
+alldir := '/home/darwin/Orthologues/AllAll/';
+ReadProgram('/home/darwin/DB/genomes/Summaries.drw'):
+GS := GenomeSummaries:
+
+
+NG := length(orgs):
+ns := [seq(GS[g,TotEntries],g=orgs)];
+if not assigned(MinScore) then MinScore := 130 fi:
+
+t1 := Counter('# RefinedMatches structures read'):
+t2 := Counter('# Matches read'):
+t3 := Counter('# Matches above MinScore read'):
+t4 := Counter('# files read'):
+tE := Counter('# errors'):
+RefinedMatches := proc( ms:list([posint, posint, numeric, numeric,
+                                 posint..posint, posint..posint, positive]) )
+    global Match1, Match2:
+    t1+1: t2+length(ms):
+    for z in ms do if z[3]>MinScore then
+        t3+1;
+        if doLenC=true then
+            len1 := z[5,2]-z[5,1]+1;
+            len2 := z[6,2]-z[6,1]+1;
+            maxL := max(Lengths[g1,z[1]],Lengths[g2,z[2]]);
+            if len1/maxL < LengthTol or len2/maxL < LengthTol then next fi:
+        fi:
+        if z[3]>Match1[z[1],1] then
+            Match1[z[1]] := [z[3],z[2]] fi:
+        if z[3]>Match2[z[2],1] then
+            Match2[z[2]] := [z[3],z[1]] fi:
+    fi od:
+end:
+
+ns_max := max(ns):
+Match1 := [seq( [-DBL_MAX,-1],i=1..ns_max)]:
+Match2 := [seq( [-DBL_MAX,-1],i=1..ns_max)]:
+active1 := CreateArray(1..ns_max,false):
+active2 := CreateArray(1..ns_max,false):
+Lengths := [seq(GS[g,EntryLengths], g=orgs)]:
+
+OpenWriting(pairFn);
+for i to NG do for j from i+1 to NG do 
+    if ns[i]<ns[j] or ns[i]=ns[j] and orgs[i]<orgs[j] then
+        g1 := i; g2 := j; swap := false;
+    else g1 := j; g2 := i; swap := true fi:
+
+    fn := sprintf('%s/%s/%s',alldir,orgs[g1],orgs[g2]);
+    t4+1;
+    res := traperror(ReadProgram(fn)):
+    if res=lasterror then printf('# could not read %s\n%A\n',fn,res); tE+1; fi:
+
+    if swap then M1 := Match2; M2 := Match1; else M1 := Match1; M2 := Match2 fi:
+    
+    for k to ns[i] do 
+        if M1[k,1]>-DBL_MAX and M2[M1[k,2],2]=k then active1[k] := true;
+        else active1[k] := false; fi:
+    od:
+    for k to ns[j] do 
+        if M2[k,1]>-DBL_MAX and M1[M2[k,2],2]=k then active2[k] := true;
+        else active2[k] := false; fi:
+    od:
+    
+    for k to ns[i] do if active1[k] then
+        printf('%s%05d\t%s%05d\n', orgs[i], k, orgs[j], M1[k,2]);    
+    fi od:
+    for k to ns[g1] do Match1[k,1] := -DBL_MAX od:
+    for k to ns[g2] do Match2[k,1] := -DBL_MAX od:
+od od:
+OpenWriting(previous):
+print(t1,t2,t3,t4,tE);
+
+dbs := [seq(ReadDb(GS[g,FileName]), g=orgs)]:
+OpenWriting(seqFn);
+for i to NG do 
+    DB := dbs[i];
+    for j to DB[TotEntries] do 
+        printf('>%s%05d\n', orgs[i], j);
+        s := Sequence(Entry(j)); len := length(s):
+        for k to len by 80 do
+            printf('%s\n',s[k..min(k+79,len)]);
+        od:
+    od:
+od:
+OpenWriting(previous):
+
+quit;

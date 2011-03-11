@@ -7,7 +7,6 @@ Set(printgc=false):
 OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 CreateDayMatrices();
 
-
 prj := [seq(GetPKeyData(z),z=projs)]:
 LoadGenomeStartIDs(); # initalizes GSID
 
@@ -61,12 +60,13 @@ FindCases := proc(iSet, prjNrs:list)
             # check if we're still below the missing lineage limit, otherwise break
             # the loop and go on with the next candidate protein.
             if sum(miss) > missThreshold then 
-    	    goOn := false; break;
+                goOn := false; break;
             fi:
         od:
         
         # only keep the cases that have not too much missing lineages
         if goOn then 
+	    for i to nrBins do if miss[i]>0 then for j to nP do treeProt[j,i] := 0 od fi od:
             cases := append(cases, treeProt):
         fi: 
     od od:
@@ -100,15 +100,16 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:posint
         od;
         
         Ndone := Ndone+1;
-        msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.2f min.\n', 
-            Ndone, totNrTrees, 100*Ndone/totNrTrees, (time()-t0)/60);
+	t := Ndone/totNrTrees;
+        msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. Estimated remaining time: %.1fmin\n', 
+            Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
         WriteLock(lock,msg);
     od:
     print('# result for '.ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr);
     return(RFstat);
 end:
 
-StoreResult := proc(fn:string, RFstat:list(Stat), PIDs:list(string))
+StoreResult := proc(fn:string, RFstat, PIDs)
     OpenWriting(fn):
     printf('RFstat := %A:\n', RFstat):
     printf('PIDs := %A:\n', PIDs );
@@ -127,10 +128,10 @@ elif meth='PAIRWISE' then
     RFstats := CreateArray(1..nP-1):
     prjNrs := [seq([i,nP],i=1..nP-1)];
     resFnParts := CreateArray(1..nP-1):
-    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2]+1)];
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     for i to nP-1 do 
-        curPrjs := [seq(prj[j],j=prjNrs)]:
-        resFnParts[i] := resFnBase.hash([curPrjs,meth]).'.drw';
+        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,'INTERSECT']) );
 	if FileExists(resFnParts[i]) then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         cases[i] := FindCases( iSet, prjNrs[i] );
@@ -139,10 +140,10 @@ elif meth='PAIRWISE' then
     totNrTrees := sum(length(z),z=cases):
     for i to nP-1 do
         if FileExists(resFnParts[i]) then
-	   RFstat := 0; ReadProgram(resFnParts[i]): assert(length(RFstat)=1); RFstats[i] := RFstat[1];
+	   RFstat := 0; ReadProgram(resFnParts[i]): assert(length(RFstat)=2); RFstats[i] := RFstat;
 	else
            RFstats[i] := ComputeCongruenceStat(prjNrs[i], cases[i], totNrTrees):
-	   StoreResult(resFnParts[i], [RFstats[i]], [seq(prj[j,'PID'],j=prjNrs[i])]);
+	   StoreResult(resFnParts[i], RFstats[i], [seq(prj[j,'PID'],j=prjNrs[i])]);
 	fi:
     od:
     StoreResult(resFn, RFstats, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)]);

@@ -6,7 +6,8 @@ ReadProgram('lib/darwinit');
 outfile := datdir.'ReconciledTrees.drw':
 overwrite := true:
 IDIndex := ReadDb(omaDBpath.'IDIndex.db');
-DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
+ReadProgram(omaDBpath.'Splicings.drw');
+DUPL := {':D=Y','D=Y','D','DUPLICATION',':Ev=duplication'}; SPEC := {':D=N','D=N','S','SPECIATION',':Ev=speciation'};
 
 MatchID := proc(id:string)
     oE := SearchIndex(id,IDIndex);
@@ -18,30 +19,42 @@ MatchID := proc(id:string)
     elif oE<>NULL and length(id[k+2..-1])=5 then
          # double-check if species is the same
          if GenomeCodeFromENr(oE)=id[k+2..-1] then return(oE) fi:
-    else lprint('can''t map id:',id);
+#   else lprint('can''t map id:',id);
     fi:
     return(NULL);
 end:
 
-ExtractPairRelR := proc(t:Tree)
+ExtractPairRelR := proc(t:Tree ; (mappings=NULL):table)
     global __PWR;
-    if type(t, Leaf) then
+    if type(t, Leaf) and mappings=NULL then
         oE := MatchID(t[Label],IDIndex):
+	if oE=NULL then  lprint('can''t map protein '''.t[Label].'''') fi:
         return( If(oE=NULL,NULL,{oE}) );
+    elif type(t,Leaf) then
+        if length( mappings[t[Label]] ) = 0 then 
+	    lprint(t[Label].' not found in mappings -> silently skipping');
+	    oE := NULL;
+	else 
+            for z in mappings[t[Label]] while MatchID(z,IDIndex)=NULL do od:
+            oE := MatchID(z,IDIndex);
+	    if oE=NULL then  lprint('can''t map protein '''.t[Label].'''') fi:
+	fi:
+	return( If(oE=NULL,NULL,{oE}) ):
     else
-        tL := ExtractPairRelR(t[Left]);
-        tR := ExtractPairRelR(t[Right]);
+        tL := ExtractPairRelR(t[Left], mappings );
+        tR := ExtractPairRelR(t[Right],mappings ); 
         if tL=NULL then return(tR);
         elif tR=NULL then return(tL);
         else
             if intersect(tL,tR)<>{} then
-                lprint('intersect not empty:'.string(intersect(tL,tR)).' '.t[4]);
+                lprint('intersect not empty:'.string(intersect(tL,tR)).If(length(t)>3,' '.t[4],''));
                 tL := minus(tL, tR);
             fi;
             for p1 in tL do for p2 in tR do
                 assert(__PWR[{p1,p2}]=unassigned);
-		if member(t['xtra'], DUPL) then ev := 'D';
-		elif member(t['xtra'], SPEC) then ev := 'S';
+
+		if length(t)=3 or member(t['xtra'], SPEC) then ev := 'S';
+		elif member(t['xtra'], DUPL) then ev := 'D';
 		else lprint('dubious event: ',t['xtra']); ev := t['xtra']; fi:
                 __PWR[{p1,p2}] := ev;
             od od:
@@ -50,9 +63,9 @@ ExtractPairRelR := proc(t:Tree)
     fi:
 end:
 
-ExtractPairwiseRel := proc(t:Tree)
+ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):table)
     global __PWR; __PWR := table();
-    prots := ExtractPairRelR(t):
+    prots := ExtractPairRelR(t, mapping):
     return( [prots, __PWR] );
 end:
 
@@ -93,8 +106,59 @@ printf('ReconciledTrees[''%s''] := %A:\n', name, case);
 OpenAppending(previous);
 AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 
+###########################################
+# NOX cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/nox_reference_labeled.nhx');
+mapping := 0; ReadProgram(datdir.'raw/nox_reference_labeled.map'); 
+assert(mapping<>0);
+label:= 'NOX protein familiy';
+name := 'NOX';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree, mapping):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the NOX gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# POP cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/pop_reference_labeled.nhx');
+mapping := 0; ReadProgram(datdir.'raw/pop_reference_labeled.map'); 
+assert(mapping<>0);
+label:= 'POP protein familiy';
+name := 'POP';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree, mapping):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the POP gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# VATB cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/vatb_reference_labeled.nhx');
+mapping := 0; ReadProgram(datdir.'raw/vatb_reference_labeled.map'); 
+assert(mapping<>0);
+label:= 'VATB protein familiy';
+name := 'VATB';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree, mapping):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the VATB gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
 
 
 od:
 lprint('lasterror:',lasterror);
-
+done

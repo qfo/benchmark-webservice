@@ -11,6 +11,7 @@
 srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
 my $cook = '';
 my $debug = 0;
+my $storeRaw = 1;
 my $error_log = '/local/BenchmarkService/output';
 my $dbg_log = '/local/BenchmarkService/dbg.log';
 
@@ -251,8 +252,11 @@ sub SeqFasta2Drw{
     my %sps = ();
     my $AA = "ACDEFGHIKLMNPQRSTVWXY";
     open(F,">$fnSeq") or die($!);
+    open( RAW, ">$fnSeq.raw") or die($!) if $storeRaw; 
+
     my $cnt=0; my $err=0;
     while( <$fh> ){
+        print RAW $_  if $storeRaw;
         chomp;
         if (/^>(\w[\w\.-_]*)(.*)/) {
 	     my $spc = undef;
@@ -282,6 +286,7 @@ sub SeqFasta2Drw{
     }
     print F "']:\n";
     close(F);
+    close(RAW) if $storeRaw;
     
     open(F, ">$fnSps") or die($!);
     print F "SPS := [\n";
@@ -326,9 +331,11 @@ sub RelText2Drw {
     my ($fh, $fn) = @_;
     
     my $cnt = 0;
-    open(F,">$fn");
+    open(F,">$fn") or die($!);
+    open( RAW, ">$fn.raw") or die($!) if $storeRaw; 
     print F "PairRelations([\n";
     while( <$fh> ){
+        print RAW $_ if $storeRaw;
         chomp;
     if ( /([\w.-]*)\t([\w.-]*)/ ){
        print F "['$1','$2'],\n";
@@ -338,6 +345,7 @@ sub RelText2Drw {
     }
     print F "NULL]):\n";
     close(F);
+    close(RAW) if $storeRaw;
     return($cnt);
 }
 

@@ -14,6 +14,17 @@ body {
     margin-bottom: 10px;
 }
 
+div#mainLogo {
+    width: 300px;
+    height: 114px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0px;
+    margin-bottom: 10px;
+    background: url(/imgs/logo.png) 0 no-repeat;
+    background-position: center;
+}
+
 a:link { text-decoration: none; }
 	
 a:visited { text-decoration: none; }
@@ -150,6 +161,9 @@ pre {
     font-size: small;
 }
 
+.emph {
+    font-weight: bold;
+}
 
 div.modalPopupTransparent {
     filter: alpha(opacity=75);
@@ -234,6 +248,31 @@ form fieldset div.notes p.last {
   margin: 0em;
 }
 
+form fieldset div.addInfo {
+  width: 380px;
+  height: auto;
+  margin: 10px 0px 10px 10px;
+  padding: 5px;
+  border: 1px solid #666666;
+  background-color: #ddffdd;
+  color: #444444;
+  font-size: 75%;
+}
+
+form fieldset div.addInfo h4 {
+  padding: 3px 0 3px 3px;
+  margin: 0px;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: #666666;
+  color: #444444;
+  font-size: 110%;
+}
+
+form fieldset div.addInfo ul{
+  margin: 0em 0em 0em 0em;
+}
+
 div.test h4 {
   padding: 0;
   font-size: 100%;
@@ -274,6 +313,10 @@ div.Graphics {
    float: right;
    width: 50%;
 }
+div.Graphics img{
+   width: 100%;
+}
+
 div.reset {
    clear: both;
 }

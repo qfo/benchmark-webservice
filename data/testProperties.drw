@@ -1,6 +1,11 @@
 TESTPROPERTIES := table(0):
 
-TESTPROPERTIES['TreeTest_Euk'] := TestProperty('TreeTest_Euk',EvaluateTreeTestProperty,['data/TreeCat_Eukaryota.drw', 1],1260360145):
-TESTPROPERTIES['TreeTest_Bac'] := TestProperty('TreeTest_Bac',EvaluateTreeTestProperty,['data/TreeCat_Bacteria.drw', 1],1260360145):
+TESTPROPERTIES['TreeTest_Euk'] := TestProperty('TreeTest_Euk',EvaluateTreeTestProperty,['data/TreeCat_Eukaryota.drw', 1],1276168683):
+TESTPROPERTIES['TreeTest_Bac'] := TestProperty('TreeTest_Bac',EvaluateTreeTestProperty,['data/TreeCat_Bacteria.drw', 1],1276168751):
 TESTPROPERTIES['TreeTest_Fun'] := TestProperty('TreeTest_Fun',EvaluateTreeTestProperty,['data/TreeCat_Fungi.drw', 1],1260360145):
-TESTPROPERTIES['PF00962'] := TestProperty('PF00962',noeval(EvaluateRefPhyloTestProperty),['PF00962'],1275412913.1175):
+TESTPROPERTIES['PF00962'] := TestProperty('PF00962',EvaluateRefPhyloTestProperty,['PF00962'],1276168847.8558):
+TESTPROPERTIES['NOX'] := TestProperty('NOX',EvaluateRefPhyloTestProperty,['NOX'],1282144068.8188):
+TESTPROPERTIES['PF00962'] := TestProperty('PF00962',EvaluateRefPhyloTestProperty,['PF00962'],1284363711.4111):
+TESTPROPERTIES['NOX'] := TestProperty('NOX',EvaluateRefPhyloTestProperty,['NOX'],1284363723.0762):
+TESTPROPERTIES['POP'] := TestProperty('POP',EvaluateRefPhyloTestProperty,['POP'],1284363761.9204):
+TESTPROPERTIES['VATB'] := TestProperty('VATB',EvaluateRefPhyloTestProperty,['VATB'],1284363773.0629):

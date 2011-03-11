@@ -18,8 +18,8 @@ orthology inference project you would like to compare your predictions
    <p class="last">Tests on the <b>intersection of several projects</b> allow for a ranking among all the selected projects. Since all the tests are based on the set of common proteins, the power of the test is more and more reduced as the space of possible orthologs gets smaller and smaller the more projects are selected.</p>
   </div>
   <div class="test">
-   <input type="radio" id="pPairwise" name="pTestStrategy" value="pairwise" checked="checked"><label for="pPairwise">Pairwise Comparisons of each selected project against <DVAR name="tit"></label> <br/>
-   <input type="radio" id="pIntersect" name="pTestStrategy" value="intersect"><label for="pIntersect">Protein intersection set of selected projects and <DVAR name="tit"></label>
+   <input type="radio" id="pPairwise" name="pTestStrategy" value="pairwise" checked="checked" /><label for="pPairwise">Pairwise Comparisons of each selected project against <DVAR name="tit"></label> <br/>
+   <input type="radio" id="pIntersect" name="pTestStrategy" value="intersect" /><label for="pIntersect">Protein intersection set of selected projects and <DVAR name="tit"></label>
   </div>
  </fieldset>
 
@@ -82,7 +82,8 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pGO1" name="pGO1" checked="checked" /><label for="pGO1">Gene Ontology Test</label></h4>
+    <h4><input type="checkbox" id="pGO1" name="pGO1" <DVAR name="styleGO"> /><label for="pGO1">Gene Ontology Test</label></h4>
+    <DBOOL name="hasGO">
     <div class="testParam">
      <label class="test" for="pGOPrj1">Projects to compare with</label>
      <div class="testParamList"><DVAR name="GOprojects"></div>
@@ -109,7 +110,7 @@ orthology inference project you would like to compare your predictions
       </p>
       <p>
       <input type="checkbox"  id="pGOFilIEA" name="pGOFilIEA" /><label for="pGOFilIEA"><span title="Inferred from electronic annotation">IEA</span></label>
-      <input type="checkbox"  id="pGOFilND"  name="pGOFilND"  /><label for="pGOFilND"><span title="No biological Data available">ND</span></label>
+      <input type="checkbox"  id="pGOFilNR"  name="pGOFilNR"  /><label for="pGOFilNR"><span title="No biological Data available">NR</span></label>
       </p>
      </fieldset>
      
@@ -121,11 +122,13 @@ orthology inference project you would like to compare your predictions
       <input type="radio" id="pGOMSchA" name="pGOMeasure" value="avg Schlicker" checked="checked"/><label for="pGOMSchA">average Schlicker Similarity</label>
      </fieldset>
     </div>
+    </DBOOL>
    </div>
   </div>
   
   <div class="test">
-   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" checked="checked" /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
+   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" <DVAR name="styleEC"> /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
+   <DBOOL name="hasEC">
    <div class="testParam">
     <label for="pECPrj1">Projects to compare with</label>
     <div class="testParamList"><DVAR name="ECprojects"></div>
@@ -138,6 +141,7 @@ orthology inference project you would like to compare your predictions
      <input type="radio" id="pECMSchA" name="pECMeasure" value="avg Schlicker" checked="checked"/><label for="pECMSchA">average Schlicker Similarity</label>
     </fieldset>
    </div>
+   </DBOOL>
   </div>
  </fieldset>
 

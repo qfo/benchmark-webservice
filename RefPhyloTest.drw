@@ -1,13 +1,11 @@
 ##
 #  Script to run the reference phylogeny tests. 
 #
-#  in: resFn, problems, projs, lock
+#  in: resFn, problems, projs, lock, measure, meth
 Set(printgc=false):
 WriteLock(lock, 'initializing computation');
-IDIndex := ReadDb(omaDBpath.'IDIndex.db');
 
 prj := [seq(GetPKeyData(z),z=projs)]:
-iSet := GetProjISets(prj);
 LoadGenomeStartIDs(); # initalizes GSID
 
 # load the project databases
@@ -17,59 +15,96 @@ for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 ReadProgram(datdir.'ReconciledTrees.drw'); #Assigns ReconciledTrees (a table)
 nrProb := length(problems);
 
-# false positive and true positive rates.
-#  - set to 0 to indicate no data
-#  - set to list [fpr, var(fpr)] once data is stored
-fpr  := CreateArray(1..nrProb,1..nP,0);
-tpr  := CreateArray(1..nrProb,1..nP,0);
-DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
-for prNr to nrProb do 
-    rels := ReconciledTrees[problems[prNr],'Relations']: 
-    prts := intersect(iSet, ReconciledTrees[problems[prNr],'MappedProts']); 
-    nProt := length(prts);
-    if nProt>5 then 
-        t := prNr/(nrProb+1);
-        WriteLock(lock,sprintf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)*time()));
-        dups := table({}); specs := table({});
-        for p1 in prts do for p2 in prts do 
-            ev := rels[{p1,p2}];
-        if member(ev,DUPL) then dups[p1] := append(dups[p1], p2);
-        elif member(ev,SPEC) then specs[p1] := append(specs[p1],p2); fi:
-        od od:
-        
-        # we iterate over all the projects
-        for pNr to nP do 
-            DB := dbs[pNr];
-            # iteration over the proteins in iSet and current reconciled tree
-            fp := tp := fn := tn := 1; #uniform prior probability
-            for oE1 in prts do
-                eNr1 := If(prj[pNr,'directMap'], oE1, DbEntryNrFromENr(oE1));
-                vps := ParseLongList(SearchTag('VP',Entry(eNr1)));
-                vps := {op(vps)} intersect prts;
-                    
-                tp := tp + length( intersect(vps, specs[oE1]) )/2;
-                tn := tn + length( minus(dups[oE1], vps) )/2;
-                fp := fp + length( intersect(vps, dups[oE1]) )/2;
-                fn := fn + length( minus(specs[oE1], vps) )/2;
+ComputePerformance := proc(iSet, prjNrs:list)
+    global DB;
+    np := length(prjNrs):
+    # false positive and true positive rates.
+    #  - set to 0 to indicate no data
+    #  - set to list [fpr, var(fpr)] once data is stored
+    fpr  := CreateArray(1..nrProb,1..np,0);
+    tpr  := CreateArray(1..nrProb,1..np,0);
+    DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
+    for prNr to nrProb do 
+        rels := ReconciledTrees[problems[prNr],'Relations']: 
+        prts := intersect(iSet, ReconciledTrees[problems[prNr],'MappedProts']); 
+        nProt := length(prts);
+        if nProt>5 then 
+	    t := (curP-1+prNr/(nrProb+1))/maxP;
+            WriteLock(lock,sprintf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)/t*time()));
+            dups := table({}); specs := table({});
+            for p1 in prts do for p2 in prts do 
+                ev := rels[{p1,p2}];
+            if member(ev,DUPL) then dups[p1] := append(dups[p1], p2);
+            elif member(ev,SPEC) then specs[p1] := append(specs[p1],p2); fi:
+            od od:
+            
+            # we iterate over all the projects
+            for pNr to np do 
+                DB := dbs[prjNrs[pNr]];
+                # iteration over the proteins in iSet and current reconciled tree
+                fp := tp := fn := tn := 1; #uniform prior probability
+                for oE1 in prts do
+                    eNr1 := If(prj[prjNrs[pNr],'directMap'], oE1, DbEntryNrFromENr(oE1));
+                    vps := ParseLongList(SearchTag('VP',Entry(eNr1)));
+                    vps := {op(vps)} intersect prts;
+                        
+                    tp := tp + length( intersect(vps, specs[oE1]) )/2;
+                    tn := tn + length( minus(dups[oE1], vps) )/2;
+                    fp := fp + length( intersect(vps, dups[oE1]) )/2;
+                    fn := fn + length( minus(specs[oE1], vps) )/2;
+                od:
+                assert( tp+tn+fp+fn-4 = nProt*(nProt-1)/2 );
+                # compute the fpr and tpr and their variances
+                p := fp/(fp+tn); 
+                fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];
+                p := tp/(tp+fn); 
+                tpr[prNr,pNr] := [p, p*(1-p)/(tp+fn)];
             od:
-            assert( tp+tn+fp+fn-4 = nProt*(nProt-1)/2 );
-            # compute the fpr and tpr and their variances
-            p := fp/(fp+tn); 
-            fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];
-            p := tp/(tp+fn); 
-            tpr[prNr,pNr] := [p, p*(1-p)/(tp+fn)];
-        od:
-    else 
-        printf('too few (%d) proteins in %a\n',nProt,problems[prNr]);
-    fi:
-od:
+        else 
+            printf('too few (%d) proteins in %a\n',nProt,problems[prNr]);
+        fi:
+    od:
+    return( [fpr, tpr] );
+end:
+
+StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
+    OpenWriting(fn):
+    printf('# created on %s\n', date());
+    printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
+    printf('PIDs := %A:\n', PIDs );
+    printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
+    OpenWriting(previous):
+end:
+
+if meth='INTERSECT' then
+    iSet  := GetProjISets(prj):
+    prjNrs:= [seq(i,i=1..nP)];
+    curP := 1; maxP := 1;
+    Res := ComputePerformance(iSet, prjNrs):
+    StoreResult(resFn, Res[1], Res[2], [seq(prj[i,'PID'], i=prjNrs)], measure, problems, meth);
+elif meth='PAIRWISE' then
+    maxP := nP-1;
+    Res := CreateArray(1..maxP):
+    prjNrs := [seq([i,nP],i=1..maxP)];
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    for curP to maxP do
+        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,measure,problems,'INTERSECT']) );
+        if FileExists(resFnPart) then
+            Res[curP] := 0; ReadProgram(resFnPart):  Res[curP] := [FPR, TPR];
+        else
+            iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
+            Res[curP] := ComputePerformance(iSet, prjNrs[curP]):
+            StoreResult(resFnPart, Res[curP,1], Res[curP,2], [seq(prj[j,'PID'], j=prjNrs[curP])], 
+                        measure, problems, 'INTERSECT');
+        fi:
+    od:
+    StoreResult(resFn, [seq(Res[i,1],i=1..maxP)], [seq(Res[i,2],i=1..maxP)], 
+                [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], measure, problems, meth);
+else error('unknown strategy method:'.meth);
+fi:
 
 
-OpenWriting(resFn);
-printf('# created on %s\n# Projects: %A\n# Problems: %A\n', date(),
-       [seq(z['Title'], z=prj)], problems);
-printf('FPR := %A:\nTPR := %A:\n', fpr, tpr);
-OpenWriting(previous);
 
 CallSystem('rm -f '.lock);
 done;

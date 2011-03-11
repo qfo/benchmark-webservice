@@ -47,6 +47,7 @@ end:
 
 
 GenomeCodeFromENr := proc(eNr:posint)
+    if not assigned(GSID) then LoadGenomeStartIDs() fi:
     return( GSID[2, GenomeNrFromENr(eNr)] ):
 end:
 
@@ -75,7 +76,7 @@ end:
 
 
 #####################################################
-# Encode ENTRYNR in Seqence Tag to quickly querry for
+# Encode ENTRYNR in Seqence Tag to quickly query for
 # the entry belonging to ENTRYNR.
 Nr2SEQ := proc(p:posint)
     base := 16:

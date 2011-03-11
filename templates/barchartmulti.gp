@@ -2,7 +2,7 @@ set terminal png medium size 640,480
 set output '<DVAR name="outfile">'
 set ylabel "<DVAR name="ylabel">" 1,0 
 set xrange [0.4:<DVAR name="nSeries">.6]
-set boxwidth .80 
+set boxwidth <DVAR name="boxwidth"> 
 
 set xtics nomirror rotate (<DVAR name="xtics"> )
 set format y "%3.2f"
