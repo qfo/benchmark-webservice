@@ -64,9 +64,9 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
 	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
 		if nrSamp>0 then
     	            avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],0),c=1..length(cases)) )/nrSamp;
     	            avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],0),c=1..length(cases)) )/nrSamp;
                     printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
                          avgFPR, avgTPR, stdFPR, stdTPR);
 	        else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
@@ -123,6 +123,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
 	          If(TPR[i,c,2]<>0, sprintf('%g +- %g', TPR[i,c,2,1], 1.96*sqrt(TPR[i,c,2,2])), 'n.a.' )) );
 	    od: 
         od:
+        if DEBUG then print(tab) fi:
         
 	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
@@ -139,13 +140,13 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
 	        nrSamp := sum(If(FPR[i,c,1]<>0,1,0),c=1..length(cases));
 		if nrSamp>0 then
     	            avgFPRq := avg(seq(If(FPR[i,c,1]<>0,FPR[i,c,1,1],NULL),c=1..length(cases)));
-    	            varFPRq := sum(If(FPR[i,c,1]<>0,FPR[i,c,1,2],NULL),c=1..length(cases))/nrSamp;
+    	            varFPRq := sum(If(FPR[i,c,1]<>0,FPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
     	            avgTPRq := avg(seq(If(TPR[i,c,1]<>0,TPR[i,c,1,1],NULL),c=1..length(cases)));
-    	            varTPRq := sum(If(TPR[i,c,1]<>0,TPR[i,c,1,2],NULL),c=1..length(cases))/nrSamp;
+    	            varTPRq := sum(If(TPR[i,c,1]<>0,TPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
     	            avgFPRr := avg(seq(If(FPR[i,c,2]<>0,FPR[i,c,2,1],NULL),c=1..length(cases)));
-    	            varFPRr := sum(If(FPR[i,c,2]<>0,FPR[i,c,2,2],NULL),c=1..length(cases))/nrSamp;
+    	            varFPRr := sum(If(FPR[i,c,2]<>0,FPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
     	            avgTPRr := avg(seq(If(TPR[i,c,2]<>0,TPR[i,c,2,1],NULL),c=1..length(cases)));
-    	            varTPRr := sum(If(TPR[i,c,2]<>0,TPR[i,c,2,2],NULL),c=1..length(cases))/nrSamp;
+    	            varTPRr := sum(If(TPR[i,c,2]<>0,TPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
 		    ratioFPR:= RatioOfRandVars( avgFPRq-avgFPRr, varFPRq+varFPRr, avgFPRq+avgFPRr, varFPRq+varFPRr );
 		    ratioTPR:= RatioOfRandVars( avgTPRq-avgTPRr, varTPRq+varTPRr, avgTPRq+avgTPRr, varTPRq+varTPRr );
                     printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
@@ -179,7 +180,7 @@ end:
 Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
         'aggregate'=((aggregate='sample variance'):string) )
-
+    if DEBUG then print(args) fi:
     m := symbol(procname.'_'.meth);
     m(args[2..-1]);
 end:

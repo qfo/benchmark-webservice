@@ -71,7 +71,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
     OpenWriting(fn):
     printf('# created on %s\n', date());
     printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
-    printf('PIDs := %A:\n', PIDs );
+    printf('#PIDs := %A:\n', PIDs );
     printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
     OpenWriting(previous):
 end:
