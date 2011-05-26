@@ -1,5 +1,18 @@
 #!/usr/bin/perl
 
+use CGI qw/:standard/;
+use CGI::Cookie;
+use POSIX qw(mkfifo);
+use CGI::Carp qw/carpout fatalsToBrowser set_message/;
+use File::stat;
+use Time::localtime;
+use IO::Zlib;
+use XML::Parser::Lite;
+use SeqXML;
+use OrthoXML;
+use strict;
+
+
 
 # To Do:
 #   - when "under maintenance", block all requests for at least 20 seconds
@@ -18,18 +31,6 @@ my $dbg_log = '/local/BenchmarkService/dbg.log';
 BEGIN {
     unshift @INC, '/local/BenchmarkService/lib';
 }
-
-use CGI qw/:standard/;
-use CGI::Cookie;
-use POSIX qw(mkfifo);
-use CGI::Carp qw/carpout fatalsToBrowser set_message/;
-use File::stat;
-use Time::localtime;
-use IO::Zlib;
-use SeqXML;
-use OrthoXML;
-use strict;
-
 # maximum Post size in bytes 
 $CGI::POST_MAX = 1<<32;
 
@@ -84,8 +85,11 @@ else {
         print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
 	my $nrProt=0; my $nrOrth=0;
         my $prot2spec = 0;
+        my $reference = $req->param("reference");
     
         foreach my $upFile ( qw(rels seqs) ){
+            next if ($upFile eq "seqs" && $reference ne "OMA");
+
             if (!$req->param($upFile)) {
                print $req->header();
                my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\n";
@@ -100,6 +104,7 @@ else {
 	        print header(-status=>cgi_error);
 	        exit 0;
 	    }
+            print DBGLOG "upload of ".$upFile." finished" if $debug;
 	    $fh = $fh->handle;
             if( $upFile eq "seqs"){
                if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
@@ -115,11 +120,11 @@ else {
             }
             print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
         }
-	push(@p, "'".$fnBase."'", "'".$req->param("methName")."'", $nrProt, $nrOrth);
-	push(@a, "'fnBase'","'methName'","'nrProt'","'nrOrth'");
+	push(@p, "'".$fnBase."'", "'".$req->param("methName")."'", $nrProt, $nrOrth, $reference);
+	push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'");
     } 
    
-    if( $debug ){
+    if( $debug > 0 ){
         my @pa = $req->param();
 	print DBGLOG "Parameters: @pa\n";
     }
