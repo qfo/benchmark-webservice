@@ -166,8 +166,6 @@ pre {
 }
 
 div.modalPopupTransparent {
-    filter: alpha(opacity=75);
-    -moz-opacity: .75;
     background: #CCCCCC;
     position: absolute;
     top: 0px;

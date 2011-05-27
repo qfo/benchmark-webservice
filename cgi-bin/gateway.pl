@@ -7,7 +7,7 @@ use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use Time::localtime;
 use IO::Zlib;
-use XML::Parser::Lite;
+use XML::SAX;
 use SeqXML;
 use OrthoXML;
 use strict;
@@ -324,10 +324,10 @@ sub RelXML2Drw {
     my ($fh, $fn) = @_;
     
     my $relFh;
-    open( $relFh, ">$fn");
+    open( $relFh, ">$fn") or die($!);
     my $handler = OrthoXML->new($relFh);
-    my $parser = XML::Parser::Lite->new(Handler => $handler);
-    $parser->parse($fh);
+    my $parser = XML::SAX::ParserFactory->parser(Handler => $handler);
+    $parser->parse_file($fh);
     close( $relFh );
     return( $handler->get_nr_of_relations());
 }

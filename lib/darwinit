@@ -13,6 +13,7 @@ rawurl := '/raw/':
 brwdat := wdir . 'BrwDat/';
 brwrel := 'All.May2010';
 omaDBpath := brwdat.brwrel.'/';
+refset5DBpath := wdir . 'reference5/';
 datdir := wdir . '/data/';
 sessiondir := wdir . '/sessions/';
 resdir := wdir . '/results/';
@@ -26,7 +27,8 @@ GetIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',GetIDType));
 WriteIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',WriteIDTypes));
 TrimID := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',TrimID));
 
-LoadGenomeStartIDs := noeval(ReadLibrary( wdir.'lib/EntryNav', LoadGenomeStartIDs));
+NrOfGenomes := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfGenomes));
+NrOfProteins := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfProteins));
 GenomeNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromENr));
 GenomeCodeFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeCodeFromENr));
 ENrFromLabel := noeval(ReadLibrary( wdir.'lib/EntryNav', ENrFromLabel));

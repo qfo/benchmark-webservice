@@ -14,22 +14,40 @@
 compare the quality of your predictions against other orthology inference efforts using different tests.</p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
+ <fieldset><legend>Protein Reference Dataset</legend>
+  <div>
+   <label for="reference">Protein Reference Dataset:</label>
+   <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />Reference Proteoms v5 (2011-04)
+   <input type="radio" name="reference" value="OMA"  class="inputRadio" onclick="toggleDisableSeqUploadOnDatasetChange(this)"/><a href="http://www.omabrowser.org">OMA Browser May 2010</a>
+  </div>
+  <div class="addInfo"><h4>Dataset sources</h4>
+  The Reference Proteoms (version 5; 2011-04) is available in 
+   <ul>
+    <li><a href="http://www.seqxml.org/xml/Reference_proteomes.html">seqxml-format</a> and </li>
+    <li><a href="http://www.ebi.ac.uk/reference_proteomes/">fasta-format</a>from EBI.</li>
+   </ul>
+  </div>
+ </fieldset>
  <fieldset><legend>Protein Sequence Data</legend>
   <div class="notes"><h4>Protein Sequence Data</h4>
    <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
    orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
    proteins are mapped to each other.</p>
-   <p>Currently, we support <a href="http://www.orthoxml.org/">SeqXML</a> and Fasta sequence formats.
-   For Fasta it is expected that each label starts with a unique ID and the species is somehow encoded.</p>
+   <p>To make comparisons of method easier, the orthology research community has <a href="">agreed in 2009</a> to established a 
+   common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">reference proteom dataset</a>. You can choose whether 
+   your orthology predictions should be assessed on the base of this reference dataset or on the proteom set of OMA.</p>
+   <p>If you decide to go for the OMA protein dataset, you are supposed to upload your protein sequences. Currently, we support 
+   <a href="http://www.orthoxml.org/">SeqXML</a> and Fasta sequence formats. For Fasta it is expected that each label starts 
+   with a unique ID and the species is somehow encoded.</p>
    <p class="last"><span class="emph">Due to recent changes on the SeqXML and OrthoXML schema, those formats are currently disabled.</span></p>
   </div>
   <div>
    <label for="seqs">Protein Sequences:</label>
-   <input type="file" name="seqs" class="inputFile" />
+   <input type="file" name="seqs" class="inputFile" disabled="disabled"/>
   </div>
   <div>
    <label for="seqType">Format:</label> 
-   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" />Fasta
+   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" disabled="disabled" />Fasta
    <input type="radio" name="seqType" value="xml" class="inputRadio" disabled="disabled"/>XML
   </div>
   <div class="addInfo"><h4>Example Datasets</h4>
@@ -53,7 +71,7 @@ compare the quality of your predictions against other orthology inference effort
   <div>
    <label for="relType">Format:</label> 
    <input type="radio" name="relType" value="txt" class="inputRadio" checked="checked" />Text (pairwise orthologs)
-   <input type="radio" name="relType" value="xml" class="inputRadio" disabled="disabled"/>XML
+   <input type="radio" name="relType" value="xml" class="inputRadio" />XML
 <!--   <input type="radio" name="relType" value="cog" class="inputRadio"/>COG groups format -->
   </div>
   <div class="addInfo"><h4>Example Datasets</h4>

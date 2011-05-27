@@ -24,52 +24,57 @@ for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 FindCases := proc(iSet, prjNrs:list)
     global DB:
     cases := []; nP := length(prjNrs);
-    for gNr in catBinsNr[1] do for oE from GSID[1,gNr] to GSID[1,gNr]+GSID[3,gNr]-1 do
-        if not member(oE, iSet) then next fi:
-        
-        assert( orgNr2Bin[GenomeNrFromENr(oE)]=1 );
-        treeProt := CreateArray(1..nP): 
-        # logical array if lineage is present in all projects
-        miss := CreateArray(1..nrBins, 0);
-        goOn := true;
-        for i2pNr to nP do
-	    pNr := prjNrs[i2pNr];
-            # get entry nr of project DB of protein having omaEntryNr oE
-            DB := dbs[pNr];
-            eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
+    for rootGenome in catBins[1] do 
+        ran := GenomeRange(rootGenome):
+        for oE from ran[1] to ran[2] do
+            if not member(oE, iSet) then next fi:
             
-            vps := ParseLongList(SearchTag('VP', Entry(eNr)));
-            vpCat := CreateArray(1..nrBins,[]):
-            for vp in vps do
-                if not member(vp,iSet) then next fi;
+            assert( orgNr2Bin[GenomeNrFromENr(oE)]=1 );
+            treeProt := CreateArray(1..nP): 
+            # logical array if lineage is present in all projects
+            miss := CreateArray(1..nrBins, 0);
+            goOn := true;
+            for i2pNr to nP do
+	        pNr := prjNrs[i2pNr];
+                # get entry nr of project DB of protein having omaEntryNr oE
+                DB := dbs[pNr];
+                eNr := If( prj[pNr,'directMap'], oE, DbEntryNrFromENr(oE) );
                 
-                bin := orgNr2Bin[ GenomeNrFromENr(vp) ]:
-                if bin>1 then vpCat[bin] := append(vpCat[bin], vp) fi:
-            od:
-    	    for i from 2 to nrBins do 
-    	        if length(vpCat[i])>0 then
-    	            vpCat[i] := vpCat[i, Rand(1..length(vpCat[i]))];
-    	        else 
-    	            miss[i] := 1;
-    	            vpCat[i] := 0;
-    	        fi:
-            od:
-    	    vpCat[1] := oE;
-            treeProt[i2pNr] := vpCat;
+                vps := ParseLongList(SearchTag('VP', Entry(eNr)));
+                vpCat := CreateArray(1..nrBins,[]):
+                for vp in vps do
+                    if not member(vp,iSet) then next fi;
+                    
+                    bin := orgNr2Bin[ GenomeNrFromENr(vp) ]:
+                    if bin>1 then vpCat[bin] := append(vpCat[bin], vp) fi:
+                od:
+    	        for i from 2 to nrBins do 
+    	            if length(vpCat[i])>0 then
+    	                vpCat[i] := vpCat[i, Rand(1..length(vpCat[i]))];
+    	            else 
+    	                miss[i] := 1;
+    	                vpCat[i] := 0;
+    	            fi:
+                od:
+    	        vpCat[1] := oE;
+                treeProt[i2pNr] := vpCat;
     
-            # check if we're still below the missing lineage limit, otherwise break
-            # the loop and go on with the next candidate protein.
-            if sum(miss) > missThreshold then 
-                goOn := false; break;
-            fi:
+                # check if we're still below the missing lineage limit, 
+                # otherwise break the loop and go on with the next candidate 
+                # protein.
+                if sum(miss) > missThreshold then 
+                    goOn := false; break;
+                fi:
+            od:
+            
+            # only keep the cases that have not too much missing lineages
+            if goOn then 
+	        for i to nrBins do if miss[i]>0 then for j to nP do 
+                    treeProt[j,i] := 0 od fi od:
+                cases := append(cases, treeProt):
+            fi: 
         od:
-        
-        # only keep the cases that have not too much missing lineages
-        if goOn then 
-	    for i to nrBins do if miss[i]>0 then for j to nP do treeProt[j,i] := 0 od fi od:
-            cases := append(cases, treeProt):
-        fi: 
-    od od:
+    od:
     
     if length(cases) > MAX_NR_TREES then
         cases := Shuffle(cases)[1..MAX_NR_TREES]:

@@ -18,7 +18,7 @@ prints(t[2]);
 ReadProgram(wdir.'nogos.drw');
 
 
-darwin64 := If(RUNLOCAL,'/local/darwin_source/darwin64 -q', 
+darwin64 := If(RUNLOCAL,'/local/bin/darwin64 -q', 
                '/home/darwin/v2/source/darwin64 -q');
 
 logfile := wdir.'server.log';
@@ -29,11 +29,6 @@ ReadProgram(omaDBpath.'Summaries.drw');
 GS := GenomeSummaries:
 LoadGenomeStartIDs():
 google_analytics := '</body>'; #ReadRawFile(wdir.'templates/analytics.htmlc'):
-#IDIndex := traperror(ReadDb(omaDBpath.'IDIndex.db'));
-#IndDB :=ReadDb(omaDBpath.'ServerIndexed.db');   # with the descriptions
-#SeqsDB :=ReadDb(omaDBpath.'ServerSeqs.db'); # with the sequences
-#VPsDB :=ReadDb(omaDBpath.'ServerVPs.db'); # with the VPs
-#NS := length(genomes):
 
 
 # --------------------- General Functions -------------------------
@@ -212,9 +207,10 @@ end:
 ####################################
 # Upload Data                      #
 ####################################
-bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth)
+bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference)
     lprint(args);
-    id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth):
+    id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
+        'reference'=reference):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 
@@ -237,6 +233,8 @@ bsMapData := proc(PID:string)
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
 	return( GenerateTemplate(wdir.'templates/uploaded.html',vars) );
+    elif pKey['ref']<>'OMA' then
+        return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     elif FileExists(seqMapResFn) then
         # visualize current mapping
         ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
@@ -316,6 +314,7 @@ bsMapRels := proc(PID:string)
     dbFn := fnBase.'.db';
     seqMapFn := fnBase.'.seqmap';
     lock := fnBase.'.rel.lock';
+    reference := GetPKeyData(PID)['ref'];
 
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
@@ -332,12 +331,13 @@ bsMapRels := proc(PID:string)
         vars['content'] := '<p>Still computing...</p>';
 	WriteLog('DOS-ATTACK?'); sleep(5);
     else 
-
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
-        SPS := 0; ReadProgram(fnBase.'.sps'); assert(SPS<>0);
-        if nargs<=length(SPS) then error('too few arguments received') fi;
-        orgMap := [seq( SearchArray(z, genomes), z=[args[2..length(SPS)+1]] )];
+        if reference='OMA' then
+            SPS := 0; ReadProgram(fnBase.'.sps'); assert(SPS<>0);
+            if nargs<=length(SPS) then error('too few arguments received') fi;
+            orgMap := [seq( SearchArray(z, genomes), z=[args[2..length(SPS)+1]] )];
+        fi:
     
         # start computation as background process
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resDBfn:=''%s''; seqmapfn:= ''%s''; '.
@@ -499,6 +499,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
+    if DEBUG then lprint('base: ',resBase,'lock exists:',FileExists(lock), 'res exists:',FileExists(resFn)); fi:
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
@@ -677,6 +678,7 @@ bsCheckResults := proc(sessionkey)
     
     if refresh then vars['reloadin'] := 20 fi;
     vars['refresh'] := refresh;
+    print(vars);
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:
 

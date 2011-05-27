@@ -4,9 +4,10 @@ module external PKeyData, UpdatePKeyDataPermanent, AddPKeyData, GetPKeyData, Get
 fn := datdir.'projectKeys.drw';
                 
 
-PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string, 
+PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
+                 ref:{'OMA','RefSet5'},
                  isPublic:boolean, directMap:boolean, 
-		 NSeqSub:posint, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
+		 NSeqSub:{0,posint}, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
 		 OrgsCovered:{set,intersect()},
 		 props:table)
    noeval(procname(args)):
@@ -44,11 +45,13 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'NSeqSub'=((NSeqSub=0):{0,posint}),
    'NOrthSub'=((NOrthSub=0):{0,posint}),
    'NSeqMap'=((NSeqMap=-1):integer),
-   'NOrthMap'=((NOrthMap=-1):integer) )
+   'NOrthMap'=((NOrthMap=-1):integer),
+   'isPublic'=((isPublic=false):boolean),
+   'reference'=((reference='OMA'):{'OMA','RefSet5'}) )
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
-    pr := PKeyData( id, tit, fnbase, date(), false, false, 
+    pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, false, 
                     NSeqSub, NOrthSub, NSeqMap, NOrthMap, 
 		    {}, table() );
 

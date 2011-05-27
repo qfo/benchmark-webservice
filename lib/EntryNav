@@ -1,77 +1,95 @@
+module external NrOfProteins, NrOfGenomes, GenomeNrFromENr, GenomeNrFromCode,
+    GenomeRange, GenomeCodeFromENr, ENrFromLabel, ENr2Label, Nr2SEQ,
+    DbEntryNrFromENr, ParseLongList, KnownSpecies;
+local GSIDtab, genomes, GenomeSummaries;
 
-LoadGenomeStartIDs := proc()
-    global GSID, GSPOR, NS: 
-    t := traperror(ReadProgram(datdir.'/GenomeStarts.drw'));
-    if t=lasterror then 
-        ReadProgram(omaDBpath.'Summaries.drw');
-	GS := GenomeSummaries;
-	NS := length(genomes);
-        GSID  := CreateArray(1..NS);
-	GSPOR := transpose( sort([seq([genomes[g],g],g=1..NS)]) );
-        
-        for g to length(genomes) do
-	    GSID[g] := [If(g=1, 1, GSID[g-1,1]+GSID[g-1,3]), 
-	                genomes[g], GS[genomes[g],TotEntries]];
-        od:
-	GSID := transpose(sort(GSID));
-	OpenWriting(datdir.'/GenomeStarts.drw');
-	printf('# created %s\n', date());
-	printf('NS := %d\n: GSID := %A:\nGSPOR := %A:\n', NS,GSID, GSPOR);
-	OpenWriting(previous);
-    fi;
+GSIDContainer := proc(dataset:string, NS:posint, GSID:matrix, GSPOR:matrix)
+    noeval(procname(args)):
+end:
+CompleteClass(GSIDContainer):
+
+LoadGenomeStartIDs := proc(ref:{'OMA','RefSet5'})
+    global genomes, GenomeSummaries:
+
+    dbdir := eval( symbol( lowercase(ref).'DBpath') ):
+    ReadProgram(dbdir.'/Summaries.drw');
+    GS := GenomeSummaries;
+    NS := length(genomes);
+    GSID  := CreateArray(1..NS);
+    GSPOR := transpose( sort([seq([genomes[g],g],g=1..NS)]) );
+    
+    for g to length(genomes) do
+        GSID[g] := [If(g=1, 1, GSID[g-1,1]+GSID[g-1,3]), 
+                    genomes[g], GS[genomes[g],TotEntries]];
+    od:
+    GSID := transpose(sort(GSID));
+    return( GSIDContainer( ref, NS, GSID, GSPOR ) ):
 end:
 
-GenomeNrFromENr := proc(eNr:posint)
-    if not assigned(GSID) then LoadGenomeStartIDs() fi:
-    g := SearchOrderedArray(eNr, GSID[1]):
-    assert(g > 0 and g <= NS):
+GSIDtab := table( proc(i) error('Dataset '.i.' not known') end ):
+GSIDtab['RefSet5'] := LoadGenomeStartIDs('RefSet5');
+GSIDtab['OMA']  := LoadGenomeStartIDs('OMA');
+
+NrOfGenomes := proc( ; (ref='OMA'):string )
+    return( GSIDtab[ref,'NS'] );
+end:
+
+NrOfProteins := proc( ; (ref='OMA'):string )
+    lastGenomeGSID := GSIDtab[ref,'GSID',-1];
+    return( lastGenomeGSID[1]+lastGenomeGSID[3]-1 );
+end:
+
+GenomeNrFromENr := proc(eNr:posint; (ref='OMA'):string)
+    gsDat := GSIDtab[ref];
+    g := SearchOrderedArray(eNr, gsDat['GSID',1]):
+    assert(g > 0 and g <= gsDat['NS']):
     return( g ):
 end:
 
-GenomeNrFromCode := proc(g:string)
-    if not assigned(GSID) then LoadGenomeStartIDs() fi:
+GenomeNrFromCode := proc(g:string ; (ref='OMA'):string)
     if length(g)<>5 then error('invalid genome code: '.g);
     else
-        k := SearchOrderedArray(g, GSPOR[1]);
-        if k<=0 or k>NS or GSPOR[1,k]<>g then 
+        gsDat := GSIDtab[ref];
+        k := SearchOrderedArray(g, gsDat['GSPOR',1]);
+        if k<=0 or k>gsDat['NS'] or gsDat['GSPOR',1,k]<>g then 
             error('unknown genome code: '.g); fi:
 
-        return(GSPOR[2,k]);
+        return(gsDat['GSPOR',2,k]);
     fi:
 end:
 
-GenomeRange := proc(g:string)
-    i := GenomeNrFromCode(g);
-    return( GSID[1,i]..GSID[3,i]-1 );
+GenomeRange := proc(g:string; (ref='OMA':string)
+    i := GenomeNrFromCode(g,ref);
+    GSID := GSIDtab[ref,'GSID'];
+    return( GSID[1,i]..GSID[1,i]+GSID[3,i]-1 );
 end:
 
 
-GenomeCodeFromENr := proc(eNr:posint)
-    if not assigned(GSID) then LoadGenomeStartIDs() fi:
-    return( GSID[2, GenomeNrFromENr(eNr)] ):
+GenomeCodeFromENr := proc(eNr:posint ; (ref='OMA'):string)
+    return( GSIDtab[ref,'GSID',2, GenomeNrFromENr(eNr)] ):
 end:
 
 
-ENrFromLabel := proc(l:string)
-    if not assigned(GSID) then LoadGenomeStartIDs() fi:
+ENrFromLabel := proc(l:string; (ref='OMA'):string)
     if length(l)<6 then error('invalid EntryLabel: '.l);
     else 
         org := l[1..5];
-        k := SearchOrderedArray(org, GSPOR[1]):
-        if k<=0 or k>NS or GSPOR[1,k]<>org then 
-            error('unknown Species: ',org) fi:
+        gsDat := GSIDtab[ref];
+        gNr := GenomeNrFromCode(org, ref);
        
         nr := parse(l[6..-1]):
-        if not type(nr, posint) or nr >= GSID[3,GSPOR[2,k]] then 
+        if not type(nr, posint) or nr >= gsDat['GSID',3,gNr] then 
             error('not a valid entry nr: '.l); fi:
 	
-        return( GSID[1,GSPOR[2,k]] + nr - 1 );
+        return( gsDat['GSID',1,gNr] + nr - 1 );
     fi:
 end:
        
-ENr2Label := proc(eNr:posint)
-    g := GenomeNrFromENr(eNr):
-    return( eNr - GSID[1,g] + 1 );
+ENr2Label := proc(eNr:posint; (ref='OMA'):string)
+    g := GenomeNrFromENr(eNr,ref):
+    gsid := GSIDtab[ref,'GSID'];
+    nr := eNr - gsid[1,g] + 1 );
+    return( sprintf('%s%05d', gsid[2,g], nr) );
 end:
 
 
@@ -115,7 +133,8 @@ ParseLongList := proc(s:string)
 end:
 
 
-KnownSpecies := proc()
-   if not assigned(GSID) then LoadGenomeStartIDs() fi:
-   return( sort(GSID[2]) );
+KnownSpecies := proc(;(ref='OMA'):string)
+   return( sort(GSIDtab[ref,'GSID',2]) );
 end:
+
+end: #module

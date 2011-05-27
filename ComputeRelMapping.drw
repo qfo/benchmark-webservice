@@ -27,19 +27,25 @@ UpdateRemainingTime := proc()
     unit := 'sec';
     if remTime>120 then remTime := remTime/60; unit:='min'; fi:
     WriteLock(lock, sprintf(
-        '%d/%d (%.1f%%) relations processed. Estimated remaining time:%.0f%s\n',
+        '%d/%d (%.1f%%) relations/groups processed. Estimated remaining time:%.0f%s\n',
 	 relDone, pKey['NOrthSub'], 100*relDone/pKey['NOrthSub'], remTime, unit));
+end:
+
+MapIDtoENr := proc(id:string)
+    i := SearchOrderedArray(id, mapping[1]);
+    if i<=0 or i>NM or mapping[1,i]<>id then
+        if printlevel>1 then warning('missing id '''.id''''); fi:
+        return(NULL);
+    else return(mapping[-1,i]) fi: # return the last column value, i.e. the project eNr
 end:
 
 # callback function pairwise data
 PairRelations := proc(rel:list)
-    global VPs, relDone, t0, relMapped;
+    global VPs, relDone, t0, relMapped, missing;
     for z in rel do
-        i1 := SearchOrderedArray(z[1], mapping[1]);
-        if i1<=0 or i1>NM or mapping[1,i1]<>z[1] then lprint('missing',z); next fi;
-        i2 := SearchOrderedArray(z[2], mapping[1]);
-        if i2<=0 or i2>NM or mapping[1,i2]<>z[2] then lprint('missing',z); next fi;
-        p1 := mapping[3,i1]; p2 := mapping[3,i2];
+        p1 := MapIDtoENr(z[1]);
+        p2 := MapIDtoENr(z[2]);
+        if p1=NULL or p2=NULL then next fi:
 
         VPs[p1] := append(VPs[p1], p2); 
         VPs[p2] := append(VPs[p2], p1);
@@ -51,22 +57,64 @@ PairRelations := proc(rel:list)
     fi:
 end:
 
-# callback function group data
-GroupRelations := proc(gps:list)
-    global VPs;
-    grp := [];
-    for z in gps do
-       i := SearchOrderedArray(z, mapping[1]);
-       if i<=0 or i>NM or mapping[1,i]<>z then next fi:
-       iSetNr := mapping[3,i]; 
-       g := GenomeNrFromENr(iSet[iSetNr]);
-       grp := append(grp, [g,iSetNr]);
+ExtractInducedPairsR := proc(hcl)
+    if not member(op(0,hcl), {OG,PG}) then 
+        error('unexpeced argument: '.op(0,hcl)) fi:
+
+    indOrthologs := indParalogs := membProt := [];
+    for z in hcl do 
+        if type(z,string) then 
+            # this is a single protein. no recursion necessay.
+            eNr := MapID2ENr(z);
+            if eNr<>NULL then membProt := append(membProt, [eNr]) fi:
+        elif type(z, structure) and member(op(0,z),{OG,PG}) then 
+            child := procname(z);
+            indOrthologs := append(indOrthologs, op(child[1]));
+            indParalogs := append(indParalogs, op(child[2]));
+            membProt := append( membProt, [op(indets(child, integer))] );
+        else error('unexpected data: '.string(z)) fi:
     od:
     
-    for i to length(grp) do for j to length(grp) do if grp[i,1]<>grp[j,1] then
-       VPs[grp[i,2]] := append(VPs[grp[i,2]], grp[j,2]);
-       VPs[grp[j,2]] := append(VPs[grp[j,2]], grp[i,2]);
-    fi od od:
+    NSubGroup := length(membProt):
+    if NSubGroup<2 then warning('dubious group') fi:
+    if op(0,hcl)=OG then
+        orgs := [seq([seq( GenomeNrFromENr(x1,referenceDatSet), 
+            x1=subgroups)], subgroups=membProt)];
+        for i to NSubGroup do for j from i+1 to NSubGroup do
+            for x1 to length(membProt[i]) do for y1 to length(membProt[j]) do 
+                e1 := membProt[i,x1]; e2 := membProt[j,y1];
+                if e1>e2 then t := e1; e1:=e2; e2 := t; fi:
+                if e1=e2 then 
+                    warning('protein cannot be orthologous/paralogous to itself: '.e1);
+                    next;
+                fi:
+                if orgs[i,x1]<>orgs[j,y1] then 
+                    indOrthologs := append(indOrthologs, [e1, e2] );
+                else indParalogs := append(indParalogs, [e1, e2] );
+                fi:
+            od od:
+        od od:
+    elif op(0,hcl)=PG then 
+        for i to NSubGroup do for j from i+1 to NSubGroup do
+            indParalogs := append( indParalogs, seq(seq(If(x<y,[x,y],[y,x]),
+                y=membProt[j]), x=membProt[i]) );
+        od od:
+    fi:
+    return( indOrthologs, indParalogs ):
+end:
+
+# callback function group data
+GroupRelations := proc(og)
+    global VPs;
+    t := ExtractInducedPairsR(og):
+    for z in t[1] do 
+        VPs[z[1]] := append(VPs[z[1]], z[2]);
+    od:
+    relDone := relDone + 1;
+    relMapped := relMapped + 1;
+    if not assigned(t0) or time()-t0>5 then 
+        UpdateRemainingTime(); t0 := time(); 
+    fi:
 end:
 
 
@@ -90,18 +138,28 @@ end:
 # to break at error
 to 1 do
     pKey := GetPKeyData(PID);
-    t := GenerateProteinMapping(seqmapfn, orgMap):
-    mapping := t[1]; iSet := t[2]:
+    referenceDatSet := pKey['ref'];
+    if referenceDatSet='OMA' then
+        t := GenerateProteinMapping(seqmapfn, orgMap):
+        mapping := t[1]; iSet := t[2]:
+    else
+        IDmapping := 0;
+        ReadProgram( symbol(lowercase(referenceDatSet).'DBpath') . 'IDmapping.drw'):
+        if IDmapping=0 then error('could not read IDmapping file'); fi:
+        mapping := transpose(sort(IDmapping)):
+        iSet := {seq(i,i=1..NrOfProteins(referenceDatSet))};
+    fi:
     NM := length(iSet):
     VPs := CreateArray(1..NM,[]);
     relDone := relMapped := 0;
+    missing := Counter('# of ignored mappings due to missing seqMapping');
     ReadProgram(relsinfn);
     WriteLock(lock, 'Storing final project data');
     WriteDB(resDBfn, VPs, mapping);
     ReadDb(resDBfn);
 
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
-    orgs := {seq(GenomeCodeFromENr(z),z=iSet)}:
+    orgs := {seq(GenomeCodeFromENr(z,pKey['ref']),z=iSet)}:
     pKey['OrgsCovered'] := orgs:
     UpdatePKeyDataPermanent(pKey);
 

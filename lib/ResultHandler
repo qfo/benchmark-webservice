@@ -64,9 +64,9 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
 	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
 		if nrSamp>0 then
     	            avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],0),c=1..length(cases)) )/nrSamp;
+    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
     	            avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],0),c=1..length(cases)) )/nrSamp;
+    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
                     printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
                          avgFPR, avgTPR, stdFPR, stdTPR);
 	        else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
@@ -124,7 +124,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
 	    od: 
         od:
         if DEBUG then print(tab) fi:
-        
+
 	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():

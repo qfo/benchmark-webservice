@@ -1,11 +1,12 @@
 package OrthoXML;
 use base qw(XML::SAX::Base);
 
-my( $relFh, $cSpec, $prot_idMap, $inGenes, $inOG, $inPG, $curGroup, $cnts );
+my( $relFh, $cSpec, $prot_idMap, $inGenes, $inOG, $inPG, $curGroup, $cnts, $lastAlive );
 sub new {
     my $type = shift;
     $relFh = shift;
     $cSpec=0; $prot_idMap={}; $inGenes=0; $cnts=0; $inOG=0; $inPG=0;
+    $lastAlive=time();
     return bless {}, $type;
 }
 
@@ -16,8 +17,11 @@ sub get_nr_of_relations{
 sub start_element{
     my ($self, $element) = @_;
    
-    print $element->{Name}."\n";
-    if ($element->{Name} eq "species") {
+    if ($element->{Name} eq "orthoXML") {
+        my $orthoxmlVersion = $element->{Attributes}->{"{}version"}->{Value};
+        die("requires orthoxml version 0.3") unless ($orthoxmlVersion eq "0.3");
+    }
+    elsif ($element->{Name} eq "species") {
         $cSpec++;
     }
     elsif ($element->{Name} eq "genes") {
@@ -30,8 +34,8 @@ sub start_element{
         $prot_idMap->{$id} = $pid;
     }
     elsif ($element->{Name} eq "orthologGroup"){
-        $inOG++;
         $curGroup .= "OG(";
+        $inOG++;
     }
     elsif ($element->{Name} eq "paralogGroup"){
         $inPG++;
@@ -45,6 +49,10 @@ sub start_element{
     elsif ($element->{Name} eq "groups"){
         $curGroup = "";
     }
+    if (time() - $lastAlive > 15 ){
+        print ".";
+        $lastAlive = time();
+    }
 }
 
 sub end_element{
@@ -55,7 +63,7 @@ sub end_element{
         $curGroup .= "NULL)";
 	$inOG--;
         if ($inOG==0){
-            print $relFh "$curGroup:";
+            print $relFh "GroupRelations( $curGroup ):\n";
             $curGroup = "";
             $cnts += 1;
         }

@@ -59,8 +59,7 @@ fi;
 SPS := sort(SPS):
 NSPS := length(SPS):
 
-
-LoadGenomeStartIDs();
+NS := NrOfGenomes('OMA');
 MappingComb := CreateArray(1..NSPS, 1..NS+1, []):
 totProts := CreateArray(1..NSPS):
 id2nr := CreateArray(1..DB[TotEntries],[]);

@@ -119,3 +119,9 @@ function sprintf () {
   return o.join('');
 }
 
+function toggleDisableSeqUploadOnDatasetChange(rad){
+  var disabledDatasetUpload = !(rad.value=="OMA");
+  for (var k=0,elm; elm=rad.form.elements[k]; k++)
+      if(elm.name=="seqType" || elm.name=="seqs")
+          elm.disabled = disabledDatasetUpload;
+}
