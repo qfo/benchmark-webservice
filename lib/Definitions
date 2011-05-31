@@ -1,7 +1,0 @@
-RecTreeCase := proc(Name:string, DisplayName:string, MappedProts:set(posint), Relations:table, Tree:Tree, Reference:string)
-    for z in [' ', '\n', '\t'] do assert(SearchString(z,Name)<0) od:
-    noeval(procname(args));
-end:
-CompleteClass(RecTreeCase):
-
-

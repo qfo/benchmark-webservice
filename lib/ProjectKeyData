@@ -74,11 +74,12 @@ GetPKeyData := proc(id:string)
     return(p);
 end:
 
-GetPublicProjects := proc()
+GetPublicProjects := proc( ; ref:string)
     LoadPKeyData();
     p := [];
     for id in Indices(PROJECTS) do
-        if PROJECTS[id, isPublic] then
+        if PROJECTS[id, isPublic] and 
+            (not assigned(ref) or ref=PROJECTS[id,'ref']) then
            p := append(p, PROJECTS[id]);
         fi;
     od;

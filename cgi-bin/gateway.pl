@@ -33,6 +33,7 @@ BEGIN {
 }
 # maximum Post size in bytes 
 $CGI::POST_MAX = 1<<32;
+$|++; # disable buffering of stdout
 
 #use Time::HiRes qw(time);
 my $hostname = `/bin/hostname`;

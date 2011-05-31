@@ -33,8 +33,8 @@ end:
 
 MapIDtoENr := proc(id:string)
     i := SearchOrderedArray(id, mapping[1]);
-    if i<=0 or i>NM or mapping[1,i]<>id then
-        if printlevel>1 then warning('missing id '''.id''''); fi:
+    if i<=0 or i>length(mapping[1]) or mapping[1,i]<>id then
+        if printlevel>1 then warning('missing id '''.id.''''); fi:
         return(NULL);
     else return(mapping[-1,i]) fi: # return the last column value, i.e. the project eNr
 end:
@@ -65,8 +65,8 @@ ExtractInducedPairsR := proc(hcl)
     for z in hcl do 
         if type(z,string) then 
             # this is a single protein. no recursion necessay.
-            eNr := MapID2ENr(z);
-            if eNr<>NULL then membProt := append(membProt, [eNr]) fi:
+            eNr := MapIDtoENr(z);
+            if eNr<>NULL then membProt := append(membProt, [eNr]) else lprint(z,' not mapped') fi:
         elif type(z, structure) and member(op(0,z),{OG,PG}) then 
             child := procname(z);
             indOrthologs := append(indOrthologs, op(child[1]));
@@ -105,7 +105,7 @@ end:
 
 # callback function group data
 GroupRelations := proc(og)
-    global VPs;
+    global VPs, relDone, relMapped;
     t := ExtractInducedPairsR(og):
     for z in t[1] do 
         VPs[z[1]] := append(VPs[z[1]], z[2]);
@@ -130,7 +130,7 @@ WriteDB := proc(fn:string, VPs, mapping)
     OpenWriting(previous);
     
     OpenWriting( fn[1..-3].'iset' );
-    printf('ISET := %A:\n', iSet);
+    printf('ISET := %A:\n', If(referenceDatSet='OMA',iSet,intersect()));
     OpenWriting( previous ); 
     Set(printgc=verb);
 end:
@@ -144,7 +144,7 @@ to 1 do
         mapping := t[1]; iSet := t[2]:
     else
         IDmapping := 0;
-        ReadProgram( symbol(lowercase(referenceDatSet).'DBpath') . 'IDmapping.drw'):
+        ReadProgram( eval(symbol(lowercase(referenceDatSet).'DBpath')) . 'IDmapping.drw'):
         if IDmapping=0 then error('could not read IDmapping file'); fi:
         mapping := transpose(sort(IDmapping)):
         iSet := {seq(i,i=1..NrOfProteins(referenceDatSet))};
@@ -159,7 +159,7 @@ to 1 do
     ReadDb(resDBfn);
 
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
-    orgs := {seq(GenomeCodeFromENr(z,pKey['ref']),z=iSet)}:
+    orgs := {seq(GenomeCodeFromENr(z,referenceDatSet),z=iSet)}:
     pKey['OrgsCovered'] := orgs:
     UpdatePKeyDataPermanent(pKey);
 

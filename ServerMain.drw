@@ -371,8 +371,10 @@ bsTestSelection := proc(PID:string)
     pairwiseOverlap := [seq( ProjSpeciesOverlap([PID,z]), z=pubPID)];
     
     # load the cases for reconciled trees from publications
-    if not assigned(ReconciledTrees) then 
-        ReadProgram(datdir.'ReconciledTrees.drw'); # assigns ReconciledTrees
+    ReconciledTrees := symbol( 'ReconciledTrees_'.lowercase(pKey['ref']));
+    if not type(ReconciledTrees,table) then 
+        # assigns ReconciledTrees
+        ReadProgram(sprintf('%s/ReconciledTrees_%s.drw',datdir,pKey['ref'])); 
     fi;
     refPhyloProbs := []; 
     for i in Indices(ReconciledTrees) do 

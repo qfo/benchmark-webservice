@@ -65,6 +65,7 @@ Handle2dSimFiles := noeval(ReadLibrary(wdir.'lib/ResultHandler', Handle2dSimFile
 RatioOfRandVars  := noeval(ReadLibrary(wdir.'lib/ResultHandler', RatioOfRandVars));
 RelativeDifference := noeval(ReadLibrary(wdir.'lib/ResultHandler', RelativeDifference));
 
-RecTreeCase := noeval(ReadLibrary(wdir.'lib/Definitions', RecTreeCase));
+RecTreeCase := noeval(ReadLibrary(wdir.'lib/RecTree', RecTreeCase));
+GetTreeCase := noeval(ReadLibrary(wdir.'lib/RecTree', GetTreeCase));
 
 ParseStrategy := noeval(ReadLibrary(wdir.'lib/Parsing', ParseStrategy));

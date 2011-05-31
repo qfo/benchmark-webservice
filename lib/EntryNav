@@ -1,7 +1,7 @@
 module external NrOfProteins, NrOfGenomes, GenomeNrFromENr, GenomeNrFromCode,
     GenomeRange, GenomeCodeFromENr, ENrFromLabel, ENr2Label, Nr2SEQ,
-    DbEntryNrFromENr, ParseLongList, KnownSpecies;
-local GSIDtab, genomes, GenomeSummaries;
+    DbEntryNrFromENr, ParseLongList, KnownSpecies, GSIDtab;
+local GSIDtab; #genomes, GenomeSummaries;
 
 GSIDContainer := proc(dataset:string, NS:posint, GSID:matrix, GSPOR:matrix)
     noeval(procname(args)):
@@ -35,8 +35,9 @@ NrOfGenomes := proc( ; (ref='OMA'):string )
 end:
 
 NrOfProteins := proc( ; (ref='OMA'):string )
-    lastGenomeGSID := GSIDtab[ref,'GSID',-1];
-    return( lastGenomeGSID[1]+lastGenomeGSID[3]-1 );
+    gsid := GSIDtab[ref,'GSID'];
+    n := GSIDtab[ref, 'NS'];
+    return( gsid[1,n]+gsid[3,n]-1 );
 end:
 
 GenomeNrFromENr := proc(eNr:posint; (ref='OMA'):string)
@@ -58,7 +59,7 @@ GenomeNrFromCode := proc(g:string ; (ref='OMA'):string)
     fi:
 end:
 
-GenomeRange := proc(g:string; (ref='OMA':string)
+GenomeRange := proc(g:string; (ref='OMA'):string)
     i := GenomeNrFromCode(g,ref);
     GSID := GSIDtab[ref,'GSID'];
     return( GSID[1,i]..GSID[1,i]+GSID[3,i]-1 );
@@ -66,7 +67,7 @@ end:
 
 
 GenomeCodeFromENr := proc(eNr:posint ; (ref='OMA'):string)
-    return( GSIDtab[ref,'GSID',2, GenomeNrFromENr(eNr)] ):
+    return( GSIDtab[ref,'GSID',2, GenomeNrFromENr(eNr,ref)] ):
 end:
 
 
@@ -88,7 +89,7 @@ end:
 ENr2Label := proc(eNr:posint; (ref='OMA'):string)
     g := GenomeNrFromENr(eNr,ref):
     gsid := GSIDtab[ref,'GSID'];
-    nr := eNr - gsid[1,g] + 1 );
+    nr := eNr - gsid[1,g] + 1;
     return( sprintf('%s%05d', gsid[2,g], nr) );
 end:
 

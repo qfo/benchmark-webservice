@@ -50,7 +50,7 @@ sub start_element{
         $curGroup = "";
     }
     if (time() - $lastAlive > 15 ){
-        print ".";
+        print "\n";
         $lastAlive = time();
     }
 }
