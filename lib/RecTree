@@ -1,4 +1,4 @@
-module external RecTreeCase, GetTreeCase;
+module external RecTreeCase, GetTreeCase, GetAllTreeCases;
 local RTtab:
 
 RecTreeCase := proc(Name:string, DisplayName:string, MappedProts:set(posint), Relations:table, Tree:Tree, Reference:string)
@@ -13,7 +13,7 @@ LoadReconciledTrees := proc( ref:string )
     if type(ReconciledTrees,table) then curRT := ReconciledTrees fi:
 
     fn := sprintf('%s/ReconciledTrees_%s.drw', datdir, ref);
-    if not FileExist(fn) then error('could not load ReconciledTree_'.ref.' datafile') fi;
+    if not FileExists(fn) then error('could not load ReconciledTree_'.ref.' datafile') fi;
 
     ReconciledTrees := 0;
     ReadProgram(fn):
@@ -25,15 +25,19 @@ LoadReconciledTrees := proc( ref:string )
     return( t ):
 end:
 
-GetTreeCase(case:string ; (ref='OMA'):string)
-    t := RTtab[ref,case];
-    if t=unassigned then error('unknown tree case:' case) fi:
-    return( t ):
-end:
-
-RTtab := table(proc(i) error('Dataset '.i.' not known') end)
+RTtab := table(proc(i) error('Dataset '.i.' not known') end):
 RTtab['OMA'] := LoadReconciledTrees('OMA');
 RTtab['RefSet5'] := LoadReconciledTrees('RefSet5');
 
+
+GetTreeCase := proc(case:string ; (ref='OMA'):string)
+    t := RTtab[ref,case];
+    if t=unassigned then error('unknown tree case:'.case) fi:
+    return( t ):
+end:
+
+GetAllTreeCases := proc(; (ref='OMA'):string)
+    return( Indices(RTtab[ref]) );
+end:
 
 end: #module

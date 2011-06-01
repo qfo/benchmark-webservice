@@ -67,5 +67,6 @@ RelativeDifference := noeval(ReadLibrary(wdir.'lib/ResultHandler', RelativeDiffe
 
 RecTreeCase := noeval(ReadLibrary(wdir.'lib/RecTree', RecTreeCase));
 GetTreeCase := noeval(ReadLibrary(wdir.'lib/RecTree', GetTreeCase));
+GetAllTreeCases := noeval(ReadLibrary(wdir.'lib/RecTree', GetAllTreeCases));
 
 ParseStrategy := noeval(ReadLibrary(wdir.'lib/Parsing', ParseStrategy));

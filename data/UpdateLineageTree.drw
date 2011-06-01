@@ -9,15 +9,18 @@
 MAX_NR_TREES := 10000;
 missThreshold := 1;
 
-#Lineage := ['Homo sapiens', 'Primates', 'Mammalia', 'Vertebrata', 'Protostomia', 'Fungi']:
-Lineage := ['Gammaproteobacteria','Betaproteobacteria', 'Alphaproteobacteria', 
-            'Deltaproteobacteria', 'Epsilonproteobacteria', 'Spirochaetes','Firmicutes'];
+Lineage := ['Homo sapiens', 'Primates', 'Mammalia', 'Vertebrata', 'Protostomia', 'Fungi']:
+#Lineage := ['Gammaproteobacteria','Betaproteobacteria', 'Alphaproteobacteria', 
+#            'Deltaproteobacteria', 'Epsilonproteobacteria', 'Spirochaetes','Firmicutes'];
 
-#dataset := 'Eukaryota';
-dataset := 'Bacteria';
+dataset := 'Eukaryota';
+#dataset := 'Bacteria';
 
-#speciestree := Tree(Tree(Tree(Tree(Tree(Leaf(1,5),4,Leaf(2,5)),3,Leaf(3,4)),2,Leaf(4,3)),1,Leaf(5,2)),0,Leaf(6,1)):
-speciestree := Tree(Tree(Tree(Tree(Tree(Tree(Leaf(1,6),5,Leaf(2,6)),4,Leaf(3,5)),3,Leaf(4,4)),2,Leaf(5,3)),1,Leaf(6,2)),0,Leaf(7,1)):
+#reference := 'OMA'
+reference := 'RefSet5';
+
+speciestree := Tree(Tree(Tree(Tree(Tree(Leaf(1,5),4,Leaf(2,5)),3,Leaf(3,4)),2,Leaf(4,3)),1,Leaf(5,2)),0,Leaf(6,1)):
+#speciestree := Tree(Tree(Tree(Tree(Tree(Tree(Leaf(1,6),5,Leaf(2,6)),4,Leaf(3,5)),3,Leaf(4,4)),2,Leaf(5,3)),1,Leaf(6,2)),0,Leaf(7,1)):
 ########################
 
 pwd := TimedCallSystem('pwd')[2];
@@ -25,7 +28,8 @@ if SearchDelim('/',pwd[1..-2])[-1]<>'BenchmarkService' then
     printf('wrong working directory. Should be at BenchmarkService'); quit; fi:
 
 ReadProgram('lib/darwinit');
-ReadProgram(omaDBpath.'Summaries.drw');
+ddir := eval( symbol(lowercase(reference).'DBpath') ):
+ReadProgram(ddir.'Summaries.drw');
 GS := GenomeSummaries:
 
 nrBins := length(Lineage); 
@@ -43,7 +47,7 @@ for g in genomes do
 od:
 
 hist := [seq(length(z), z=catBins)];
-fn := sprintf('data/TreeCat_%s.drw', dataset);
+fn := sprintf('data/TreeCat_%s_%s.drw', dataset,reference);
 OpenWriting(fn);
 printf('# Histogram of the %d used genomes: %A\n', sum(hist), hist);
 lprint('catBins :=', catBins, ':');

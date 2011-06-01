@@ -355,32 +355,27 @@ end:
 
 
 bsTestSelection := proc(PID:string)
-    global ReconciledTrees;
-    fnBase := GetPKeyData(PID)['fnBase'];
+    pKey := GetPKeyData(PID);
+    fnBase := pKey['fnBase'];
     dbFn := fnBase.'.db';
     if not FileExists(dbFn) then 
         error('Project "'.GetPKeyData(PID)['Title'].'" was not corretely uploaded');
     fi:
 
     vars := table(''):
-    vars['tit'] := GetPKeyData(PID)['Title'];
+    vars['tit'] := pKey['Title'];
+    dataset := pKey['ref'];
     
-    
-    t := transpose(sort([seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), z=GetPublicProjects())])):
-    pubPID := t[2]; publicProjects := t[1]; Npub := length(pubPID):
+    t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
+        z=GetPublicProjects(dataset))]:
+    if length(t)>0 then
+        t := transpose(sort(t)):
+        pubPID := t[2]; publicProjects := t[1]; 
+    else pubPID := publicProjects := []; 
+    fi:
+    Npub := length(pubPID):
     pairwiseOverlap := [seq( ProjSpeciesOverlap([PID,z]), z=pubPID)];
     
-    # load the cases for reconciled trees from publications
-    ReconciledTrees := symbol( 'ReconciledTrees_'.lowercase(pKey['ref']));
-    if not type(ReconciledTrees,table) then 
-        # assigns ReconciledTrees
-        ReadProgram(sprintf('%s/ReconciledTrees_%s.drw',datdir,pKey['ref'])); 
-    fi;
-    refPhyloProbs := []; 
-    for i in Indices(ReconciledTrees) do 
-        refPhyloProbs := append(refPhyloProbs, ReconciledTrees[i]) 
-    od:
-
     for z in ['Euk','Bac','Fun'] do
         if ProjMetProperty(PID, GetTestProperty('TreeTest_'.z)) then
             vars['TT'.z.'Projects'] := ConcatStrings(
@@ -393,8 +388,11 @@ bsTestSelection := proc(PID:string)
 	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
         fi:
     od:
-    
+   
+    # load the TreeCases of the available reconciled tree problems
+    refPhyloProbs := [seq(GetTreeCase( z, dataset ), z=GetAllTreeCases(dataset))];
     stub := 'pRefPhyloPrj';
+
     vars['RefPhyloProjects'] := ConcatStrings(
          [seq(If( length(pairwiseOverlap[pNr])>1,
 	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
