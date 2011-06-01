@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-use CGI qw/:standard/;
+use CGI qw/:standard delete_all/;
 use CGI::Cookie;
-use POSIX qw(mkfifo);
+use POSIX qw/mkfifo strftime/;
 use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use Time::localtime;
@@ -39,8 +39,6 @@ $|++; # disable buffering of stdout
 my $hostname = `/bin/hostname`;
 chomp($hostname);
 my $din = 'BSin.'.$hostname;
-
-#$pDarwin = '/home/darwin/v2/source/bio-recipes/Orthologues/Browser/'.$din;
 my $pDarwin = '/tmp/'.$din;
 
 
@@ -69,6 +67,9 @@ $cook =~ s/\n//sg;
 my $f = undef;
 my @p = ();
 my @a = ();
+my $cache = undef;
+my $session = undef;
+
 if (not defined($req->param('f'))) {
     ($f,@p) = @ARGV;
 #    print STDERR "using argv (@ARGV)\n";
@@ -78,52 +79,69 @@ else {
     if ($f =~/[^A-Za-z0-9_]/) { die "Malformed function request"; }
     
     if ($f eq "UploadData") {
-        # store uploaded data
-        my $fnBase = $req->param("methName");
-        $fnBase =~ tr/ /_/;
-        $fnBase =~ s/[^A-Za-z0-9_.-]//g;
-        $fnBase = "/local/BenchmarkService/projects/".$fnBase.".".int(1000*rand());
-        print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
-	my $nrProt=0; my $nrOrth=0;
-        my $prot2spec = 0;
-        my $reference = $req->param("reference");
-    
-        foreach my $upFile ( qw(rels seqs) ){
-            next if ($upFile eq "seqs" && $reference ne "OMA");
-
-            if (!$req->param($upFile)) {
-               print $req->header();
-               my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\n";
-               open(ERRLOG, ">>$error_log"); print ERRLOG $msg; close(ERRLOG);
-               print $msg;
-               exit;
+        if ($session=param('session')) {
+            # we have a returning user who is waiting for session data
+            $cache = getCacheHandle();
+            my $data = $cache->get($session);
+            unless($data and ref $data eq "ARRAY"){
+                open(ERRLOG,">>$error_log");
+                print ERRLOG "session data invalid";
+                close(ERRLOG);
+                delete_all();
+                print redirect(self_url());
+                exit 0;
             }
-
-            my $fn = "$fnBase.$upFile";
-            my $fh = $req->upload($upFile);
-	    if (!$fh && cgi_error) {
-	        print header(-status=>cgi_error);
-	        exit 0;
-	    }
-            print DBGLOG "upload of ".$upFile." finished" if $debug;
-	    $fh = $fh->handle;
-            if( $upFile eq "seqs"){
-               if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
-               } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
-               } else {die("unknown seqType: ".$req->param("seqType"));}
+            if ($data->[0] == 0){
+                # still computing
+                my $msg=$data->[1];
+                show_waiting( "$$msg" );
+                print DBGLOG "[checker] not finished: ".$data->[0]."\n";
+                exit 0;
             }
+            elsif ($data->[0] == 1){
+                @p = @{$data->[1][0]};
+                @a = @{$data->[1][1]};
+                print DBGLOG "[pickup] data loaded: [@p]  [@a]\n" if $debug;
+            } 
             else {
-               if ($req->param("relType") eq "txt"){ $nrOrth = RelText2Drw($fh,$fn);
-               } elsif ($req->param("relType") eq "xml"){ $nrOrth = RelXML2Drw($fh, $fn);
-	       } elsif ($req->param("relType") eq "cog"){ 
-	           ($nrOrth, $prot2spec) = RelCOG2Drw($fh, $fn);
-               } else {die("unknown relType: ".$req->param("relType"));}
+                # error happend in conversion
+                print header(status=>400);
+                print $data->[1];
+                print end_html;
+                open(ERRLOG, ">>$error_log"); print ERRLOG $data->[0].":".$data->[1]."\n"; close(ERRLOG);
+                exit 0;
             }
-            print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
+        } 
+        else {
+            $session = getSessionId();
+            $cache = getCacheHandle();
+            $cache->set($session, [0,""]);
+
+            if (my $pid = fork) {
+                # parent process
+                delete_all();
+                param('session', $session);
+                param('f','UploadData');
+                print DBGLOG "[parrent] session is $session\n" if $debug;
+
+                print redirect( self_url() );
+                exit 0;
+            } 
+            elsif (defined $pid){
+                # chlild process
+                close STDOUT; # allows parent to go on
+
+                print DBGLOG "[child] session is $session\n" if $debug;
+                process_datafiles();
+                print DBGLOG "[child] finished conversion of datafile" if $debug;
+                exit 0;
+            } 
+            else { die "cannot fork: $!";
+            }
         }
-	push(@p, "'".$fnBase."'", "'".$req->param("methName")."'", $nrProt, $nrOrth, $reference);
-	push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'");
-    } 
+    }
+ 
+
    
     if( $debug > 0 ){
         my @pa = $req->param();
@@ -146,6 +164,7 @@ else {
             push(@a,$m);
         }
     }
+    print DBGLOG "passed parameters: @p\n" if $debug;
 }
 
 #die('No input whatsoever') unless defined($f);
@@ -153,7 +172,7 @@ if (not defined($f)) { $f = 'Index' }
 print DBGLOG "Function call: $f\n" if $debug;
 
 #### we verify that we have not just issed a "too busy" message
-if (time - (stat('/tmp/busy'))[9] < 10 and not $debug) { 
+if (time - (stat('/tmp/BSbusy'))[9] < 10 and not $debug) { 
   die "The server is busy... please wait a few seconds and try again.\n" 
 }
 
@@ -200,12 +219,12 @@ close(REQ);
 ####################################################################
 # We make sure that the server is alive 
 $SIG{"ALRM"} = sub { 
-    print "Content-type: text/html\n\n";
+    print header(status=>500);
     print "Server too busy, please try again in a few minutes...\n"; 
     print $ENV{QUERY_STRING};
     unlink($file.'.alive'); 
     unlink($file);
-    system("touch /tmp/busy"); 
+    system("touch /tmp/BSbusy"); 
     exit;
 };
 alarm 20;
@@ -325,6 +344,7 @@ sub RelXML2Drw {
     my ($fh, $fn) = @_;
     
     my $relFh;
+    $cache->set($session,[0,"processing orthoXML file"]);
     open( $relFh, ">$fn") or die($!);
     my $handler = OrthoXML->new($relFh);
     my $parser = XML::SAX::ParserFactory->parser(Handler => $handler);
@@ -405,3 +425,90 @@ sub RelCOG2Drw {
     }
     return( ($cnts, \%p2s) );
 }
+
+sub show_waiting {
+    my $content = @_;
+    print header;
+    print start_html(-title=>"Processing data",
+                     -head=>["<meta http-equiv=refresh content=10>"]);
+    print h1("Processing data");
+    print escapeHTML($content);
+    print p(i("... continuing ..."));
+    print end_html;
+
+}
+
+sub process_datafiles{
+    # store uploaded data
+    my $methName = $req->param("methName");
+    $methName =~ s/'/''/g; # make sure name is properly quoted
+
+    my $fnBase = $req->param("methName");
+    $fnBase =~ tr/ /_/;
+    $fnBase =~ s/[^A-Za-z0-9_.-]//g;
+    my $timestamp = ""; #strftime("%Y%m%d-%H%M", localtime());
+    print DBGLOG "[worker] $fnBase - $timestamp\n" if $debug;
+    $fnBase = "/local/BenchmarkService/projects/".$fnBase."-".$timestamp.
+        ".".int(1000*rand());
+
+    print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
+    my $nrProt=0; my $nrOrth=0;
+    my $prot2spec = 0;
+    my $reference = $req->param("reference");
+
+    foreach my $upFile ( qw(rels seqs) ){
+        next if ($upFile eq "seqs" && $reference ne "OMA");
+
+        if (!$req->param($upFile)) {
+           my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\n";
+           open(ERRLOG, ">>$error_log"); print ERRLOG $msg; close(ERRLOG);
+           $cache->set($session, [-1, $msg] );
+           exit;
+        }
+        
+        $cache->set($session,[0,"saving ".$upFile." file"]);
+        my $fn = "$fnBase.$upFile";
+        my $fh = $req->upload($upFile);
+        if (!$fh && cgi_error) {
+            $cache->set($session, [-1, "CGI error: ".&cgi_error]);
+            exit 0;
+        }
+        print DBGLOG "upload of ".$upFile." finished" if $debug;
+        $fh = $fh->handle;
+        if( $upFile eq "seqs"){
+           if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
+           } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
+           } else {die("unknown seqType: ".$req->param("seqType"));}
+        }
+        else {
+           if ($req->param("relType") eq "txt"){ $nrOrth = RelText2Drw($fh,$fn);
+           } elsif ($req->param("relType") eq "xml"){ $nrOrth = RelXML2Drw($fh, $fn);
+           } elsif ($req->param("relType") eq "cog"){ 
+               ($nrOrth, $prot2spec) = RelCOG2Drw($fh, $fn);
+           } else {die("unknown relType: ".$req->param("relType"));}
+        }
+        print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
+    }
+    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'");
+    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'");
+    $cache->set($session,[1,[\@p,\@a]]);
+} 
+
+sub getCacheHandle {
+  require Cache::FileCache;
+
+  Cache::FileCache->new
+      ({
+        namespace => 'BenchmarkService',
+        username => 'nobody',
+        default_expires_in => '30 minutes',
+        auto_purge_interval => '4 hours',
+       });
+}
+
+sub getSessionId {
+    require Digest::MD5;
+
+    Digest::MD5::md5_hex(Digest::MD5::md5_hex(time().{}.rand().$$));
+}
+
