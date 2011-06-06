@@ -6,13 +6,13 @@ Set(printgc=false):
 WriteLock(lock, 'initializing computation');
 
 prj := [seq(GetPKeyData(z),z=projs)]:
-LoadGenomeStartIDs(); # initalizes GSID
+dataset := prj[-1,'ref'];
 
 # load the project databases
 nP := length(prj); dbs := CreateArray(1..nP):
 for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
-ReadProgram(datdir.'ReconciledTrees.drw'); #Assigns ReconciledTrees (a table)
+ReadProgram(datdir.'ReconciledTrees_'.dataset.'.drw'); #Assigns ReconciledTrees (a table)
 nrProb := length(problems);
 
 ComputePerformance := proc(iSet, prjNrs:list)
@@ -76,7 +76,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
     OpenWriting(previous):
 end:
 
-if meth='INTERSECT' then
+if meth='INTERSECT' or meth='REFSET5' then
     iSet  := GetProjISets(prj):
     prjNrs:= [seq(i,i=1..nP)];
     curP := 1; maxP := 1;
@@ -101,6 +101,22 @@ elif meth='PAIRWISE' then
     od:
     StoreResult(resFn, [seq(Res[i,1],i=1..maxP)], [seq(Res[i,2],i=1..maxP)], 
                 [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], measure, problems, meth);
+#elif length(meth)>=6 and meth[1..6]='REFSET' then
+#    Res := CreateArray(1..nP): maxP := nP;
+#    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+#    for curP to nP do
+#        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,problems,meth]) );
+#        if FileExists(resFnPart) then
+#            Res[curP] := 0; ReadProgram(resFnPart):  Res[curP] := [FPR, TPR];
+#        else
+#            Res[curP] := ComputePerformance(intersect(), [curP]):
+#            StoreResult(resFnPart, Res[curP,1], Res[curP,2], [prj[curP,'PID']], 
+#                        measure, problems, meth);
+#        fi:
+#    od:
+#    StoreResult(resFn, [seq(Res[i,1],i=1..nP)], [seq(Res[i,2],i=1..nP)], 
+#                [seq(prj[i,'PID'],i=1..nP)], measure, problems, meth);
+#
 else error('unknown strategy method:'.meth);
 fi:
 

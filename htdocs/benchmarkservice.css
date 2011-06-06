@@ -246,6 +246,11 @@ form fieldset div.notes p.last {
   margin: 0em;
 }
 
+form fieldset div.notes ul{
+  margin: 0em 0em 0em 0em;
+  font-size: 80%
+}
+
 form fieldset div.addInfo {
   width: 380px;
   height: auto;

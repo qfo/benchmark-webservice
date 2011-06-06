@@ -109,6 +109,7 @@ GroupRelations := proc(og)
     t := ExtractInducedPairsR(og):
     for z in t[1] do 
         VPs[z[1]] := append(VPs[z[1]], z[2]);
+        VPs[z[2]] := append(VPs[z[2]], z[1]);
     od:
     relDone := relDone + 1;
     relMapped := relMapped + 1;

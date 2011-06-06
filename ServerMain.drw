@@ -365,6 +365,9 @@ bsTestSelection := proc(PID:string)
     vars := table(''):
     vars['tit'] := pKey['Title'];
     dataset := pKey['ref'];
+    vars['ref'] := dataset;
+    vars['isRefSet'] := evalb(dataset<>'OMA');
+    vars['notRefSet'] := evalb(dataset='OMA');
     
     t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
         z=GetPublicProjects(dataset))]:
@@ -410,7 +413,8 @@ bsTestSelection := proc(PID:string)
     vars['RefPhyloProb1_id'] := 'RefPhyloProb'.refPhyloProbs[1,'Name'];
     vars['hasRefPhylo'] := SearchString('<input',vars['RefPhyloProjects'])>=0 and 
                            SearchString('<input',vars['RefPhyloProblems'])>=0;
-    vars['styleRefPhylo'] := If(vars['hasRefPhylo'],'checked="checked"', 'disabled="disabled"');
+    vars['styleRefPhylo'] := If(vars['hasRefPhylo'] or dataset<>'OMA',
+        'checked="checked"', 'disabled="disabled"');
     
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
@@ -421,7 +425,8 @@ bsTestSelection := proc(PID:string)
 	          ''), 
 		  pNr=1..Npub)],'\n');
     vars['hasGO'] := SearchString('<input',vars['GOprojects'])>=0;
-    vars['styleGO'] := If(vars['hasGO'], 'checked="checked"', 'disabled="disabled"');
+    vars['styleGO'] := If(vars['hasGO'] or dataset<>'OMA', 
+        'checked="checked"', 'disabled="disabled"');
 
     stub := 'pECPrj';
     vars['ECprojects'] := ConcatStrings(
@@ -432,7 +437,7 @@ bsTestSelection := proc(PID:string)
 	          ''),
 		  pNr=1..Npub)],'\n');
     vars['hasEC'] := SearchString('<input',vars['ECprojects'])>=0;
-    vars['styleEC'] := If(vars['hasEC'], 'checked="checked"', 'disabled="disabled"');
+    vars['styleEC'] := If(vars['hasEC'] or dataset<>'OMA', 'checked="checked"', 'disabled="disabled"');
 
     vars['PID'] := PID;
     return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
@@ -446,14 +451,15 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     vars['case'] := king;
     vars['resheader'] := 'Species Tree Discordance Test - Dataset '.king;
     vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
     
-    pubPrj := GetPublicProjects();
-
-    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
-    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then 
+        meth := 'INTERSECT'; fi:
 
     resBase := sprintf('TreeTest.%s.%a', king, hash([projs,meth]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
@@ -464,9 +470,10 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         isRunning := false;
         HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
-        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; problem := ''%s/TreeCat_%s.drw''; '.
-               'projs := %A; lock:=''%s''; meth:=''%s''; ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, datdir, king, projs, lock, meth, wdir, darwin64);
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=''%s''; '.
+            'problem := ''%s/TreeCat_%s_%s.drw''; projs := %A; lock:=''%s''; meth:=''%s''; '.
+            'ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
+            wdir, resFn, datdir, king, vars['ref'], projs, lock, meth, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -481,19 +488,21 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
     vars := table('');
     vars['resheader'] := 'Agreement with Reference Phylogeny - Test';
     vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
     
-    pubPrj := GetPublicProjects();
-
-    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>12 and z[1..12]='pRefPhyloPrj', parse(z[13..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
     
     k := SearchArray('pRefPhylAggMeas',pnames);
     measure := If(k>0,params[k],'sample variance');
-    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then 
+        meth := 'INTERSECT'; fi:
 
-    problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', parse(z[14..-1]), NULL), z=pnames)];
+    problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', 
+                        parse(z[14..-1]), NULL), z=pnames)];
     if DEBUG then print('Do RefPhyloTest with those projects:',projs) fi;
     
     resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems,meth]) );
@@ -525,16 +534,17 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     vars := table('');
     vars['resheader'] := 'Enzyme Classification (EC) conservation test';
     vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
     
-    pubPrj := GetPublicProjects();
-
-    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
     measure := params[ SearchArray('pECMeasure',pnames) ];
-    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then 
+        meth := 'INTERSECT'; fi:
         
     resBase := sprintf('EC.%a', hash([projs,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
@@ -564,19 +574,22 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     vars := table('');
     vars['resheader'] := 'Gene Ontology conservation test';
     vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
     exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,NR};
     
-    pubPrj := GetPublicProjects();
-
-    projs := [op( {op(GetPublicProjects())} minus {GetPKeyData(PID)} )];
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', parse(z[7..-1]), NULL), z=pnames)];
+    sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', 
+                   parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
-    filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', parse(z[7..-1]),NULL), z=pnames)};
+    filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', 
+                       parse(z[7..-1]),NULL), z=pnames)};
     filter := intersect(filter, exEv);
     measure := params[ SearchArray('pGOMeasure',pnames) ];
-    meth := If(length(projs)<=2,'INTERSECT',ParseStrategy(pnames,params));
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then 
+        meth := 'INTERSECT'; fi:
     
     resBase := sprintf('GO.%a', hash([projs,filter,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );

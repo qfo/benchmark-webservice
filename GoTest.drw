@@ -12,7 +12,7 @@ Set(printgc=false); Set(gc=5e6):
 OpenWriting(lock); lprint(getpid()); lprint('initializing computation'); OpenWriting(previous);
 
 prj := [seq(GetPKeyData(z),z=projs)]:
-LoadGenomeStartIDs(); # initalizes GSID
+dataset := prj[-1,'ref'];
 
 # load the project databases
 nP := length(prj); dbs := CreateArray(1..nP):
@@ -25,10 +25,14 @@ if not type(dbs, list(database)) then
    quit
 fi:
 
-nGo := 1e5;
-GOparents := CreateArray(1..nGo):
-for i to nGo do GOparents[i] := GOsuperclassR(i) od:
-DB := GODB := ReadDb(omaDBpath.'ServerIndexed.db'):
+# hacky thing to make sure Ontolgy_name is loaded and can be accessed.
+GOname(55):
+allterms := Indices(Ontology_name):
+GOparents := table({}):
+for i in allterms do GOparents[i] := GOsuperclassR(i) od:
+
+ddir := eval(symbol(lowercase(dataset).'DBpath'));
+DB := GODB := ReadDb(ddir.'ServerIndexed.db'):
 
 
 # extract important all GO annotations from ServerIndexed.db
@@ -45,19 +49,24 @@ LoadGOset := proc(iSet)
         gos := SearchDelim('; ',gos);
         
         gos := [seq(SearchDelim('@',z), z=gos)];
-        for z in gos do if length( intersect({z[2,2..-2]}, filter) )>0 then
-            GOs[i] := append(GOs[i], parse(z[1,4..-1]) );
-        fi od:
+
+        for z in gos do 
+            annotation := parse(z[2]);
+            evidence := {seq( x[1], x=annotation)};
+            if length( intersect(evidence, filter) )>0 then
+                GOs[i] := append(GOs[i], parse(z[1,4..-1]) );
+            fi;
+        od:
     od:
     
     # compute GO term frequencies of proteins in iSet;
-    freqs := CreateArray(1..nGo): cnts := 0;
+    freqs := table(0); cnts := 0;
     for p in GOs do for go in p do
         cnts := cnts+1;
         freqs[go] := freqs[go]+1;
         for parent in GOparents[go] do freqs[parent] := freqs[parent]+1; od:
     od od:
-    if cnts>0 then freqs := freqs/cnts fi:
+    if cnts>0 then for i in Indices(freqs) do freqs[i] := freqs[i]/cnts od fi:
 end:
 
 
@@ -106,11 +115,11 @@ ComputePerformance := proc(iSet, prjNrs:list)
                     if vp<oE then next fi: # uni-directional
                     if not member(vp, iSet) then next fi; # 
                     
-    		if directMap then k := vp; 
+                    if directMap then k := vp; 
                     else 
-    		    k := SearchOrderedArray(vp, iList):
+    		        k := SearchOrderedArray(vp, iList):
                         assert(k>0 and k<=nProt and iList[k]=vp);
-    		fi:
+    		    fi:
                     if length(GOs[k]) = 0 then next fi:
                    
                     pairs := [];
@@ -157,7 +166,7 @@ StoreResult := proc(fn:string, Sims, PIDs, filter, measure, meth)
     OpenWriting(previous):
 end:
 
-if meth='INTERSECT' then
+if meth='INTERSECT' or meth='REFSET5' then
     iSet  := GetProjISets(prj):
     prjNrs:= [seq(i,i=1..nP)];
     LoadGOset(iSet):

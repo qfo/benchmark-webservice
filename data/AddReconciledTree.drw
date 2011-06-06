@@ -3,8 +3,8 @@
 # the EntryNumbers and stores those files in data/ReconciledTrees.drw
 #
 ReadProgram('lib/darwinit');
-DUPL := {':D=Y','D=Y','D','DUPLICATION',':Ev=duplication','Ev=DUPLICATION'};
-SPEC := {':D=N','D=N','S','SPECIATION',':Ev=speciation','Ev=SPECIATION'};
+DUPL := {':D=Y','D=Y','D','DUPLICATION',':Ev=duplication',':Ev=DUPLICATION'};
+SPEC := {':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'};
 overwrite := true:
 
 SetDatasetVariables := proc(;(ref='OMA'):string)

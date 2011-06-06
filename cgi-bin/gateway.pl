@@ -94,7 +94,7 @@ else {
             if ($data->[0] == 0){
                 # still computing
                 my $msg=$data->[1];
-                show_waiting( "$$msg" );
+                show_waiting( $msg );
                 print DBGLOG "[checker] not finished: ".$data->[0]."\n";
                 exit 0;
             }
@@ -427,12 +427,12 @@ sub RelCOG2Drw {
 }
 
 sub show_waiting {
-    my $content = @_;
+    my @content = @_;
     print header;
     print start_html(-title=>"Processing data",
                      -head=>["<meta http-equiv=refresh content=10>"]);
     print h1("Processing data");
-    print escapeHTML($content);
+    print escapeHTML(@content[0]);
     print p(i("... continuing ..."));
     print end_html;
 

@@ -8,11 +8,11 @@ OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 CreateDayMatrices();
 
 prj := [seq(GetPKeyData(z),z=projs)]:
-LoadGenomeStartIDs(); # initalizes GSID
+dataset := prj[-1,'ref'];
 
 ReadProgram(problem); # this loads the species tree and the bins containg species
 nrBins := length(catBins);
-catBinsNr := [seq({seq(GenomeNrFromCode(g),g=catBins[i])}, i=1..nrBins)];
+catBinsNr := [seq({seq(GenomeNrFromCode(g,dataset),g=catBins[i])}, i=1..nrBins)];
 # lookup table for a genome to which bin it belongs (if any)
 orgNr2Bin := table(0);
 for i to nrBins do for z in catBinsNr[i] do orgNr2Bin[z] := i; od od:
@@ -25,11 +25,11 @@ FindCases := proc(iSet, prjNrs:list)
     global DB:
     cases := []; nP := length(prjNrs);
     for rootGenome in catBins[1] do 
-        ran := GenomeRange(rootGenome):
+        ran := GenomeRange(rootGenome,dataset):
         for oE from ran[1] to ran[2] do
             if not member(oE, iSet) then next fi:
             
-            assert( orgNr2Bin[GenomeNrFromENr(oE)]=1 );
+            assert( orgNr2Bin[GenomeNrFromENr(oE,dataset)]=1 );
             treeProt := CreateArray(1..nP): 
             # logical array if lineage is present in all projects
             miss := CreateArray(1..nrBins, 0);
@@ -45,7 +45,7 @@ FindCases := proc(iSet, prjNrs:list)
                 for vp in vps do
                     if not member(vp,iSet) then next fi;
                     
-                    bin := orgNr2Bin[ GenomeNrFromENr(vp) ]:
+                    bin := orgNr2Bin[ GenomeNrFromENr(vp,dataset) ]:
                     if bin>1 then vpCat[bin] := append(vpCat[bin], vp) fi:
                 od:
     	        for i from 2 to nrBins do 
@@ -86,7 +86,9 @@ end:
 ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:posint)
     global DB, Ndone:
     RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
-    DB := SeqDB := ReadDb(omaDBpath.'ServerSeqs.db'):
+    
+    ddir := eval(symbol(lowercase(dataset).'DBpath'));
+    DB := SeqDB := ReadDb(ddir.'ServerSeqs.db'):
     cErr := Counter('# errors in PhylogeneticTree');
     if not type(Ndone, integer) then Ndone:=0 fi:
 
@@ -152,6 +154,27 @@ elif meth='PAIRWISE' then
 	fi:
     od:
     StoreResult(resFn, RFstats, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)]);
+elif length(meth)>=6 and meth[1..6]='REFSET' then
+    cases := CreateArray(1..nP,[]):
+    prjNrs := [seq(i,i=1..nP)];
+    resFnParts := CreateArray(1..nP):
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    for i to nP do 
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
+	if FileExists(resFnParts[i]) then next fi:
+        cases[i] := FindCases( intersect(), [i] );
+    od:
+    t0 := time();
+    totNrTrees := sum(length(z),z=cases):
+    for i to nP do
+        if FileExists(resFnParts[i]) then
+	   RFstat := 0; ReadProgram(resFnParts[i]): assert(length(RFstat)=1); RFstats[i] := RFstat;
+	else
+           RFstats[i] := ComputeCongruenceStat([prjNrs[i]], cases[i], totNrTrees):
+	   StoreResult(resFnParts[i], RFstats[i], [prj[i,'PID']]);
+	fi:
+    od:
+    StoreResult(resFn, RFstats, [seq(prj[i,'PID'],i=1..nP)]);
 else error('unknown strategy method:'.meth); 
 fi:
 

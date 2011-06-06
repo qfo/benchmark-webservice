@@ -11,35 +11,35 @@
 <div id="mainLogo"> <!--<p><center><img src="/imgs/logo.png" alt="Ortholog Benchmarking Webservice" width="300" height="114"/></center></p>--> </div>
 
 <p>Provide us with your own ortholog inference data. After uploading your predictions, you will be able to 
-compare the quality of your predictions against other orthology inference efforts using different tests.</p>
+compare the quality of your predictions against other orthology inference efforts using several tests.</p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
  <fieldset><legend>Protein Reference Dataset</legend>
+  <div class="notes"><h4>Protein Sequence Data</h4>
+  <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
+   orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
+   proteins are mapped to each other.</p>
+   <p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">reference proteom dataset</a>. You can choose whether your orthology predictions should be assessed on the base of this reference dataset or on the proteom set of OMA.</p>
+  </div>
   <div>
-   <label for="reference">Protein Reference Dataset:</label>
-   <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />Reference Proteoms v5 (2011-04)
+   <label for="reference">Protein Reference Dataset:</label> <br/>
+   <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />Reference Proteoms v5 (2011-04) <br/>
    <input type="radio" name="reference" value="OMA"  class="inputRadio" onclick="toggleDisableSeqUploadOnDatasetChange(this)"/><a href="http://www.omabrowser.org">OMA Browser May 2010</a>
   </div>
   <div class="addInfo"><h4>Dataset sources</h4>
   The Reference Proteoms (version 5; 2011-04) is available in 
    <ul>
     <li><a href="http://www.seqxml.org/xml/Reference_proteomes.html">seqxml-format</a> and </li>
-    <li><a href="http://www.ebi.ac.uk/reference_proteomes/">fasta-format</a>from EBI.</li>
+    <li><a href="http://www.ebi.ac.uk/reference_proteomes/">fasta-format</a> from EBI.</li>
    </ul>
   </div>
  </fieldset>
  <fieldset><legend>Protein Sequence Data</legend>
   <div class="notes"><h4>Protein Sequence Data</h4>
-   <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
-   orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
-   proteins are mapped to each other.</p>
-   <p>To make comparisons of method easier, the orthology research community has <a href="">agreed in 2009</a> to established a 
-   common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">reference proteom dataset</a>. You can choose whether 
-   your orthology predictions should be assessed on the base of this reference dataset or on the proteom set of OMA.</p>
    <p>If you decide to go for the OMA protein dataset, you are supposed to upload your protein sequences. Currently, we support 
-   <a href="http://www.orthoxml.org/">SeqXML</a> and Fasta sequence formats. For Fasta it is expected that each label starts 
-   with a unique ID and the species is somehow encoded.</p>
-   <p class="last"><span class="emph">Due to recent changes on the SeqXML and OrthoXML schema, those formats are currently disabled.</span></p>
+   <!-- <a href="http://www.orthoxml.org/">SeqXML</a> and -->
+   Fasta sequence formats. It is expected that each label starts 
+   with a unique ID and the species is somehow encoded, e.g. SwissProt/UniProt species codes or ncbi taxonomic ids</p>
   </div>
   <div>
    <label for="seqs">Protein Sequences:</label>
@@ -48,7 +48,7 @@ compare the quality of your predictions against other orthology inference effort
   <div>
    <label for="seqType">Format:</label> 
    <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" disabled="disabled" />Fasta
-   <input type="radio" name="seqType" value="xml" class="inputRadio" disabled="disabled"/>XML
+<!--   <input type="radio" name="seqType" value="xml" class="inputRadio" disabled="disabled"/>XML -->
   </div>
   <div class="addInfo"><h4>Example Datasets</h4>
    <ul>
@@ -60,9 +60,12 @@ compare the quality of your predictions against other orthology inference effort
  
  <fieldset><legend>Ortholog Relation Data</legend>
   <div class="notes"><h4>Ortholog Relation Data</h4>
-   <p class="last">The most general form of specifying orthology is a pairwise listing of orthologous proteins. Therefore, we encourage 
-   to upload your prediction in the pairwise format, a simple text file with two tab-separated columns of orthologous 
-   protein ids.</p>
+   <p class="last">Our tests assess orthology on the bases of protein pairs. Therefore, we ask our users to upload their prediction in a format from which we can extract pairwise relations in an unambiguous manner: We support</p> 
+   <ul>
+    <li> simple simple text file with two tab-separated columns of orthologous protein represented by their ids</li>
+    <li> <a href="http://orthoxml.org/0.3/orthoxml_doc_v0.3.html" title="Documentation orthoxml format">orthoxml v0.3</a>, which allows for nested <i>orthologGroups</i> and <i>paralogGroups</i>.
+   </ul>
+   <p>For both formats, we expect you to submit your predictions in a single file. </p>
   </div>
   <div>
    <label for="rels">Ortholog Relations:</label>
@@ -71,13 +74,14 @@ compare the quality of your predictions against other orthology inference effort
   <div>
    <label for="relType">Format:</label> 
    <input type="radio" name="relType" value="txt" class="inputRadio" checked="checked" />Text (pairwise orthologs)
-   <input type="radio" name="relType" value="xml" class="inputRadio" />XML
+   <input type="radio" name="relType" value="xml" class="inputRadio" />orthoXML v0.3
 <!--   <input type="radio" name="relType" value="cog" class="inputRadio"/>COG groups format -->
   </div>
   <div class="addInfo"><h4>Example Datasets</h4>
    <ul>
     <li>A small dataset comprising 7 Bacteria genomes in the pairwise text format: <a href="/examples/BacExample.txt">BacExample.txt</a> (273Kb)</li>
     <li>Eukaryotic dataset with 9 genomes in pairwise text format: <a href="/examples/EukBBH.txt">EukBBH.txt</a> (5Mb) </li>
+    <li>Dataset of OMA Groups on reference proteomes in orthoxml format: <a href="/examples/OMAGroups.orthoxml">OMAGroups.orthoxml</a> (45Mb)</li>
     </ul>
    </div>
  </fieldset>

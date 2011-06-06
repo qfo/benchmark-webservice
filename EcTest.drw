@@ -12,7 +12,7 @@ Set(printgc=false); Set(gc=5e6):
 OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
 
 prj := [seq(GetPKeyData(z),z=projs)]:
-LoadGenomeStartIDs(); # initalizes GSID
+dataset := prj[-1,'ref'];
 
 # load the project databases
 nP := length(prj); dbs := CreateArray(1..nP):
@@ -25,7 +25,7 @@ if not type(dbs, list(database)) then
    quit
 fi:
 
-ReadProgram(datdir.'enzymes.drw'); # assigns EC
+ReadProgram(datdir.'enzymes_'.dataset.'.drw'); # assigns EC
 
 # get the superclasses for a given EC including the empty class -> any Enzyme.
 ECsuperclassR := proc( c:string )
@@ -175,6 +175,22 @@ elif meth='PAIRWISE' then
         fi:
     od:
     StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);
+elif length(meth)>=6 and meth[1..6]='REFSET' then
+    SimsRes := CreateArray(1..nP):
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    maxP := 1:
+    for curP to nP do 
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
+        if FileExists(resFnPart) then 
+            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(type(Sims,Stat)); SimsRes[curP] := Sims;
+        else
+            freqs := ECFreqs(intersect()):
+            SimsRes[curP] := ComputePerformance(intersect(), [curP])[1]:
+            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth);
+        fi:
+    od:
+    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth);
+
 else error('unknown strategy method:'.meth); 
 fi:
 

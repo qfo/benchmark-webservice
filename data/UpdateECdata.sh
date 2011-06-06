@@ -1,8 +1,9 @@
 #!/bin/bash
-darwin64="/home/darwin/v2/source/darwin64"
+darwin64="/local/bin/darwin64 -q"
 enzRaw="/tmp/enzymes.dat"
 enzDrw="/tmp/enzymes.drw"
-enzDat="data/enzymes.drw"
+dataset="RefSet5"
+enzDat="data/enzymes_$dataset.drw"
 
 wget "ftp://ftp.expasy.org/databases/enzyme/enzyme.dat" -O $enzRaw
 if [ $? -ne 0 ] ; then echo "could not download enzyme.dat"; exit 1; fi
@@ -17,10 +18,10 @@ if SearchDelim('/',pwd[1..-2])[-1]<>'BenchmarkService' then
 printf('wrong working directory. Should be at BenchmarkService'); quit; fi:
 
 ReadProgram('lib/darwinit');
-LoadGenomeStartIDs();
-IDDB := LoadIndex(omaDBpath.'IDIndex.db');
+ddir := eval(symbol(lowercase('$dataset').'DBpath'));
+IDDB := LoadIndex(ddir.'IDIndex.db');
 
-EC := CreateArray(1..GSID[1,-1]+GSID[3,-1]-1):
+EC := CreateArray( 1..NrOfProteins('$dataset') ):
 c_inOma := Counter('number of proteins mappable to OMA');
 c_all   := Counter('total Proteins with EC numbers');
 

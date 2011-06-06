@@ -12,6 +12,7 @@
 Select from the available benchmarks and against which standard 
 orthology inference project you would like to compare your predictions
 <form action="gateway.pl" method="post">
+ <DBOOL name="notRefSet">
  <fieldset><legend>Test Strategy</legend>
   <div class="notes"><h4>Select your strategy of testing</h4>
    <p>Performing the <b>pairwise tests</b> allows you to compare the quality of your predicted orthologs against each selected project independently. Comparisons across the different reference projects are not valid, as the set of proteins in general differs.</p>
@@ -22,6 +23,10 @@ orthology inference project you would like to compare your predictions
    <input type="radio" id="pIntersect" name="pTestStrategy" value="intersect" /><label for="pIntersect">Protein intersection set of selected projects and <DVAR name="tit"></label>
   </div>
  </fieldset>
+ </DBOOL>
+ <DBOOL name="isRefSet">
+  <input type="hidden" name="pTestStrategy" value="<DVAR name="ref">" />
+ </DBOOL>
 
  <fieldset><legend>Phylogeny-Based Definition Tests</legend>
   <div class="notes"><h4>Phylogeny-Based Definition</h4>

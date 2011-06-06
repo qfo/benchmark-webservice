@@ -177,11 +177,16 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
     fi:
 end:
 
+Handle2dROCFiles_REFSET := proc()
+    Handle2dROCFiles_INTERSECT(args);
+end:
+
 Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
         'aggregate'=((aggregate='sample variance'):string) )
     if DEBUG then print(args) fi:
-    m := symbol(procname.'_'.meth);
+    method := If(length(meth)>=6 and meth[1..6]='REFSET',meth[1..6],meth):
+    m := symbol(procname.'_'.method);
     m(args[2..-1]);
 end:
 
@@ -298,10 +303,13 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
     fi;
 end:
 
-
+HandleBoxRFFiles_REFSET := proc() 
+    HandleBoxRFFiles_INTERSECT(args);
+end:
 
 HandleBoxRFFiles := proc(meth:string, resFn:string, resBase:string, vars:table)
-    m := symbol(procname.'_'.meth);
+    method := If(length(meth)>5 and meth[1..6]='REFSET', meth[1..6], meth);
+    m := symbol(procname.'_'.method);
     m(args[2..-1]);
 end:
  
@@ -417,9 +425,13 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
     fi;
 end:
 
+Handle2dSimFiles_REFSET := proc() 
+    Handle2dSimFiles_INTERSECT(args);
+end:
 
 Handle2dSimFiles := proc(meth:string, resFn:string, resBase:string, vars:table;
         'measure'=((measure='avg Lin'):string) )
-   m := symbol(procname.'_'.meth):
-   m(args[2..-1]);
+    method := If( length(meth)>5 and meth[1..6]='REFSET', meth[1..6], meth ):
+    m := symbol(procname.'_'.method):
+    m(args[2..-1]);
 end:
