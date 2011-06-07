@@ -1,3 +1,5 @@
-#!/bin/csh
-unlimit stacksize
-/usr/bin/nohup /local/darwin_source/darwin64 </local/BenchmarkService/ServerMain.drw >>/local/BenchmarkService/output&
+#!/bin/bash
+
+ulimit -s unlimited
+ROOT="/local/BenchmarkService"
+/usr/bin/nohup /local/bin/darwin64 -i $ROOT/ServerMain.drw >> $ROOT/output &
