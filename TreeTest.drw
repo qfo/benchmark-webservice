@@ -156,6 +156,7 @@ elif meth='PAIRWISE' then
     StoreResult(resFn, RFstats, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)]);
 elif length(meth)>=6 and meth[1..6]='REFSET' then
     cases := CreateArray(1..nP,[]):
+    RFstats := CreateArray(1..nP):
     prjNrs := [seq(i,i=1..nP)];
     resFnParts := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
@@ -168,9 +169,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     totNrTrees := sum(length(z),z=cases):
     for i to nP do
         if FileExists(resFnParts[i]) then
-	   RFstat := 0; ReadProgram(resFnParts[i]): assert(length(RFstat)=1); RFstats[i] := RFstat;
+	   RFstat := 0; ReadProgram(resFnParts[i]): assert(type(RFstat,Stat)); RFstats[i] := RFstat;
 	else
-           RFstats[i] := ComputeCongruenceStat([prjNrs[i]], cases[i], totNrTrees):
+           RFstats[i] := ComputeCongruenceStat([prjNrs[i]], cases[i], totNrTrees)[1]:
 	   StoreResult(resFnParts[i], RFstats[i], [prj[i,'PID']]);
 	fi:
     od:
