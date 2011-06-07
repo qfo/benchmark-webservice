@@ -131,6 +131,7 @@ function toggleDisableSeqUploadOnDatasetChange(rad){
 //          elm.disabled = disabledDatasetUpload;
 }
 function setFormSubmitted(button) {
-    button.disabled = true;
+//button.disabled = true;
     document.getElementById("afterSubmit").style.visibility = "visible";
+	document.forms[0].submit();
 }
