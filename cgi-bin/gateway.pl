@@ -85,10 +85,14 @@ else {
             my $data = $cache->get($session);
             unless($data and ref $data eq "ARRAY"){
                 open(ERRLOG,">>$error_log");
-                print ERRLOG "session data invalid";
+                print ERRLOG "session data invalid: $session\n";
                 close(ERRLOG);
                 delete_all();
-                print redirect(self_url());
+		print header(-status=>500);
+		print h1("Invalid session number");
+		print p('Sorry, you will need to start over: <a href="'
+		    . self_url() . '">home</a>');
+                #print redirect(self_url());
                 exit 0;
             }
             if ($data->[0] == 0){
@@ -105,7 +109,7 @@ else {
             } 
             else {
                 # error happend in conversion
-                print header(status=>400);
+                print header(-status=>500);
                 print $data->[1];
                 print end_html;
                 open(ERRLOG, ">>$error_log"); print ERRLOG $data->[0].":".$data->[1]."\n"; close(ERRLOG);
@@ -219,7 +223,7 @@ close(REQ);
 ####################################################################
 # We make sure that the server is alive 
 $SIG{"ALRM"} = sub { 
-    print header(status=>500);
+    print header(-status=>500);
     print "Server too busy, please try again in a few minutes...\n"; 
     print $ENV{QUERY_STRING};
     unlink($file.'.alive'); 

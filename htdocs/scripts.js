@@ -120,8 +120,17 @@ function sprintf () {
 }
 
 function toggleDisableSeqUploadOnDatasetChange(rad){
-  var disabledDatasetUpload = !(rad.value=="OMA");
-  for (var k=0,elm; elm=rad.form.elements[k]; k++)
-      if(elm.name=="seqType" || elm.name=="seqs")
-          elm.disabled = disabledDatasetUpload;
+  if (rad.value=="OMA") {
+      document.getElementById("SequencesUpload").style.display = "inherit";
+  }
+  else {
+      document.getElementById("SequencesUpload").style.display = "none";
+  }
+//  for (var k=0,elm; elm=rad.form.elements[k]; k++)
+//      if(elm.name=="seqType" || elm.name=="seqs")
+//          elm.disabled = disabledDatasetUpload;
+}
+function setFormSubmitted(button) {
+    button.disabled = true;
+    document.getElementById("afterSubmit").style.visibility = "visible";
 }

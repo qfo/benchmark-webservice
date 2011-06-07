@@ -11,7 +11,7 @@
 <div id="mainLogo"> <!--<p><center><img src="/imgs/logo.png" alt="Ortholog Benchmarking Webservice" width="300" height="114"/></center></p>--> </div>
 
 <p>Provide us with your own ortholog inference data. After uploading your predictions, you will be able to 
-compare the quality of your predictions against other orthology inference efforts using several tests.</p>
+ ompare the quality of your predictions against other orthology inference efforts using several tests.</p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
  <fieldset><legend>Protein Reference Dataset</legend>
@@ -34,7 +34,7 @@ compare the quality of your predictions against other orthology inference effort
    </ul>
   </div>
  </fieldset>
- <fieldset><legend>Protein Sequence Data</legend>
+ <fieldset style="display: none;" id="SequencesUpload"><legend>Protein Sequence Data</legend>
   <div class="notes"><h4>Protein Sequence Data</h4>
    <p>If you decide to go for the OMA protein dataset, you are supposed to upload your protein sequences. Currently, we support 
    <!-- <a href="http://www.orthoxml.org/">SeqXML</a> and -->
@@ -43,11 +43,11 @@ compare the quality of your predictions against other orthology inference effort
   </div>
   <div>
    <label for="seqs">Protein Sequences:</label>
-   <input type="file" name="seqs" class="inputFile" disabled="disabled"/>
+   <input type="file" name="seqs" class="inputFile" />
   </div>
   <div>
    <label for="seqType">Format:</label> 
-   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" disabled="disabled" />Fasta
+   <input type="radio" name="seqType" value="fasta" class="inputRadio" checked="checked" />Fasta
 <!--   <input type="radio" name="seqType" value="xml" class="inputRadio" disabled="disabled"/>XML -->
   </div>
   <div class="addInfo"><h4>Example Datasets</h4>
@@ -98,14 +98,12 @@ compare the quality of your predictions against other orthology inference effort
 
  <fieldset>
   <input type="hidden" name="f" value="UploadData"/>
-  <input type="submit" value="Submit &raquo;" class="inputSubmit"/>
+  <input type="submit" value="Submit &raquo;" class="inputSubmit" onClick="setFormSubmitted(this);"/>
+  <div id="afterSubmit" style="visibility: hidden;">(Please wait while your data get uploaded to the benchmarking server.)</div>
  </fieldset>
 </form>
-<p>Or try out the webservice on the basis of the <a href="http://www.omabrowser.org">OMA predictions</a> and 
-see all the implemented tests that are available also to your data.<br/>
-<a href="gateway.pl?f=TestSelection&amp;pPID=NE29Yxm5WI9Am5Y">try existing example (OMA)</a>.</p>
 
-<p><em>&copy;2009, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em></p>
+<p><em>&copy;2011, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em></p>
 </div>
 </body>
 </html>
