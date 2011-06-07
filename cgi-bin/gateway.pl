@@ -5,8 +5,12 @@ use CGI::Cookie;
 use POSIX qw/mkfifo strftime/;
 use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
+use File::Basename;
 use Time::localtime;
 use IO::Zlib;
+use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError) ;
+
 use XML::SAX;
 use SeqXML;
 use OrthoXML;
@@ -348,7 +352,7 @@ sub RelXML2Drw {
     my ($fh, $fn) = @_;
     
     my $relFh;
-    $cache->set($session,[0,"processing orthoXML file"]);
+    $cache->set($session,[0,"<p>processing orthoXML file. This may take a while, e.g. a 45Mb file requires roughly 20min to be processed</p>"]);
     open( $relFh, ">$fn") or die($!);
     my $handler = OrthoXML->new($relFh);
     my $parser = XML::SAX::ParserFactory->parser(Handler => $handler);
@@ -472,6 +476,7 @@ sub process_datafiles{
         
         $cache->set($session,[0,"saving ".$upFile." file"]);
         my $fn = "$fnBase.$upFile";
+        my ($fileName,$path,$suffix) = fileparse($req->param($upFile),qr/\.(gz|bz2)/);
         my $fh = $req->upload($upFile);
         if (!$fh && cgi_error) {
             $cache->set($session, [-1, "CGI error: ".&cgi_error]);
@@ -479,6 +484,16 @@ sub process_datafiles{
         }
         print DBGLOG "upload of ".$upFile." finished" if $debug;
         $fh = $fh->handle;
+        if ($suffix ne ""){
+            open( my $decmpFh, ">$fn.tmp");
+            if ($suffix eq ".gz"){
+                gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
+            } elsif ($suffix eq ".bz2"){
+                bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
+            }
+            seek( $decmpFh, 0, 0 );
+            $fh = $decmpFh;
+        }
         if( $upFile eq "seqs"){
            if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
            } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
@@ -505,8 +520,8 @@ sub getCacheHandle {
       ({
         namespace => 'BenchmarkService',
         username => 'nobody',
-        default_expires_in => '30 minutes',
-        auto_purge_interval => '4 hours',
+        default_expires_in => '48 hours',
+        auto_purge_interval => '240 hours',
        });
 }
 
