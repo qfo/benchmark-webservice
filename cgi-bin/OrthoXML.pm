@@ -67,8 +67,11 @@ sub end_element{
             $curGroup = "";
             $cnts += 1;
         }
+        else{
+            $curGroup .= ",";
+        }
     } elsif ($element->{Name} eq "paralogGroup"){
-        $curGroup .= "NULL)";
+        $curGroup .= "NULL),";
         $inPG--;
         $inOG>0 or die("not nested 'paralogGroup' tag");
     }
