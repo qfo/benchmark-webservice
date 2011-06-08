@@ -1,0 +1,5 @@
+# Histogram of the 6 used genomes: [2, 0, 1, 1, 0, 1, 1]
+catBins := [{ECOLI,PSEA7}, {}, {BRAJA}, {GEOSL}, {}, {LEPIN}, {BACSU}] :
+MAX_NR_TREES := 10000:
+speciestree := Tree(Tree(Tree(Tree(Tree(Tree(Leaf(1,6),5,Leaf(2,6)),4,Leaf(3,5)),3,Leaf(4,4)),2,Leaf(5,3)),1,Leaf(6,2)),0,Leaf(7,1)):
+missThreshold := 1:
