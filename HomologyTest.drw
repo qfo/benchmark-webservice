@@ -1,0 +1,84 @@
+# 
+# A script to measure missing and fp homolog relations of 
+# multidomain proteins based on the method and data of 
+# Dannie Durand (Song et al, PLOS Comp Biol, 2008)
+#
+#                             Adrian Altenhoff, Jun 8, 2011  
+#
+#  in: resFn, filter, projs, lock, 
+Set(printgc=false); Set(gc=5e6): 
+OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+
+prj := [seq(GetPKeyData(z),z=projs)]:
+dataset := prj[-1,'ref'];
+
+# load the project databases
+nP := length(prj); dbs := CreateArray(1..nP):
+for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
+if not type(dbs, list(database)) then 
+   OpenWriting(resFn);
+   printf('error(''could not open databases'');\n');
+   OpenWriting(previous);
+   CallSystem('rm -f '.lock);
+   quit
+fi:
+
+ReadProgram(datdir.'homologyTest_'.dataset.'.drw'); # assigns pos/neg
+ 
+StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
+    OpenWriting(fn):
+    printf('# created on %s\n', date());
+    printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
+    printf('#PIDs := %A:\n', PIDs );
+    printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
+    OpenWriting(previous):
+end:
+          
+if meth='INTERSECT' then
+    iSet  := GetProjISets(prj):
+    prjNrs:= [seq(i,i=1..nP)];
+    freqs := ECFreqs(iSet):
+    curP := 1; maxP := 1;
+    SimsRes := ComputePerformance(iSet, prjNrs):
+    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=prjNrs)], filter, measure, meth);
+elif meth='PAIRWISE' then
+    maxP := nP-1;
+    SimsRes := CreateArray(1..maxP):
+    prjNrs := [seq([i,nP],i=1..maxP)];
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    for curP to maxP do 
+        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,measure,'INTERSECT']) );
+        if FileExists(resFnPart) then 
+            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(length(Sims)=2); SimsRes[curP] := Sims;
+        else
+            iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
+            freqs := ECFreqs(iSet):
+            SimsRes[curP] := ComputePerformance(iSet, prjNrs[curP]):
+            StoreResult(resFnPart, SimsRes[curP], [seq(prj[j,'PID'], j=prjNrs[curP])], filter, measure, 'INTERSECT');
+        fi:
+    od:
+    StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);
+elif length(meth)>=6 and meth[1..6]='REFSET' then
+    SimsRes := CreateArray(1..nP):
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    maxP := 1:
+    for curP to nP do 
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
+        if FileExists(resFnPart) then 
+            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(type(Sims,Stat)); SimsRes[curP] := Sims;
+        else
+            freqs := ECFreqs(intersect()):
+            SimsRes[curP] := ComputePerformance(intersect(), [curP])[1]:
+            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth);
+        fi:
+    od:
+    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth);
+
+else error('unknown strategy method:'.meth); 
+fi:
+
+
+CallSystem('rm -f '.lock);
+done;
+
