@@ -101,7 +101,7 @@ MapPairsFromFile := proc(fn:string, map)
     return(pairs);
 end:
 
-ExludeSameSpeciesPairs := proc(pairs:list)
+ExcludeSameSpeciesPairs := proc(pairs:list)
     filtered := []:
     for pair in pairs do 
         s := {seq(GenomeNrFromENr(z,'$DATASET'), z=pair)};
