@@ -49,10 +49,12 @@ sub start_element{
     elsif ($element->{Name} eq "groups"){
         $curGroup = "";
     }
-    if (time() - $lastAlive > 15 ){
-        print "\n";
-        $lastAlive = time();
-    }
+#    if (time() - $lastAlive > 15 ){
+#        if ($inGenes>0) {print "in genes\n";}
+#        elsif ($inOG>0) {print "in OG\n";}
+#        else {print "don't know\n";};
+#        $lastAlive = time();
+#    }
 }
 
 sub end_element{

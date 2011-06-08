@@ -31,6 +31,7 @@ my $debug = 0;
 my $storeRaw = 1;
 my $error_log = '/local/BenchmarkService/output';
 my $dbg_log = '/local/BenchmarkService/dbg.log';
+my $upload_log = '/local/BenchmarkService/upload.log';
 
 BEGIN {
     unshift @INC, '/local/BenchmarkService/lib';
@@ -138,10 +139,12 @@ else {
             elsif (defined $pid){
                 # chlild process
                 close STDOUT; # allows parent to go on
+                open STDOUT, '>>', "$upload_log";
 
                 print DBGLOG "[child] session is $session\n" if $debug;
                 process_datafiles();
                 print DBGLOG "[child] finished conversion of datafile" if $debug;
+                close STDOUT;
                 exit 0;
             } 
             else { die "cannot fork: $!";
@@ -352,11 +355,13 @@ sub RelXML2Drw {
     my ($fh, $fn) = @_;
     
     my $relFh;
-    $cache->set($session,[0,"<p>processing orthoXML file. This may take a while, e.g. a 45Mb file requires roughly 20min to be processed</p>"]);
-    open( $relFh, ">$fn") or die($!);
+    $cache->set($session,[0,"processing orthoXML file. This may take a while, e.g. a 45Mb file requires roughly 20min to be processed"]);
+    open( $relFh, ">$fn") or die("cannot open $fn for writing: $!");
     my $handler = OrthoXML->new($relFh);
     my $parser = XML::SAX::ParserFactory->parser(Handler => $handler);
-    $parser->parse_file($fh);
+    print "[$session] parser initialized, start parsing...\n";
+    $parser->parse_file($fh) or die("can't parse: $!");
+    print "[$session] ...finished parsing\n";
     close( $relFh );
     return( $handler->get_nr_of_relations());
 }
@@ -482,7 +487,7 @@ sub process_datafiles{
             $cache->set($session, [-1, "CGI error: ".&cgi_error]);
             exit 0;
         }
-        print DBGLOG "upload of ".$upFile." finished" if $debug;
+        print "[$session] upload of ".$upFile." finished\n";
         $fh = $fh->handle;
         if ($suffix ne ""){
             open( my $decmpFh, ">$fn.tmp");
@@ -493,6 +498,7 @@ sub process_datafiles{
             }
             seek( $decmpFh, 0, 0 );
             $fh = $decmpFh;
+            print "[$session] decompression finished, fh reset\n";
         }
         if( $upFile eq "seqs"){
            if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
@@ -507,6 +513,7 @@ sub process_datafiles{
            } else {die("unknown relType: ".$req->param("relType"));}
         }
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
+        print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
     }
     push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'");
     push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'");
