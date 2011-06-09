@@ -71,7 +71,7 @@ ExtractInducedPairsR := proc(hcl)
             child := procname(z);
             indOrthologs := append(indOrthologs, op(child[1]));
             indParalogs := append(indParalogs, op(child[2]));
-            membProt := append( membProt, [op(indets(child, integer))] );
+            membProt := append( membProt, [op(indets([child], integer))] );
         else error('unexpected data: '.string(z)) fi:
     od:
     
