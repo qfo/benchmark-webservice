@@ -37,7 +37,7 @@ FracOfPredictedPairs := proc( pairs, iSet, directMap:boolean )
             prd := length( intersect(vps, restrictedPair) );
             predicted := predicted + prd;
             cnt := cnt + length(restrictedPair);
-        if:
+        fi:
     od:
     return( If(cnt>0,predicted/cnt,0), cnt );
 end:
@@ -88,22 +88,22 @@ elif meth='PAIRWISE' then
                 [seq(prj[j,'PID'], j=prjNrs[curP])], 'INTERSECT');
         fi:
     od:
-    StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);
+    StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], meth);
 elif length(meth)>=6 and meth[1..6]='REFSET' then
-    SimsRes := CreateArray(1..nP):
+    Res := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     maxP := 1:
     for curP to nP do 
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],meth]) );
         if FileExists(resFnPart) then 
-            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(type(Sims,Stat)); SimsRes[curP] := Sims;
+            Res[curP] := 0; ReadProgram(resFnPart): Res[curP] := [FPR, TPR];
         else
             freqs := ECFreqs(intersect()):
-            SimsRes[curP] := ComputePerformance(intersect(), [curP])[1]:
-            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth);
+            Res[curP] := ComputePerformance(intersect(), [curP])[1]:
+            StoreResult(resFnPart, Res[curP,1], Res[curP,2], [prj[curP,'PID']], meth);
         fi:
     od:
-    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth);
+    StoreResult(resFn, Res[1], Res[2], [seq(prj[i,'PID'], i=1..nP)], meth);
 
 else error('unknown strategy method:'.meth); 
 fi:
