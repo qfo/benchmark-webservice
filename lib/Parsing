@@ -3,11 +3,29 @@
 ParseStrategy := proc(pnames:list, params:list)
     k := SearchArray('pTestStrategy', pnames);
     if k<=0 then error('TestStrategy not defined') fi:
-    
+
     meth := uppercase(params[k]):
     if not member(meth, {'PAIRWISE','INTERSECT','REFSET5'}) then
         error('TestStrategy not allowed: '.meth);
     fi:
     return(meth);
 end:
+
+ParseParam := proc(target:string, pnames:list, params:list;
+    'default'=((default=NULL):anything) )
+
+    k := SearchArray(target, pnames);
+    if k<=0 then default else params[k] fi:
+end:
+
+ParseAllPrefixParams := proc( prefix, pnames, params ;
+    'onlyIf'=((filter=NULL):string) )
+    len := length(prefix);
+    res := [seq( If(length(pnames[i])>len
+                    and pnames[i,1..len]=prefix
+                    and (filter=NULL or params[i]=filter),
+                    pnames[i,len+1..-1], NULL), i=1..length(pnames))];
+    return(res);
+end:
+
 

@@ -70,3 +70,5 @@ GetTreeCase := noeval(ReadLibrary(wdir.'lib/RecTree', GetTreeCase));
 GetAllTreeCases := noeval(ReadLibrary(wdir.'lib/RecTree', GetAllTreeCases));
 
 ParseStrategy := noeval(ReadLibrary(wdir.'lib/Parsing', ParseStrategy));
+ParseAllPrefixParams := noeval(ReadLibrary(wdir.'lib/Parsing',ParseAllPrefixParams)):
+ParseParam := noeval(ReadLibrary(wdir.'lib/Parsing',ParseParam));
