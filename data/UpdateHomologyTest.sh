@@ -110,16 +110,17 @@ ExcludeSameSpeciesPairs := proc(pairs:list)
     return( filtered );
 end:
 
-Reformat := proc(pairs:list)
+Reformat := proc(pairs_:list)
     nP := NrOfProteins('$DATASET');
     data := CreateArray(1..nP,{}):
-    cur := -1; partners := []:
+    pairs := sort(pairs_):
+    cur := pairs[1,1]; partners := [pairs[1,2]]:
     for pair in pairs do 
-        if pair[1]<>cur and cur>0 then
+        if pair[1]<>cur then
             data[cur] := {op(partners)};
             cur := pair[1]; partners := [];
         fi;
-        partners := append(partners, pairs[2]);
+        partners := append(partners, pair[2]);
     od:
     data[cur] := {op(partners)};
     return( data );
@@ -134,9 +135,23 @@ negAll := MapPairsFromFile( '$RAW/homologyTest.neg.dat', map2oENr ):
 pos := Reformat( ExcludeSameSpeciesPairs(posAll) ):
 neg := Reformat( ExcludeSameSpeciesPairs(negAll) ):
 
+nP  := NrOfProteins('$DATASET');
+
+
+Set(quiet);
 OpenWriting('$OUTFILE');
 printf('# $DATASET dataset, created %s\n', date());
-printf('pos := %A:\nneg := %A:\n', pos, neg):
+printf('pos := table(): neg := table():\n');
+printf('__TMP := CreateArray(1..%d,{}):\n',nP);
+for i to nP do if length(pos[i])>0 then
+    printf('__TMP[%d] := %A:\n', i, pos[i]);
+fi od:
+printf('pos[''HumMus''] := __TMP:\n);
+printf('__TMP := CreateArray(1..%d,{}):\n',nP);
+for i to nP do if length(neg[i])>0 then
+    printf('__TMP[%d] := %A:\n', i, neg[i]);
+fi od:
+printf('neg[''HumMus''] := __TMP:\n'):
 OpenWriting(previous);
 EOA
 
