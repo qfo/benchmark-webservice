@@ -67,13 +67,29 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" <DVAR name="styleRefPhylo"> /><label for="pRefPhylo1">Agreement with Reference Phylogenies</label></h4>
+    <h4><input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" <DVAR name="styleRefPhylo"> /><label for="pRefPhylo1">Agreement with Reference Phylogenies (contributed by Brigitte B&ouml;ckmann)</label></h4>
     <DBOOL name="hasRefPhylo">
     <div class="testParam">
      <label class="test" for="pRefPhyloPrj1">Projects to compare with:</label>
      <div class="testParamList"><DVAR name="RefPhyloProjects"></div>
      <label class="test" for="<DVAR name="RefPhyloProb1_id">">Reference Phylogenies:</label>
      <div class="testParamList"><DVAR name="RefPhyloProblems"></div>
+    </div>
+    </DBOOL>
+   </div>
+  </div>
+ </fieldset>
+
+ <fieldset><legend>Homology of Mulit-Domain Proteins Test</legend>
+  <div class="test_kind">
+   <div class="test">
+    <h4><input type="checkbox" id="pHom1" name="pHom1" <DVAR name="styleHom"> /><label for="pHom1">Detection Accuracy of Multi-Domain Protein (contributed by Joseph Jackobs and Dannie Durand)</label></h4>
+    <DBOOL name="hasHom">
+    <div class="testParam">
+     <label class="test" for="pHomPrj1">Projects to compare with:</label>
+     <div class="testParamList"><DVAR name="HomProjects"></div>
+     <label class="test" for="pHomProbHumMus">Datasets:</label>
+     <div class="testParamList"><DVAR name="HomProblems"></div>
     </div>
     </DBOOL>
    </div>

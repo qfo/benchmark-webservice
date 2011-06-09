@@ -415,7 +415,29 @@ bsTestSelection := proc(PID:string)
                            SearchString('<input',vars['RefPhyloProblems'])>=0;
     vars['styleRefPhylo'] := If(vars['hasRefPhylo'] or dataset<>'OMA',
         'checked="checked"', 'disabled="disabled"');
-    
+   
+    ##################################
+    # Multi Domain Homology 
+    stub := 'pHomPrj';
+    vars['HomProjects'] := ConcatStrings(
+         [seq(If( length(pairwiseOverlap[pNr]>1,
+             sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+                     '<label for="%s%d">%s</label><br/>',
+                         stub, pNr, stub, pNr, stub, pNr, publicProjecs[pNr]),
+             ''), pNr=1..Npub)],'\n');
+    stub := 'pHomProb'; name := 'HumMus';
+    vars['HomProblems'] := sprintf(
+        '<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+        '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+        stub, name, stub, name, stub, name, 'Song <i>et al</i>, '.
+        'PLOS Comp Biol, 2008', 'Multidomain homologs between Human and Mouse');
+    vars['hasHom'] := SearchString('<input',vars['HomProjects'])>=0;
+    vars['styleHom'] := If(vars['hasHom'] or dataset<>'OMA', 
+        'checked="checked"', 'disabled="disabled"');
+
+
+    ##################################
+    # Function based
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
          [seq(If( length(pairwiseOverlap[pNr])>1,
@@ -612,6 +634,50 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     if DEBUG then print('GOtestvars:',vars) fi:
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars),isRunning] );
 end:
+
+StartHomologyTest := proc(PID:string, params:list, pnames:list)
+    fnBase := GetPKeyData(PID)['fnBase'];
+    lock  := sprintf('%s.Homology.lock',fnBase);
+    vars := table('');
+    vars['resheader'] := 'Correct Homology Detection of Multi-Domain Proteins';
+    vars['contributor'] := '';
+    vars['pubref'] := '';
+    vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
+    
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
+    projs := sort( projs, x->x['Title'] );
+    sel := [seq(If(length(z)>6 and z[1..6]='pHomPrj', parse(z[7..-1]), NULL), z=pnames)];
+    projs := [seq(projs[i,'PID'], i=sel), PID];
+
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then 
+        meth := 'INTERSECT'; fi:
+    measure := ParseParam('pHomAggMeas', pnames, params, 'default'='sample variance');
+    problems := ParseAllPrefixParams( 'pHomProb', pnames, params, 'onlyIf'='on');
+        
+    resBase := sprintf('Homology.%a', hash([projs,problems,measure,meth]) );
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
+    if FileExists(lock) then 
+        vars['content'] := HandleLockFile(lock);
+    elif FileExists(resFn) then
+        isRunning := false;
+        Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 'aggregate'=measure);
+    else 
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
+           'projs := %A; problems := %A; measure := %A; lock:=%A; meth:=%A; '.
+           'ReadProgram(''%s/HomologyTest.drw''); done;" | nice -n 19 %s &',
+               wdir, resFn, projs, problems, measure, lock, meth, wdir, darwin64);
+        prints(cmd);
+        CallSystem( cmd );
+        WriteLog('started command: '.cmd);
+        vars['content'] := '<p>Computation started...</p>';
+    fi:
+    if DEBUG then print('HomologyTestvars',vars) fi:
+    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
+end:
+
 
 #################################
 # Run Tests                     #
