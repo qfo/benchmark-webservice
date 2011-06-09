@@ -420,10 +420,10 @@ bsTestSelection := proc(PID:string)
     # Multi Domain Homology 
     stub := 'pHomPrj';
     vars['HomProjects'] := ConcatStrings(
-         [seq(If( length(pairwiseOverlap[pNr]>1,
+         [seq(If( length(pairwiseOverlap[pNr])>1,
              sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
                      '<label for="%s%d">%s</label><br/>',
-                         stub, pNr, stub, pNr, stub, pNr, publicProjecs[pNr]),
+                         stub, pNr, stub, pNr, stub, pNr, publicProjects[pNr]),
              ''), pNr=1..Npub)],'\n');
     stub := 'pHomProb'; name := 'HumMus';
     vars['HomProblems'] := sprintf(
@@ -740,6 +740,13 @@ bsCheckResults := proc(sessionkey)
 	vars['RefPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:
     fi;
+
+    k := SearchArray('pHom1', pnames);
+    if k>0 and params[k]='on' then
+        t := StartHomologyTest(PID, params, pnames);
+        vars['Hom'] := t[1];
+        if t[2]=true then refresh := true fi:
+    fi:
 
     k := SearchArray('pGO1',pnames);
     if k>0 and params[k]='on' then
