@@ -25,17 +25,19 @@ fi:
 
 ReadProgram(datdir.'homologyTest_'.dataset.'.drw'); # assigns pos/neg
 
-# pairs is list of [oE1, {oEx_i}], meaning the pairs 
-# [oE1, oEx_1], [oE1,oEx_2],...
+# pairs is list of length NrOfProteins containing a set of 
+# homologous/non-homologous partners 
 FracOfPredictedPairs := proc( pairs, iSet, directMap:boolean )
     predicted := cnt := 0;
-    for pair in pairs do if member(pair[1],iSet) then
-        eNr1 := If(directMap, pair[1], DBEntryNrFromENr(pair[1])):
-        vps := {op(ParseLongList(SearchTag('VP',Entry(eNr1))))}:
-        restrictedPair := intersect( pair[2], iSet );
-        prd := length( intersect(vps, restrictedPair) );
-        predicted := predicted + prd;
-        cnt := cnt + length(restrictedPair);
+    for oE1 to length(pairs) do 
+        if member(oE1, iSet) and length(pairs[oE1])>0 then
+            eNr1 := If(directMap, oE1, DBEntryNrFromENr(oE1)):
+            vps := {op(ParseLongList(SearchTag('VP',Entry(eNr1))))}:
+            restrictedPair := intersect( pairs[oE1], iSet );
+            prd := length( intersect(vps, restrictedPair) );
+            predicted := predicted + prd;
+            cnt := cnt + length(restrictedPair);
+        if:
     od:
     return( If(cnt>0,predicted/cnt,0), cnt );
 end:
@@ -82,7 +84,8 @@ elif meth='PAIRWISE' then
         else
             iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
             Res[curP] := ComputePerformance(iSet, prjNrs[curP]):
-            StoreResult(resFnPart, Res[curP,1], Res[curP,2], [seq(prj[j,'PID'], j=prjNrs[curP])], 'INTERSECT');
+            StoreResult(resFnPart, Res[curP,1], Res[curP,2], 
+                [seq(prj[j,'PID'], j=prjNrs[curP])], 'INTERSECT');
         fi:
     od:
     StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);

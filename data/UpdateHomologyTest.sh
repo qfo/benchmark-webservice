@@ -109,14 +109,30 @@ ExcludeSameSpeciesPairs := proc(pairs:list)
     od:
     return( filtered );
 end:
+
+Reformat := proc(pairs:list)
+    nP := NrOfProteins('$DATASET');
+    data := CreateArray(1..nP,{}):
+    cur := -1; partners := []:
+    for pair in pairs do 
+        if pair[1]<>cur and cur>0 then
+            data[cur] := {op(partners)};
+            cur := pair[1]; partners := [];
+        fi;
+        partners := append(partners, pairs[2]);
+    od:
+    data[cur] := {op(partners)};
+    return( data );
+end:
+
         
 fasta := ReadFastaWithNames('$RAW/homologyTest.fasta'):
 map2oENr := transpose(sort(MapProteins( op(fasta) ))):
 posAll := MapPairsFromFile( '$RAW/homologyTest.pos.dat', map2oENr ):
 negAll := MapPairsFromFile( '$RAW/homologyTest.neg.dat', map2oENr ):
 
-pos := ExcludeSameSpeciesPairs(posAll):
-neg := ExcludeSameSpeciesPairs(negAll):
+pos := Reformat( ExcludeSameSpeciesPairs(posAll) ):
+neg := Reformat( ExcludeSameSpeciesPairs(negAll) ):
 
 OpenWriting('$OUTFILE');
 printf('# $DATASET dataset, created %s\n', date());
