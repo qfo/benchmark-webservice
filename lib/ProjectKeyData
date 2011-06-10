@@ -51,9 +51,9 @@ AddPKeyData := proc(tit:string, fnbase:string ;
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
-    pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, false, 
-                    NSeqSub, NOrthSub, NSeqMap, NOrthMap, 
-		    {}, table() );
+    pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, 
+                    reference<>'OMA', NSeqSub, NOrthSub, NSeqMap, 
+                    NOrthMap, {}, table() );
 
     verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');

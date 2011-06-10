@@ -466,7 +466,6 @@ bsTestSelection := proc(PID:string)
 end:
 
 StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
-    global RFstat;
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.%s.lock',fnBase,king);
     vars := table('');
@@ -647,7 +646,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>6 and z[1..6]='pHomPrj', parse(z[7..-1]), NULL), z=pnames)];
+    sel := [seq(If(length(z)>7 and z[1..7]='pHomPrj', parse(z[8..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
     meth := ParseStrategy(pnames,params):
@@ -663,7 +662,9 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn) then
         isRunning := false;
-        Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 'aggregate'=measure);
+        Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 
+           'aggregate'=measure,'FPRLabel'='coverage', 
+           'TPRLabel'='false discovery rate');
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
            'projs := %A; problems := %A; measure := %A; lock:=%A; meth:=%A; '.

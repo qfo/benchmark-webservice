@@ -11,7 +11,7 @@ unset key
 
 #series below
 plot \
-<DLOOP name="series"> \
+<DLOOP name="plot"> \
     '<DVAR name="datafile">' index <DLVAR name="index"> using 1:2 \
         notit w boxes fill solid ls <DLVAR name="style">, \
     '<DVAR name="datafile">' index <DLVAR name="index"> using 1:2:3 \

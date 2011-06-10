@@ -162,6 +162,10 @@ to 1 do
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
     orgs := {seq(GenomeCodeFromENr(z,referenceDatSet),z=iSet)}:
     pKey['OrgsCovered'] := orgs:
+    if referenceDatSet<>'OMA' and relMapped>0 and 
+        pKey['NOrthSub']>0 and relMapped/pKey['NOrthSub']>.01 then
+        pKey['isPublic'] := true;
+    fi:
     UpdatePKeyDataPermanent(pKey);
 
     CallSystem('rm -f '.lock);

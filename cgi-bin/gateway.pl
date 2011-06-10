@@ -10,6 +10,7 @@ use Time::localtime;
 use IO::Zlib;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError) ;
+use IO::File;
 
 use XML::SAX;
 use SeqXML;
@@ -490,14 +491,15 @@ sub process_datafiles{
         print "[$session] upload of ".$upFile." finished\n";
         $fh = $fh->handle;
         if ($suffix ne ""){
-            open( my $decmpFh, ">$fn.tmp");
+            open( my $decmpFh,  ">$fn.tmp");
             if ($suffix eq ".gz"){
                 gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
             } elsif ($suffix eq ".bz2"){
                 bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
             }
-            seek( $decmpFh, 0, 0 );
-            $fh = $decmpFh;
+            close( $decmpFh );
+            close( $fh );
+            $fh = new IO::File("$fn.tmp", "r");
             print "[$session] decompression finished, fh reset\n";
         }
         if( $upFile eq "seqs"){

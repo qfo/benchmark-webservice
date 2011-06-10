@@ -2,6 +2,6 @@
 catBins := [{HUMAN}, {MACMU,PANTR}, {BOVIN,CANFA,MONDO,MOUSE,ORNAN,RATNO}, {
 CHICK,DANRE,SINMA,TAKRU}, {ANOGA,DROME,IXOSC}, {ASPFC,CANAL,CRYNE,NEUCR,PHANO,
 SCHPO,SCLS1,USTMA,YARLI,YEAST}] :
-MAX_NR_TREES := 10000:
+MAX_NR_TREES := 15000:
 speciestree := Tree(Tree(Tree(Tree(Tree(Leaf(1,5),4,Leaf(2,5)),3,Leaf(3,4)),2,Leaf(4,3)),1,Leaf(5,2)),0,Leaf(6,1)):
 missThreshold := 1:

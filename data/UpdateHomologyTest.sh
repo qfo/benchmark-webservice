@@ -146,7 +146,7 @@ printf('__TMP := CreateArray(1..%d,{}):\n',nP);
 for i to nP do if length(pos[i])>0 then
     printf('__TMP[%d] := %A:\n', i, pos[i]);
 fi od:
-printf('pos[''HumMus''] := __TMP:\n);
+printf('pos[''HumMus''] := __TMP:\n');
 printf('__TMP := CreateArray(1..%d,{}):\n',nP);
 for i to nP do if length(neg[i])>0 then
     printf('__TMP[%d] := %A:\n', i, neg[i]);

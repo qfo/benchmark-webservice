@@ -30,9 +30,13 @@ MeanVarPrint := proc(s:Stat)
     else s['MeanVar'] fi;
 end:
 
+
 Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
-        'aggregate'=((aggregate='sample variance'):string) )
+        'aggregate'=((aggregate='sample variance'):string),
+        'FPRLabel'=((fprLabel='false positive rate'):string),
+        'TPRLabel'=((tprLabel='true positive rate'):string))
+
     global FPR, TPR;
     FPR := TPR := 0;
     traperror(ReadProgram(resFn));
@@ -42,7 +46,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
     else
         prjNames := [seq(GetPKeyData(z)['Title'], z=PIDs)];
         tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
-	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR')) );
+	         Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
 	    for i to length(prjNames) do 
 	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
@@ -55,8 +59,8 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
-            t['xlabel'] := 'false positive rate (1 - specificity)';
-            t['ylabel'] := 'true positive rate (sensitivity)';
+            t['xlabel'] := fprLabel;
+            t['ylabel'] := tprLabel;
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
@@ -96,7 +100,9 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
 end:
 Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
-        'aggregate'=((aggregate='sample variance'):string) )
+        'aggregate'=((aggregate='sample variance'):string),
+        'FPRLabel'=((fprLabel='false positive rate'):string),
+        'TPRLabel'=((tprLabel='true positive rate'):string))
     global FPR, TPR;
     FPR := TPR := 0;
     traperror(ReadProgram(resFn));
@@ -183,12 +189,67 @@ end:
 
 Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
-        'aggregate'=((aggregate='sample variance'):string) )
+        'aggregate'=((aggregate='sample variance'):string),
+        'FPRLabel'=((fprLabel='false positive rate'):string),
+        'TPRLabel'=((tprLabel='true positive rate'):string))
     if DEBUG then print(args) fi:
     method := If(length(meth)>=6 and meth[1..6]='REFSET',meth[1..6],meth):
     m := symbol(procname.'_'.method);
     m(args[2..-1]);
 end:
+
+MakeIntersectTable := proc(data:list(Stat) ;
+    'covLabel'=((covLabel='# ortholog relations'):string),
+    'corLabel'=((corLabel='avg similarity'):string))
+
+    tab := Table( border, gutter=2, ColAlign(l,r,c),
+        Row(Bold('Project'),Bold(covLabel),Bold(corLabel)));
+    for z in data do
+        tab := append(tab, Row(z['Description'], z['Number'], MeanVarPrint(z)) );
+    od:
+    return( tab );
+end:
+
+GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
+    'plotType'=((plotType='2d'):{'2d','barchart'}),
+    'covLabel'=((covLabel='# ortholog relations'):string),
+    'corLabel'=((corLabel='avg similarity'):string))
+
+    t := table():
+    t['outfile'] := resPlotFn;
+    t['xlabel'] := covLabel;
+    t['ylabel'] := corLabel;
+    t['datafile'] := sprintf('/tmp/%s.dat', resBase);
+    plotTab := [seq(table(), length(data))];
+    if plotType='barchart' then
+        t['nSeries'] := length(data);
+        t['boxwidth'] := 0.8;
+        t['xtics'] := ConcatStrings( [seq(
+            sprintf('"%s" %.2f', data[i,'Description'],i),
+            i=1..length(data))], ', ' );
+    fi:
+    OpenWriting(t['datafile']);
+    for i to length(data) do
+        printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
+           If(plotType='2d', data[i,'Number'], i),
+           data[i,'Mean'], data[i,'StdErr']);
+        plotTab[i,'index'] := i-1;
+        plotTab[i,'title'] := data[i,'Description'];
+        plotTab[i,'style'] := i;
+    od:
+    OpenWriting(previous);
+    t['plot'] := plotTab;
+    cmdFile := sprintf('/tmp/%s.gp', resBase);
+    OpenWriting(cmdFile);
+    prints( GenerateTemplate(wdir.'/templates/'.plotType.'_multi.gp', t) );
+    OpenWriting(previous);
+
+    CallSystem('gnuplot '.cmdFile);
+    CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+    CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
+    CallSystem('mv '.resBase.'.tgz '.rawdir);
+end:
+
 
 HandleBoxRFFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table)
     global RFstat;
@@ -197,44 +258,14 @@ HandleBoxRFFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table)
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
-        tab := Table( border, gutter=2, ColAlign(l,r,c), 
-               Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )')));
-        for z in RFstat do 
-            tab := append(tab, Row(z[Description], z[Number], MeanVarPrint(z)));
-        od:
+        tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
+            'corLabel'='avg RF distance( genetree , speciestree )' );
         
 	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
-            t := table():
-            t['outfile'] := resPlotFn;
-            t['xlabel'] := '# of ortholog predictions';
-            t['ylabel'] := 'avg RF distance';
-	    t['nSeries'] := length(RFstat);
-	    t['boxwidth'] := 0.80;
-	    t['xtics'] := ConcatStrings([seq(
-	        sprintf('"%s" %.2f', RFstat[i,Description],i),
-		i=1..length(RFstat))],', ');
-            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-            plotTab := [seq(table(), length(RFstat))]:
-            OpenWriting(t['datafile']);
-            for i to length(RFstat) do 
-                printf('# %s\n%d\t%f\t%f\n\n\n', RFstat[i,Description], 
-                    i, RFstat[i,Mean], RFstat[i,StdErr]);
-                plotTab[i,'index'] := i-1; 
-                plotTab[i,'title'] := RFstat[i,Description];
-                plotTab[i,'style'] := i;
-            od:
-            OpenWriting(previous);
-            t['series'] := plotTab;
-            cmdFile := sprintf('/tmp/%s.gp', resBase);
-            OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/barchartmulti.gp', t) );
-            OpenWriting(previous);
-                    
-            CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-            CallSystem('mv '.resBase.'.tgz '.rawdir);
+            GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
+                'plotType'='barchart',
+                'corLabel'='avg RF distance( genetree, speciestree )' );
         fi:
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
@@ -288,7 +319,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             t['series'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/barchartmulti.gp', t) );
+            prints( GenerateTemplate(wdir.'/templates/barchart_multi.gp', t) );
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
@@ -303,8 +334,28 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
     fi;
 end:
 
-HandleBoxRFFiles_REFSET := proc() 
-    HandleBoxRFFiles_INTERSECT(args);
+HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
+    global RFstat;
+    RFstat := 0;
+    traperror(ReadProgram(resFn)):
+    if RFstat=0 then 
+        vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
+    else 
+        tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
+            'corLabel'='avg RF distance( genetree , speciestree )' );
+        
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        if not FileExists(resPlotFn) then
+            GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
+                'plotType'='2d',
+                'covLabel'='# trees',
+                'corLabel'='avg RF distance( genetree, speciestree )' );
+        fi:
+        vars['content'] := HTMLC(tab);
+        vars['fig'] := imgurl.resBase.'.png';
+        vars['gp_src'] := rawurl.resBase.'.tgz';
+	vars['resFigReady'] := true;
+    fi;
 end:
 
 HandleBoxRFFiles := proc(meth:string, resFn:string, resBase:string, vars:table)
@@ -312,50 +363,26 @@ HandleBoxRFFiles := proc(meth:string, resFn:string, resBase:string, vars:table)
     m := symbol(procname.'_'.method);
     m(args[2..-1]);
 end:
- 
 
 Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
-        'measure'=((measure='avg Lin'):string) ) 
+        'measure'=((measure='avg Lin'):string))
     global Sims;
     Sims := 0;
     traperror(ReadProgram(resFn)):
+    Sims := eval( symbol(datavar) ):
     if Sims=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
-    else 
-        tab := Table( border, gutter=2, ColAlign(l,r,c), 
-            Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure)));
-        for z in Sims do 
-            tab := append(tab, Row(z[Description], z[Number], MeanVarPrint(z)));
-        od:
+    else
+        tab := MakeIntersectTable( RFstat, 'covLabel'='# ortholog relations', 
+            'corLabel'=measure );
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
-            t := table():
-            t['outfile'] := resPlotFn;
-            t['xlabel'] := '# of ortholog predictions';
-            t['ylabel'] := measure.' Similarity';
-            t['datafile'] := sprintf('/tmp/%s.dat',resBase);
-            plotTab := [seq(table(), length(Sims))]:
-            OpenWriting(t['datafile']);
-            for i to length(Sims) do 
-                printf('# %s\n%d\t%f\t%f\n\n\n', Sims[i,Description], 
-                    Sims[i,Number], Sims[i,Mean], Sims[i,StdErr]);
-                plotTab[i,'index'] := i-1; 
-                plotTab[i,'title'] := Sims[i,Description];
-                plotTab[i,'style'] := i;
-            od:
-            OpenWriting(previous);
-            t['plot'] := plotTab;
-            cmdFile := sprintf('/tmp/%s.gp', resBase);
-            OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
-            OpenWriting(previous);
-                    
-            CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
-            CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
-            CallSystem('mv '.resBase.'.tgz '.rawdir);
+            GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
+                'plotType'='2d',
+                'corLabel'=measure.' Similarity' );
         fi:
+
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';

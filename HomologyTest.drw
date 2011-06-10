@@ -25,9 +25,26 @@ fi:
 
 ReadProgram(datdir.'homologyTest_'.dataset.'.drw'); # assigns pos/neg
 nProb := length(problems):
+WriteLock(lock, 'computing preformance...');
 
 # pairs is list of length NrOfProteins containing a set of 
-# homologous/non-homologous partners 
+# homologous/non-homologous partners
+ComputeRates := proc(pos, neg, iSet, directMap:boolean)
+    fp := tp := covPos := covNeg := 0;
+    for i to DB[TotEntries] do 
+        e := Entry(i);
+        oE1 := If(directMap, i, parse(SearchTag('OE',e))):
+        if not member(oE1, iSet) then next fi:
+        
+        if length(pos[oE1])>0 or length(neg[oE1])>0 then
+            vps := {op(ParseLongList(SearchTag('VP',e)))}:
+            p := length( intersect(vps, pos[oE1]) );
+            n := length( intersect(vps, neg[oE1]) );
+            fp := fp+n; tp := tp+p; covPos := covPos+p; covNeg := covNeg+n;
+        fi:
+    od:
+    return( [[tp,0], EstimateAndVarOfFraction(fp, covPos+covNeg)] );
+end:
 FracOfPredictedPairs := proc( pairs, iSet, directMap:boolean )
     predicted := cnt := 0;
     for oE1 to length(pairs) do 
@@ -40,7 +57,15 @@ FracOfPredictedPairs := proc( pairs, iSet, directMap:boolean )
             cnt := cnt + length(restrictedPair);
         fi:
     od:
-    return( If(cnt>0,predicted/cnt,0), cnt );
+    return( [predicted, cnt] );
+end:
+
+EstimateAndVarOfFraction := proc( tp:integer, tot:integer )
+    if tot=0 then return([0,DBL_MAX]);
+    else 
+        p := tp/tot;
+        return( [p, p*(1-p)/tot] );
+    fi:
 end:
 
 ComputePerformance := proc(iSet, prjNrs:list(posint))
@@ -51,9 +76,10 @@ ComputePerformance := proc(iSet, prjNrs:list(posint))
     for prNr to nProb do for pNr to nP do
         DB := dbs[prjNrs[pNr]];
         directMap := prj[prjNrs[pNr],'directMap'];
-
-        tpr[prNr,pNr] := FracOfPredictedPairs( pos[problems[prNr]], iSet, directMap )[1];
-        fpr[prNr,pNr] := FracOfPredictedPairs( neg[problems[prNr]], iSet, directMap )[1];
+        
+        t := ComputeRates( pos[problems[prNr]], neg[problems[prNr]], iSet, directMap);
+        fpr[prNr,pNr] := t[1];
+        tpr[prNr,pNr] := t[2];
     od od:
     return( [fpr, tpr] );
 end:

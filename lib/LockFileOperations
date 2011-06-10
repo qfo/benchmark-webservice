@@ -33,7 +33,7 @@ end:
 WriteLock := proc(lock:string, msg:string)
     OpenWriting(lock):
     lprint(getpid());
-    lprint(msg);
+    prints(msg);
     OpenWriting(previous);
 end:
 
