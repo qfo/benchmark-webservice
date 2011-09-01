@@ -28,7 +28,7 @@ else printf('Browser not found\n'); quit fi;
 ReadProgram(omaDBpath.'Summaries.drw');
 GS := GenomeSummaries:
 LoadGenomeStartIDs():
-google_analytics := '</body>'; #ReadRawFile(wdir.'templates/analytics.htmlc'):
+google_analytics := ReadRawFile(wdir.'templates/analytics.htmlc'):
 
 
 # --------------------- General Functions -------------------------
@@ -415,6 +415,32 @@ bsTestSelection := proc(PID:string)
                            SearchString('<input',vars['RefPhyloProblems'])>=0;
     vars['styleRefPhylo'] := If(vars['hasRefPhylo'] or dataset<>'OMA',
         'checked="checked"', 'disabled="disabled"');
+    
+    # load the semiautomatic TreeCases
+    testset := 'SemiAuto';
+    autoPhyloProbs := [seq(GetTreeCase( z, dataset,'testset'=testset ), z=GetAllTreeCases(dataset,'testset'=testset))];
+    stub := 'pAutoPhyloPrj';
+
+    vars['AutoPhyloProjects'] := ConcatStrings(
+         [seq(If( length(pairwiseOverlap[pNr])>1,
+	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+	                  '<label for="%s%d">%s</label><br/>',
+                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
+	          ''), pNr=1..Npub)],'\n');
+    stub := 'pAutoPhyloProb';
+    vars['AutoPhyloProblems'] := ConcatStrings(
+         [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
+	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+                      stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
+		  ''), 
+		  z=autoPhyloProbs)],'\n');
+    vars['AutoPhyloProb1_id'] := 'AutoPhyloProb'.autoPhyloProbs[1,'Name'];
+    vars['hasAutoPhylo'] := SearchString('<input',vars['AutoPhyloProjects'])>=0 and 
+                           SearchString('<input',vars['AutoPhyloProblems'])>=0;
+    vars['styleAutoPhylo'] := If(vars['hasAutoPhylo'] or dataset<>'OMA',
+        'checked="checked"', 'disabled="disabled"');
+
    
     ##################################
     # Multi Domain Homology 
@@ -503,30 +529,37 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
-StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
+StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
+    'testset'=((testset='Ref'):{'Ref','Auto'}) )
     fnBase := GetPKeyData(PID)['fnBase'];
-    lock  := sprintf('%s.RefPhyl.lock',fnBase);
+    lock  := sprintf('%s.%sPhyl.lock',fnBase,testset);
     vars := table('');
-    vars['resheader'] := 'Agreement with Reference Phylogeny - Test';
+    if testset='Ref' then
+        vars['resheader'] := 'Agreement with Reference Phylogeny';
+    elif testset='Auto' then
+        vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny';
+    fi:
+
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>12 and z[1..12]='pRefPhyloPrj', parse(z[13..-1]), NULL), z=pnames)];
+    prefix := sprintf('p%sPhyloPrj', testset); 
+    sel := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on'); 
     projs := [seq(projs[i,'PID'], i=sel), PID];
     
-    k := SearchArray('pRefPhylAggMeas',pnames);
+    k := SearchArray( sprintf('p%sPhylAggMeas',testset), pnames );
     measure := If(k>0,params[k],'sample variance');
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
 
-    problems := [seq(If(length(z)>13 and z[1..13]='pRefPhyloProb', 
-                        parse(z[14..-1]), NULL), z=pnames)];
-    if DEBUG then print('Do RefPhyloTest with those projects:',projs) fi;
+    prefix := sprintf('p%sPhyloProb', testset);
+    problems := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on' );
+    if DEBUG then print('Do '.testset.'PhyloTest with those projects:',projs) fi;
     
-    resBase := sprintf('RefPhyl.%a', hash([projs,measure,problems,meth]) );
+    resBase := sprintf('%sPhyl.%a', testset, hash([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if DEBUG then lprint('base: ',resBase,'lock exists:',FileExists(lock), 'res exists:',FileExists(resFn)); fi:
@@ -537,9 +570,10 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list)
         Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 'aggregate'=measure);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''); resFn :=%A; '.
-           'projs := %A; lock := %A; problems := %A; measure := %A; meth := %A;'.
-           'ReadProgram(''%s/RefPhyloTest.drw''); done;" | nice -n 19 %s &',
-               wdir, resFn, projs, lock, problems, measure, meth, wdir, darwin64);
+           'projs := %A; lock := %A; problems := %A; measure := %A; meth := %A; '.
+           'testset := %A: ReadProgram(''%s/RefPhyloTest.drw''); done;" '.
+           '| nice -n 19 %s &',
+               wdir, resFn, projs, lock, problems, measure, meth, testset, wdir, darwin64);
         prints(cmd);
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
@@ -739,6 +773,14 @@ bsCheckResults := proc(sessionkey)
         # do reference phylogeney based test
         t := StartRefPhyloTest(PID, params, pnames);
 	vars['RefPhylo'] := t[1]; 
+	if t[2]=true then refresh := true fi:
+    fi;
+    
+    k := SearchArray('pAutoPhylo1', pnames);
+    if k>0 and params[k]='on' then
+        # do reference phylogeney based test
+        t := StartRefPhyloTest(PID, params, pnames,'testset'='Auto');
+	vars['AutoPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:
     fi;
 

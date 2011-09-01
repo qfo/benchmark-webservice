@@ -149,7 +149,7 @@ elif meth='PAIRWISE' then
         if FileExists(resFnParts[i]) then
 	   RFstat := 0; ReadProgram(resFnParts[i]): assert(length(RFstat)=2); RFstats[i] := RFstat;
 	else
-           RFstats[i] := ComputeCongruenceStat(prjNrs[i], cases[i], totNrTrees):
+           RFstats[i] := ComputeCongruenceStat(prjNrs[i], cases[i], max(1,totNrTrees) ):
 	   StoreResult(resFnParts[i], RFstats[i], [seq(prj[j,'PID'],j=prjNrs[i])]);
 	fi:
     od:

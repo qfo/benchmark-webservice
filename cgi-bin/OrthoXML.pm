@@ -42,7 +42,7 @@ sub start_element{
         $curGroup .= "PG(";
     }
     elsif ($element->{Name} eq "geneRef"){
-        ($inOG>0) or die("geneRef tag outside orthologGroup tag");
+        ($inOG>0) or die("geneRef tag outside orthologGroup tag:".$element->{Attributes}->{"{}id"}->{Value});
         my $geneid = $element->{Attributes}->{"{}id"}->{Value};
         $curGroup .= "'".$prot_idMap->{$geneid}."',";
     }

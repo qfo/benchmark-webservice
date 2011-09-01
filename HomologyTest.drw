@@ -27,10 +27,39 @@ ReadProgram(datdir.'homologyTest_'.dataset.'.drw'); # assigns pos/neg
 nProb := length(problems):
 WriteLock(lock, 'computing preformance...');
 
+#ddir := eval(symbol(lowercase(dataset).'DBpath')):
+#SeqDB := ReadDb(ddir.'ServerSeqs.db'):
+ReadProgram(datdir.'homology.mapback'):
+InitLogger := proc()
+    global LoggedPairs:
+    LoggedPairs := table([],[]):
+end:
+LogPairs := proc(pairs,typ)
+    global LoggedPairs:
+    t := []:
+    for z in pairs do
+        k1 := SearchOrderedArray( z[1], oENr2jacob[2] ); 
+        if k1<0 or k1>length(oENr2jacob[2]) or oENr2jacob[2,k1]<>z[1] then 
+            lprint('should not happen');
+        else id1 := oENr2jacob[1,k1]; fi:
+        k2:= SearchOrderedArray( z[2], oENr2jacob[2] ); 
+        if k2<0 or k2>length(oENr2jacob[2]) or oENr2jacob[2,k2]<>z[2] then 
+            lprint('should not happen');
+        else id2 := oENr2jacob[1,k2]; fi:
+        t := append( t, [id1, id2] );
+    od:
+    LoggedPairs[typ] := append(LoggedPairs[typ], op(t)):
+    DB := curDB:
+end:
+GetLoggedData := proc(typ)
+    return( LoggedPairs[typ] ):
+end:
+
 # pairs is list of length NrOfProteins containing a set of 
 # homologous/non-homologous partners
 ComputeRates := proc(pos, neg, iSet, directMap:boolean)
-    fp := tp := covPos := covNeg := 0;
+    fp := tp := covPos := covNeg := 0; 
+    InitLogger():
     for i to DB[TotEntries] do 
         e := Entry(i);
         oE1 := If(directMap, i, parse(SearchTag('OE',e))):
@@ -41,23 +70,13 @@ ComputeRates := proc(pos, neg, iSet, directMap:boolean)
             p := length( intersect(vps, pos[oE1]) );
             n := length( intersect(vps, neg[oE1]) );
             fp := fp+n; tp := tp+p; covPos := covPos+p; covNeg := covNeg+n;
+            if n>0 then LogPairs( [seq([oE1,z],z=intersect(vps, neg[oE1]))],'FP') fi:
+            if p>0 then LogPairs( [seq([oE1,z],z=intersect(vps, pos[oE1]))],'TP') fi:
         fi:
     od:
-    return( [[tp,0], EstimateAndVarOfFraction(fp, covPos+covNeg)] );
-end:
-FracOfPredictedPairs := proc( pairs, iSet, directMap:boolean )
-    predicted := cnt := 0;
-    for oE1 to length(pairs) do 
-        if member(oE1, iSet) and length(pairs[oE1])>0 then
-            eNr1 := If(directMap, oE1, DbEntryNrFromENr(oE1)):
-            vps := {op(ParseLongList(SearchTag('VP',Entry(eNr1))))}:
-            restrictedPair := intersect( pairs[oE1], iSet );
-            prd := length( intersect(vps, restrictedPair) );
-            predicted := predicted + prd;
-            cnt := cnt + length(restrictedPair);
-        fi:
-    od:
-    return( [predicted, cnt] );
+    FPdata := GetLoggedData('FP'):
+    TPdata := GetLoggedData('TP'):
+    return( [[tp,0], EstimateAndVarOfFraction(fp, covPos+covNeg), FPdata, TPdata] );
 end:
 
 EstimateAndVarOfFraction := proc( tp:integer, tot:integer )
@@ -73,6 +92,8 @@ ComputePerformance := proc(iSet, prjNrs:list(posint))
     np := length(prjNrs);
     fpr := CreateArray(1..nProb,1..np,0);
     tpr := CreateArray(1..nProb,1..np,0);
+    FPdata := CreateArray(1..nProb,1..np,0);
+    TPdata := CreateArray(1..nProb,1..np,0);
     for prNr to nProb do for pNr to nP do
         DB := dbs[prjNrs[pNr]];
         directMap := prj[prjNrs[pNr],'directMap'];
@@ -80,16 +101,19 @@ ComputePerformance := proc(iSet, prjNrs:list(posint))
         t := ComputeRates( pos[problems[prNr]], neg[problems[prNr]], iSet, directMap);
         fpr[prNr,pNr] := t[1];
         tpr[prNr,pNr] := t[2];
+        FPdata[prNr,pNr] := t[3];
+        TPdata[prNr,pNr] := t[4];
     od od:
-    return( [fpr, tpr] );
+    return( [fpr, tpr, FPdata, TPdata] );
 end:
 
-StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
+StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth, FPdata, TPdata)
     OpenWriting(fn):
     printf('# created on %s\n', date());
     printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
     printf('#PIDs := %A:\n', PIDs );
     printf('#problems:=%A:\nmeasure:=%A:\n#meth := %A:\n', problems, measure, meth);
+    printf('#FPdata := %A:\n#TPdata := %A:\n', FPdata, TPdata);
     OpenWriting(previous):
 end:
           
@@ -98,7 +122,7 @@ if meth='INTERSECT' or (length(meth)>=6 and meth[1..6]='REFSET') then
     prjNrs:= [seq(i,i=1..nP)];
     Res := ComputePerformance(iSet, prjNrs):
     StoreResult(resFn, Res[1], Res[2], [seq(prj[i,'PID'], i=prjNrs)], 
-        problems, measure, meth);
+        problems, measure, meth, Res[3], Res[4]);
 elif meth='PAIRWISE' then
     maxP := nP-1;
     SimsRes := CreateArray(1..maxP):
@@ -115,7 +139,7 @@ elif meth='PAIRWISE' then
             Res[curP] := ComputePerformance(iSet, prjNrs[curP]):
             StoreResult(resFnPart, Res[curP,1], Res[curP,2], 
                 [seq(prj[j,'PID'], j=prjNrs[curP])], problems, measure,
-                'INTERSECT');
+                'INTERSECT',Res[curP,3], Res[curP,4]);
         fi:
     od:
     StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], 

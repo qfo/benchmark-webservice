@@ -28,7 +28,8 @@ EvaluateRefPhyloTestProperty := proc(p:{PKeyData,list(PKeyData)}, prop:TestPrope
     dataset := If(type(p,PKeyData), p['ref'], p[1,'ref']);
     
     iSet := GetProjISets(p);
-    mapped := GetTreeCase( prop['Args',1], dataset )['MappedProts'];
+    testset := If(length(prop['Args'])>1, prop['Args',2], '');
+    mapped := GetTreeCase( prop['Args',1], dataset, 'testset'=testset )['MappedProts'];
     lprint( intersect(mapped,iSet) ):
     return( length(intersect(mapped, iSet)) > 4 );
 end:

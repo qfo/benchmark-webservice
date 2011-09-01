@@ -12,7 +12,9 @@ dataset := prj[-1,'ref'];
 nP := length(prj); dbs := CreateArray(1..nP):
 for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
-ReadProgram(datdir.'ReconciledTrees_'.dataset.'.drw'); #Assigns ReconciledTrees (a table)
+#Assigns ReconciledTrees (a table)
+qualifier := If(testset='Ref', '', 'SemiAuto'):
+ReadProgram(datdir.'ReconciledTrees'.qualifier.'_'.dataset.'.drw'); 
 nrProb := length(problems);
 
 ComputePerformance := proc(iSet, prjNrs:list)
@@ -32,11 +34,11 @@ ComputePerformance := proc(iSet, prjNrs:list)
 	    t := (curP-1+prNr/(nrProb+1))/maxP;
             WriteLock(lock,sprintf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)/t*time()));
             dups := table({}); specs := table({});
-            for p1 in prts do for p2 in prts do 
-                ev := rels[{p1,p2}];
-            if member(ev,DUPL) then dups[p1] := append(dups[p1], p2);
-            elif member(ev,SPEC) then specs[p1] := append(specs[p1],p2); fi:
-            od od:
+            for rel in Indices(rels) do 
+                ev := rels[rel];
+                if member(ev,DUPL) then dups[rel[1]] := append(dups[rel[1]], rel[2]);
+                elif member(ev,SPEC) then specs[rel[1]] := append(specs[rel[1]], rel[2]); fi:
+            od:
             
             # we iterate over all the projects
             for pNr to np do 
@@ -53,7 +55,6 @@ ComputePerformance := proc(iSet, prjNrs:list)
                     fp := fp + length( intersect(vps, dups[oE1]) )/2;
                     fn := fn + length( minus(specs[oE1], vps) )/2;
                 od:
-                assert( tp+tn+fp+fn-4 = nProt*(nProt-1)/2 );
                 # compute the fpr and tpr and their variances
                 p := fp/(fp+tn); 
                 fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];

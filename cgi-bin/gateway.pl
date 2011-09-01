@@ -377,10 +377,10 @@ sub RelText2Drw {
     while( <$fh> ){
         print RAW $_ if $storeRaw;
         chomp;
-    if ( /([\w.-]*)\t([\w.-]*)/ ){
-       print F "['$1','$2'],\n";
-       $cnt++;
-       if ($cnt % 50000 == 0){ print F "NULL]):\nPairRelations([\n";}
+    if ( /([\w.-]+)\s+([\w.-]+)/ ){
+        print F "['$1','$2'],\n";
+        $cnt++;
+        if ($cnt % 50000 == 0){ print F "NULL]):\nPairRelations([\n";}
         }
     }
     print F "NULL]):\n";

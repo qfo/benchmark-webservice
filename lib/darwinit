@@ -23,9 +23,9 @@ GenerateTemplate := noeval(ReadLibrary( wdir.'/lib/GenerateTemplate', GenerateTe
 CreateIndex := noeval(ReadLibrary( wdir.'/lib/Index',CreateIndex));
 SearchIndex := noeval(ReadLibrary( wdir.'/lib/Index',SearchIndex));
 LoadIndex := noeval(ReadLibrary( wdir.'/lib/Index',LoadIndex));
-GetIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',GetIDType));
-WriteIDType := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',WriteIDTypes));
-TrimID := noeval(ReadLibrary( wdir.'/lib/XRefTypes.drw',TrimID));
+TrimID := noeval(ReadLibrary( wdir.'/lib/XRefs',TrimID));
+UniProtAC := noeval(ReadLibrary( wdir.'/lib/XRefs',UniProtAC));
+EnsemblID := noeval(ReadLibrary( wdir.'/lib/XRefs',EnsemblID));
 
 NrOfGenomes := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfGenomes));
 NrOfProteins := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfProteins));

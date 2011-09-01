@@ -5,11 +5,14 @@
 ReadProgram('lib/darwinit');
 DUPL := {':D=Y','D=Y','D','DUPLICATION',':Ev=duplication',':Ev=DUPLICATION'};
 SPEC := {':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'};
+SPEC_MATCH := SPEC minus {'S','SPECIATION'}:
+DUPL_MATCH := DUPL minus {'D','DUPLICATION'}:
 overwrite := true:
 
 SetDatasetVariables := proc(;(ref='OMA'):string)
-    global outfile, IDIndex, DB;
+    global outfile, outfile_semiauto, IDIndex, DB;
     outfile := datdir.'ReconciledTrees_'.ref.'.drw':
+    outfile_semiauto := datdir.'ReconciledTreesSemiAuto_'.ref.'.drw':
     ddir := eval(symbol(lowercase(ref).'DBpath'));
     IDIndex := ReadDb(ddir.'IDIndex.db');
 end:
@@ -57,9 +60,10 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):table)
             fi;
             for p1 in tL do for p2 in tR do
                 assert(__PWR[{p1,p2}]=unassigned);
-
-		if length(t)=3 or member(t['xtra'], SPEC) then ev := 'S';
-		elif member(t['xtra'], DUPL) then ev := 'D';
+                if length(t)=3 or member(t['xtra'], SPEC) then ev := 'S';
+                elif member(t['xtra'],DUPL) then ev:='D';
+		elif max( seq(SearchString(z,t['xtra']), z=SPEC_MATCH) )>=0 then ev := 'S';
+		elif max( seq(SearchString(z,t['xtra']), z=DUPL_MATCH) )>=0 then ev := 'D';
 		else lprint('dubious event: ',t['xtra']); ev := t['xtra']; fi:
                 __PWR[{p1,p2}] := ev;
             od od:
@@ -88,9 +92,11 @@ to 1 do
 
 SetDatasetVariables('OMA');
 if overwrite=true then
-    OpenWriting(outfile);
-    printf('ReconciledTrees := table():\n');
-    OpenWriting(previous);
+    for f in [outfile, outfile_semiauto] do 
+        OpenWriting(f);
+        printf('ReconciledTrees := table():\n');
+        OpenWriting(previous);
+    od:
 fi:
 
 ##############################################
@@ -173,9 +179,11 @@ AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 ##################################################################################
 SetDatasetVariables('RefSet5');
 if overwrite=true then
-    OpenWriting(outfile);
-    printf('ReconciledTrees := table():\n');
-    OpenWriting(previous);
+    for f in [outfile, outfile_semiauto] do 
+        OpenWriting(f);
+        printf('ReconciledTrees := table():\n');
+        OpenWriting(previous);
+    od:
 fi:
 
 ###########################################
@@ -268,6 +276,37 @@ printf('ReconciledTrees[''%s''] := %A:\n', name, case);
 OpenAppending(previous);
 AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 
+############################################
+# All of Treefam A
+name := 'TreeFamA';
+label:= 'Reconciled gene trees from TreeFam A';
+t := ReadRawFile(datdir.'raw/treefam/treefam2reference.txt');
+mapping := table():
+for z in SplitLines(t) do
+    x := SearchDelim('\t',z[1..-2]);
+    mapping[x[1]] := x[2];
+od:
+fams := TimedCallSystem('ls '.datdir.'raw/treefam/*.nhx')[2]:
+fams := [seq(z[1..-2], z=SplitLines(fams))]:
+rels := table(): memb := {}: 
+errT := errM := 0;
+for fam in fams do 
+    tree := traperror(ParseNewickTree( ReadRawFile(fam) )):
+    if tree=lasterror then errT:=errT+1; next fi:
+
+    t := traperror(ExtractPairwiseRel(tree,mapping));
+    if t=lasterror then errM := errM+1; next fi:
+    memb := union(memb, t[1]);
+    for z in Indices(t[2]) do 
+        rels[z] := t[2,z];
+    od:
+od:
+case := RecTreeCase( name, label, memb, rels, tree,
+    'Ruan et al, Nucleic Acids Res. 2008 (Database issue)'):
+OpenAppending(outfile_semiauto);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name,'SemiAuto'],UTCTime());
 
 
 od:

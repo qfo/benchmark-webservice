@@ -24,7 +24,8 @@ ParseAllPrefixParams := proc( prefix, pnames, params ;
     res := [seq( If(length(pnames[i])>len
                     and pnames[i,1..len]=prefix
                     and (filter=NULL or params[i]=filter),
-                    pnames[i,len+1..-1], NULL), i=1..length(pnames))];
+                    parse(pnames[i,len+1..-1]), NULL), 
+                    i=1..length(pnames))];
     return(res);
 end:
 

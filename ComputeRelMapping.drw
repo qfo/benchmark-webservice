@@ -164,7 +164,7 @@ to 1 do
     pKey['OrgsCovered'] := orgs:
     if referenceDatSet<>'OMA' and relMapped>0 and 
         pKey['NOrthSub']>0 and relMapped/pKey['NOrthSub']>.01 then
-        pKey['isPublic'] := true;
+#        pKey['isPublic'] := true;
     fi:
     UpdatePKeyDataPermanent(pKey);
 

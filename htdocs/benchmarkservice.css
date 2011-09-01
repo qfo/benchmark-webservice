@@ -282,6 +282,11 @@ div.test h4 {
   margin: 10px 0px 3px 0px;
 }
 
+div.test_kind {
+    border-width: 0 0 1px 0;
+    border-style: dashed;
+    border-color: #666666;
+}
 
 div.testParam {
   margin-left: 50px ;

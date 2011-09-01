@@ -25,9 +25,14 @@ RelativeDifference := proc(s1:Stat, s2:Stat)
               ratio[1], 1.96*sqrt(ratio[2]) ] );
 end:
 
-MeanVarPrint := proc(s:Stat)
-    if s[Number]<=1 then 'n.a.';
-    else s['MeanVar'] fi;
+MeanVarPrint := proc(s:{Stat,[numeric,numeric]})
+    if type(s,Stat) then
+        if s[Number]<=1 then 'n.a.';
+        else s['MeanVar'] fi;
+    else
+        if s[2]=0 then sprintf('%g', s[1]);
+        else sprintf('%g +- %g', s[1], 1.96*sqrt(s[2])) fi:
+    fi:
 end:
 
 
@@ -50,8 +55,8 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
 	    for i to length(prjNames) do 
 	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[c,i]<>0, sprintf('%g +- %g', FPR[c,i,1], 1.96*sqrt(FPR[c,i,2])), 'n.a.' ),
-	          If(TPR[c,i]<>0, sprintf('%g +- %g', TPR[c,i,1], 1.96*sqrt(TPR[c,i,2])), 'n.a.' )) );
+	          If(FPR[c,i]<>0, MeanVarPrint(FPR[c,i]), 'n.a.' ),
+	          If(TPR[c,i]<>0, MeanVarPrint(TPR[c,i]), 'n.a.' )) );
 	    od: 
         od:
         
@@ -123,10 +128,10 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
 	    for i to length(prjNames)-1 do 
 	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[i,c,1]<>0, sprintf('%g +- %g', FPR[i,c,1,1], 1.96*sqrt(FPR[i,c,1,2])), 'n.a.' ),
-	          If(TPR[i,c,1]<>0, sprintf('%g +- %g', TPR[i,c,1,1], 1.96*sqrt(TPR[i,c,1,2])), 'n.a.' ),
-	          If(FPR[i,c,2]<>0, sprintf('%g +- %g', FPR[i,c,2,1], 1.96*sqrt(FPR[i,c,2,2])), 'n.a.' ),
-	          If(TPR[i,c,2]<>0, sprintf('%g +- %g', TPR[i,c,2,1], 1.96*sqrt(TPR[i,c,2,2])), 'n.a.' )) );
+	          If(FPR[i,c,1]<>0, MeanVarPrint(FPR[i,c,1]), 'n.a.' ),
+	          If(TPR[i,c,1]<>0, MeanVarPrint(TPR[i,c,1]), 'n.a.' ),
+	          If(FPR[i,c,2]<>0, MeanVarPrint(FPR[i,c,2]), 'n.a.' ),
+	          If(TPR[i,c,2]<>0, MeanVarPrint(TPR[i,c,2]), 'n.a.' )) );
 	    od: 
         od:
         if DEBUG then print(tab) fi:
@@ -230,9 +235,13 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     fi:
     OpenWriting(t['datafile']);
     for i to length(data) do
+        if data[i,'Number']>1 then 
         printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
            If(plotType='2d', data[i,'Number'], i),
            data[i,'Mean'], data[i,'StdErr']);
+        else printf('# %s\n%d\t?0\t?0\n', data[i,'Description'],
+            If(plotType='2d', data[i,'Number'],i) );
+        fi:
         plotTab[i,'index'] := i-1;
         plotTab[i,'title'] := data[i,'Description'];
         plotTab[i,'style'] := i;
@@ -369,16 +378,16 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
     global Sims;
     Sims := 0;
     traperror(ReadProgram(resFn)):
-    Sims := eval( symbol(datavar) ):
+    #Sims := eval( symbol(datavar) ):
     if Sims=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
     else
-        tab := MakeIntersectTable( RFstat, 'covLabel'='# ortholog relations', 
+        tab := MakeIntersectTable( Sims, 'covLabel'='# ortholog relations', 
             'corLabel'=measure );
         
 	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
-            GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
+            GenerateIntersectPlot( Sims, resPlotFn, resBase, 
                 'plotType'='2d',
                 'corLabel'=measure.' Similarity' );
         fi:
