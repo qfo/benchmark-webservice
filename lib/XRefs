@@ -1,0 +1,41 @@
+UniProtAC := proc(ids)
+    for z in ids do if length(z)=6 then
+        ascii := AsciiToInt(z[1]);
+        if ascii>=65 and ascii<=90 then return(z) fi;
+    fi od:
+    return( NULL );
+end:
+
+EnsemblID := proc(ids)
+    for z in ids do if length(z)>4 and z[1..3]='ENS' then
+        return( z );
+    fi od:
+    return( NULL );
+end:
+
+IPI := proc(ids)
+    for z in ids do if length(z)>3 and z[1..3]='IPI' then
+        return( z );
+    fi od:
+    return( NULL );
+end:
+
+TrimID := proc(id_:string ; typ:string)
+    ids := SearchDelim('; ', id_);
+    if not assigned(typ) or typ='UniProt' then
+        id := UniProtAC(ids):
+        if id<>NULL then return(id) fi:
+    fi:
+
+    if not assigned(typ) or typ='Ensembl' then
+        id := EnsemblID(ids);
+        if id<>NULL then return(id) fi;
+    fi:
+
+    if not assigned(typ) or typ='IPI' then
+        id := IPI(ids);
+        if id<>NULL then return(id); fi:
+    fi:
+    return( NULL );
+end:
+
