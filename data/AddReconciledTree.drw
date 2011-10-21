@@ -3,8 +3,8 @@
 # the EntryNumbers and stores those files in data/ReconciledTrees.drw
 #
 ReadProgram('lib/darwinit');
-DUPL := {':D=Y','D=Y','D','DUPLICATION',':Ev=duplication',':Ev=DUPLICATION'};
-SPEC := {':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'};
+DUPL := {':D=T',':D=Y','D=Y','D','DUPLICATION',':Ev=duplication',':Ev=DUPLICATION'};
+SPEC := {':D=F',':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'};
 SPEC_MATCH := SPEC minus {'S','SPECIATION'}:
 DUPL_MATCH := DUPL minus {'D','DUPLICATION'}:
 overwrite := true:
@@ -59,7 +59,10 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):table)
                 tL := minus(tL, tR);
             fi;
             for p1 in tL do for p2 in tR do
-                assert(__PWR[{p1,p2}]=unassigned);
+                if not __PWR[{p1,p2}]=unassigned then
+                    lprint('assertion failure:',p1,p2);
+                    assert( __PWR[{p1,p2}] = unassigned );
+                fi:
                 if length(t)=3 or member(t['xtra'], SPEC) then ev := 'S';
                 elif member(t['xtra'],DUPL) then ev:='D';
 		elif max( seq(SearchString(z,t['xtra']), z=SPEC_MATCH) )>=0 then ev := 'S';
