@@ -1,15 +1,15 @@
 module external NrOfProteins, NrOfGenomes, GenomeNrFromENr, GenomeNrFromCode,
     GenomeRange, GenomeCodeFromENr, ENrFromLabel, ENr2Label, Nr2SEQ,
-    DbEntryNrFromENr, ParseLongList, KnownSpecies, GSIDtab;
-local GSIDtab; #genomes, GenomeSummaries;
+    DbEntryNrFromENr, ParseLongList, KnownSpecies, GSIDtab,ENr2XRef;
+#local GSIDtab; #genomes, GenomeSummaries;
 
-GSIDContainer := proc(dataset:string, NS:posint, GSID:matrix, GSPOR:matrix)
+GSIDContainer := proc(dataset:string, NS:posint, GSID:matrix, GSPOR:matrix, IndDB:database)
     noeval(procname(args)):
 end:
 CompleteClass(GSIDContainer):
 
 LoadGenomeStartIDs := proc(ref:{'OMA','RefSet5'})
-    global genomes, GenomeSummaries:
+    global genomes, GenomeSummaries, DB:
 
     dbdir := eval( symbol( lowercase(ref).'DBpath') ):
     ReadProgram(dbdir.'/Summaries.drw');
@@ -23,7 +23,12 @@ LoadGenomeStartIDs := proc(ref:{'OMA','RefSet5'})
                     genomes[g], GS[genomes[g],TotEntries]];
     od:
     GSID := transpose(sort(GSID));
-    return( GSIDContainer( ref, NS, GSID, GSPOR ) ):
+    
+    curDB := DB:
+    IndDB := ReadDb(dbdir.'/ServerIndexed.db');
+    if type(curDB,database) then DB := curDB fi:
+
+    return( GSIDContainer( ref, NS, GSID, GSPOR, IndDB ) ):
 end:
 
 GSIDtab := table( proc(i) error('Dataset '.i.' not known') end ):
@@ -135,7 +140,19 @@ end:
 
 
 KnownSpecies := proc(;(ref='OMA'):string)
-   return( sort(GSIDtab[ref,'GSID',2]) );
+    return( sort(GSIDtab[ref,'GSID',2]) );
+end:
+
+
+ENr2XRef := proc(oE:posint ; (ref='OMA'):string, 'typ'=((typ=NULL):string))
+    global DB:
+    curDB := DB: 
+    DB := GSIDtab[ref,'IndDB'];
+    ids := SearchTag( If(ref='OMA', 'ID','MAPIDS'), Entry(oE)):
+    xref := TrimID(ids, typ);
+    if xref=NULL then xref := ENr2Label(oE) fi:
+    if type(curDB,database) then DB := curDB fi:
+    return( xref );
 end:
 
 end: #module
