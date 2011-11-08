@@ -513,7 +513,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     isRunning := true;
     if FileExists(lock) then
         vars['content'] := HandleLockFile(lock);
-    elif FileExists(resFn) then
+    elif FileExists(resFn.'.gz') then
         isRunning := false;
         HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
@@ -562,10 +562,10 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     resBase := sprintf('%sPhyl.%a', testset, hash([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
-    if DEBUG then lprint('base: ',resBase,'lock exists:',FileExists(lock), 'res exists:',FileExists(resFn)); fi:
+    if DEBUG then lprint('base: ',resBase,'lock exists:',FileExists(lock), 'res exists:',FileExists(resFn.'.gz')); fi:
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
-    elif FileExists(resFn) then
+    elif FileExists(resFn.'.gz') then
         isRunning := false;
         Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 'aggregate'=measure);
     else 
@@ -606,7 +606,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
-    elif FileExists(resFn) then
+    elif FileExists(resFn.'.gz') then
         isRunning := false;
         Handle2dSimFiles(meth, resFn, resBase, vars, 'measure'=measure);
     else 
@@ -651,7 +651,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
-    elif FileExists(resFn) then
+    elif FileExists(resFn.'.gz') then
         isRunning := false;
         Handle2dSimFiles(meth, resFn, resBase, vars, 'measure'=measure);
     else 
@@ -694,7 +694,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     isRunning := true;
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
-    elif FileExists(resFn) then
+    elif FileExists(resFn.'.gz') then
         isRunning := false;
         Handle2dROCFiles(meth, resFn, resBase, problems, projs, vars, 
            'aggregate'=measure,'FPRLabel'='coverage', 

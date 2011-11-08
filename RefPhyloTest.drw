@@ -75,6 +75,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
     printf('#PIDs := %A:\n', PIDs );
     printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
     OpenWriting(previous):
+    CallSystem('gzip -9f '.fn);
 end:
 
 if meth='INTERSECT' or meth='REFSET5' then

@@ -115,6 +115,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth, FPdata, 
     printf('#problems:=%A:\nmeasure:=%A:\n#meth := %A:\n', problems, measure, meth);
     printf('#FPdata := %A:\n#TPdata := %A:\n', FPdata, TPdata);
     OpenWriting(previous):
+    CallSystem('gzip -9f '.fn);
 end:
           
 if meth='INTERSECT' or (length(meth)>=6 and meth[1..6]='REFSET') then

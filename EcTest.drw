@@ -148,6 +148,7 @@ StoreResult := proc(fn:string, Sims, PIDs, filter, measure, meth)
     printf('PIDs := %A:\n', PIDs );
     printf('# filter := %A:\n# measure := %A:\n#meth := %A:\n', filter, measure, meth);
     OpenWriting(previous):
+    CallSystem('gzip -9f '.fn);
 end:
 
 if meth='INTERSECT' then
