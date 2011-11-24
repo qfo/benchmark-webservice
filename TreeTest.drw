@@ -104,7 +104,17 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:posint
                 seqs := append(seqs, Sequence(Entry(cas[pNr,i])));
                 labs := append(labs, i);
             fi od:
-            genetree := traperror(PhylogeneticTree(seqs, labs, DISTANCE));
+            nseq := length(seqs):
+            msa := traperror(MafftMSA(seqs)):
+            if msa=lasterror then cErr+1; next fi:
+            D := CreateArray(1..nseq,1..nseq):
+            V := CreateArray(1..nseq,1..nseq):
+            for i to nseq do for j from i+1 to nseq do
+                 dps := EstimatePam(msa[AlignedSeqs,i],msa[AlignedSeqs,j],DMS):
+                 D[i,j] := D[j,i] := dps[2];
+                 V[i,j] := V[j,i] := dps[3];
+            od od:
+            genetree := traperror( LeastSquaresTree(D,V,labs) ):
             if genetree=lasterror then cErr+1; next fi;
             
             pruned_st := PruneTree(copy(speciestree), labs);
@@ -178,14 +188,14 @@ elif meth='PAIRWISE' then
             hash([curPrjPIDs, 'INTERSECT']) );
         rawDataFn[i] := sprintf('TreeTest/%a.tsv.gz', 
             hash([curPrjPIDs, 'INTERSECT']) );
-        if FileExists(resFnParts[i]) then next fi:
+        if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         cases[i] := FindCases( iSet, prjNrs[i] );
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
     for i to nP-1 do
-        if FileExists(resFnParts[i]) then
+        if FileExists(resFnParts[i].'.gz') then
             RFstat := RawDataFn := 0; 
             ReadProgram(resFnParts[i]): 
             assert(length(RFstat)=2); 
@@ -214,13 +224,13 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     for i to nP do 
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
         rawDataFn[i] := sprintf('TreeTest/%a.tsv.gz', hash([prj[i,'PID'],meth]) );
-        if FileExists(resFnParts[i]) then next fi:
+        if FileExists(resFnParts[i].'.gz') then next fi:
         cases[i] := FindCases( intersect(), [i] );
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
     for i to nP do
-        if FileExists(resFnParts[i]) then
+        if FileExists(resFnParts[i].'.gz') then
             RFstat := RawDatFn := 0;
             ReadProgram(resFnParts[i]): 
             assert(type(RFstat,Stat)); 

@@ -182,7 +182,7 @@ elif meth='PAIRWISE' then
     for curP to maxP do
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
         resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,measure,'INTERSECT']) );
-        if FileExists(resFnPart) then
+        if FileExists(resFnPart.'.gz') then
             SimsRes[curP] := 0; ReadProgram(resFnPart): assert(length(Sims)=2); SimsRes[curP] := Sims;
         else
             iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):

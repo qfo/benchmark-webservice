@@ -133,7 +133,7 @@ elif meth='PAIRWISE' then
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
         resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs, problems, 
             measure,'INTERSECT']) );
-        if FileExists(resFnPart) then 
+        if FileExists(resFnPart.'.gz') then 
             Res[curP] := 0; ReadProgram(resFnPart): Res[curP] := [FPR,TPR];
         else
             iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
@@ -152,7 +152,7 @@ elif meth='PAIRWISE' then
 #    for curP to nP do 
 #        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],problems, 
 #            measure,meth]) );
-#        if FileExists(resFnPart) then 
+#        if FileExists(resFnPart.'.gz') then 
 #            Res[curP] := 0; ReadProgram(resFnPart): Res[curP] := [FPR, TPR];
 #        else
 #            Res[curP] := ComputePerformance(intersect(), [curP])[1]:
