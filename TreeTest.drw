@@ -164,6 +164,9 @@ StoreRawData := proc(fn:string, RawData, projects)
     CallSystem('gzip -9f '.fn);
 end:
 
+kingdom := SearchAllString('_',problem):
+assert( length(kingdom) = 2 );
+kingdom := problem[kingdom[1]+1..kingdom[2]-1];
 if meth='INTERSECT' then
     iSet  := GetProjISets(prj);
     prjNrs:= [seq(i,i=1..nP)];
@@ -171,8 +174,8 @@ if meth='INTERSECT' then
     t0 := time();
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
     RFstat := compRes[1]; rawdata := compRes[2];
-    rawDataFn := [seq(sprintf('TreeTest/%a.tsv.gz', hash([prj[i,'PID'],meth])), 
-        i=1..nP)];
+    rawDataFn := [seq(sprintf('TreeTest/%s.%a.tsv.gz', kingdom,
+        hash([prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
     StoreResult(resFn, RFstat, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
@@ -186,8 +189,8 @@ elif meth='PAIRWISE' then
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
             hash([curPrjPIDs, 'INTERSECT']) );
-        rawDataFn[i] := sprintf('TreeTest/%a.tsv.gz', 
-            hash([curPrjPIDs, 'INTERSECT']) );
+        rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', 
+            kingdom, hash([curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         cases[i] := FindCases( iSet, prjNrs[i] );
@@ -223,7 +226,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     rawDataFn := CreateArray(1..nP):
     for i to nP do 
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
-        rawDataFn[i] := sprintf('TreeTest/%a.tsv.gz', hash([prj[i,'PID'],meth]) );
+        rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', kingdom, hash([prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         cases[i] := FindCases( intersect(), [i] );
     od:

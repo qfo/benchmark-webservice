@@ -239,6 +239,7 @@ bsMapData := proc(PID:string)
         # visualize current mapping
         ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
         prNS := length(MappingComb);
+        NS := NrOfGenomes('OMA'); 
         cnts := CreateArray(1..prNS,1..NS+1):
         for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
         
