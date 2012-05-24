@@ -25,12 +25,14 @@ RelativeDifference := proc(s1:Stat, s2:Stat)
               ratio[1], 1.96*sqrt(ratio[2]) ] );
 end:
 
-MeanVarPrint := proc(s:{Stat,[numeric,numeric]})
+MeanVarPrint := proc(s:{Stat,[numeric,numeric],0})
     if type(s,Stat) then
         if s[Number]<=1 then 'n.a.';
         else s['MeanVar'] fi;
+    elif s=0 then 'n.a.';
     else
-        if s[2]=0 then sprintf('%g', s[1]);
+        if s[2]<0 then 'n.a.';
+        elif s[2]=0 then sprintf('%g', s[1]);
         else sprintf('%g +- %g', s[1], 1.96*sqrt(s[2])) fi:
     fi:
 end:
@@ -54,9 +56,9 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
 	         Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
 	    for i to length(prjNames) do 
-	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[c,i]<>0, MeanVarPrint(FPR[c,i]), 'n.a.' ),
-	          If(TPR[c,i]<>0, MeanVarPrint(TPR[c,i]), 'n.a.' )) );
+	        warning('case:'.cases[c].' FPR:'.string(FPR[c,i]).' TPR:'.string(TPR[c,i]));
+                tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
+	          MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]) ));
 	    od: 
         od:
         

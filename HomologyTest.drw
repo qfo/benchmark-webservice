@@ -80,7 +80,7 @@ ComputeRates := proc(pos, neg, iSet, directMap:boolean)
 end:
 
 EstimateAndVarOfFraction := proc( tp:integer, tot:integer )
-    if tot=0 then return([0,DBL_MAX]);
+    if tot=0 then return([0,-1]);
     else 
         p := tp/tot;
         return( [p, p*(1-p)/tot] );
