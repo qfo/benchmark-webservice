@@ -465,6 +465,13 @@ sub process_datafiles{
     $fnBase = "/local/BenchmarkService/projects/".$fnBase."-".$timestamp.
         ".".int(1000*rand());
 
+    my $vis = $req->param("methVis");
+    if ($vis eq "public") {$vis="true"; }
+    else { $vis="false";}
+
+    my $methDesc = $req->param("methDesc");
+    $methDesc =~ tr/'/"/;
+
     print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
     my $nrProt=0; my $nrOrth=0;
     my $prot2spec = 0;
@@ -517,8 +524,8 @@ sub process_datafiles{
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
         print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
     }
-    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'");
-    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'");
+    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'");
+    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'");
     $cache->set($session,[1,[\@p,\@a]]);
 } 
 

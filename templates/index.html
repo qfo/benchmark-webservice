@@ -92,8 +92,13 @@
  </div>
  <div>
   <label for="methName">Method Name:</label> 
-  <input type="text" name="methName"  maxlength="50" class="inputText" />
- </div>
+  <input type="text" name="methName"  maxlength="50" class="inputText" /><br/>
+  <label for="methDesc">Description:</label> 
+  <textarea name="methDesc" cols="50" rows="3" class="inputTextarea" ></textarea><br/>
+  <label for="methVis">Result Visability:</label>
+  <input type="radio" name="methVis" value="public" class="inputRadio" checked="checked" />Public
+  <input type="radio" name="methVis" value="private" class="inputRadio" />Private (only I can see results)
+  </div>
  </fieldset>
 
  <fieldset>

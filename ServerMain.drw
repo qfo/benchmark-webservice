@@ -210,7 +210,7 @@ end:
 bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference)
     lprint(args);
     id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
-        'reference'=reference):
+        'reference'=reference,'description'=methDesc):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 

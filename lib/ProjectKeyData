@@ -9,8 +9,11 @@ PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
                  isPublic:boolean, directMap:boolean, 
 		 NSeqSub:{0,posint}, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
 		 OrgsCovered:{set,intersect()},
-		 props:table)
-   noeval(procname(args)):
+		 props:table,
+                 Description:string)
+   if nargs<13 then error('wrong number of arguments');
+   elif nargs=13 then procname(args,'');
+   else noeval(procname(args)):fi
 end:
 CompleteClass(PKeyData):
 
@@ -47,13 +50,14 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'NSeqMap'=((NSeqMap=-1):integer),
    'NOrthMap'=((NOrthMap=-1):integer),
    'isPublic'=((isPublic=false):boolean),
-   'reference'=((reference='OMA'):{'OMA','RefSet5'}) )
+   'reference'=((reference='OMA'):{'OMA','RefSet5'}),
+   'description'=((desc=''):string))
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
     pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, 
                     reference<>'OMA', NSeqSub, NOrthSub, NSeqMap, 
-                    NOrthMap, {}, table() );
+                    NOrthMap, {}, table(), desc );
 
     verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');
