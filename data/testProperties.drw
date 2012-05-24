@@ -18,5 +18,3 @@ TESTPROPERTIES['HOX'] := TestProperty('HOX',EvaluateRefPhyloTestProperty,['HOX']
 TESTPROPERTIES['VATB'] := TestProperty('VATB',EvaluateRefPhyloTestProperty,['VATB'],1306945943.6154):
 TESTPROPERTIES['RPS'] := TestProperty('RPS',EvaluateRefPhyloTestProperty,['RPS'],1306945960.7592):
 TESTPROPERTIES['TreeFamA'] := TestProperty('TreeFamA',EvaluateRefPhyloTestProperty,['TreeFamA','SemiAuto'],1308063164.3210):
-TESTPROPERTIES['RPS'] := TestProperty('RPS',EvaluateRefPhyloTestProperty,['RPS'],1319195896.9844):
-TESTPROPERTIES['HOX'] := TestProperty('HOX',EvaluateRefPhyloTestProperty,['HOX'],1319197836.8535):
