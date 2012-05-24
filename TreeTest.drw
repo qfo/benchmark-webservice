@@ -88,7 +88,7 @@ FindCases := proc(iSet, prjNrs:list)
     return(cases):
 end:
 
-ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:posint)
+ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
     global DB, Ndone:
     RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
     rawDat := CreateArray(1..length(prjNrs),[]):
