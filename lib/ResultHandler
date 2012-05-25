@@ -52,16 +52,17 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
     else
         prj := [seq(GetPKeyData(z), z=PIDs)];
+        prjNames := [seq(z['Title'],prj)];
         tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
-	         Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
+                 Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
-	    for i to length(prjNames) do 
+            for i to length(prjNames) do 
                 tab := append(tab, Row( If(i=1,cases[c],''), ProjectWLink(prj[i]),
-	          MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]) ));
-	    od: 
+                  MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]) ));
+            od: 
         od:
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -71,15 +72,15 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
             for i to length(prjNames) do 
-	        nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
-		if nrSamp>0 then
-    	            avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
-    	            avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
-    	            stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+                nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
+                if nrSamp>0 then
+                    avgFPR := avg(seq(If(FPR[c,i]<>0,FPR[c,i,1],NULL),c=1..length(cases)));
+                    stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
+                    avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
+                    stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
                     printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
                          avgFPR, avgTPR, stdFPR, stdTPR);
-	        else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
+                else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
 
                 plotTab[i,'index'] := i-1; 
                 plotTab[i,'title'] := prjNames[i];
@@ -101,7 +102,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi:
 end:
 Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string, 
@@ -114,30 +115,30 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
     traperror(ReadProgram(resFn));
     if FPR=0 or TPR=0 or length(FPR)<>length(PIDs)-1 
              or length(FPR[1])<>length(cases) or length(FPR[1,1])<>2 then
-	msg := sprintf('%s: %A\n%s:%A\n%s: %A\n', 'length(FPR)<>length(PIDs)-1',
-	     evalb(length(FPR)<>length(PIDs)-1),'length(FPR[1])<>length(cases)',
-	     evalb(length(FPR[1])<>length(cases)), 'length(FPR[1,1])<>2',
-	     evalb(length(FPR[1,1])<>2));
+        msg := sprintf('%s: %A\n%s:%A\n%s: %A\n', 'length(FPR)<>length(PIDs)-1',
+             evalb(length(FPR)<>length(PIDs)-1),'length(FPR[1])<>length(cases)',
+             evalb(length(FPR[1])<>length(cases)), 'length(FPR[1,1])<>2',
+             evalb(length(FPR[1,1])<>2));
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR\n'.msg);
     else
         prjNames := [seq(GetPKeyData(z)['Title'], z=PIDs)];
-	ref := prjNames[-1];
+        ref := prjNames[-1];
         tab := Table( border, gutter=2, ColAlign('l','l','c','c','c','c'),
-	         Row('','',Bold('Query Project'),SpanPrevious, 
-		           Bold('Reference Project ('.ref.')'),SpanPrevious),
-	         Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR'),Bold('FPR'),Bold('TPR')) );
+                 Row('','',Bold('Query Project'),SpanPrevious, 
+                           Bold('Reference Project ('.ref.')'),SpanPrevious),
+                 Row(Bold('Case'),Bold('Project'),Bold('FPR'),Bold('TPR'),Bold('FPR'),Bold('TPR')) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
-	    for i to length(prjNames)-1 do 
-	        tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
-	          If(FPR[i,c,1]<>0, MeanVarPrint(FPR[i,c,1]), 'n.a.' ),
-	          If(TPR[i,c,1]<>0, MeanVarPrint(TPR[i,c,1]), 'n.a.' ),
-	          If(FPR[i,c,2]<>0, MeanVarPrint(FPR[i,c,2]), 'n.a.' ),
-	          If(TPR[i,c,2]<>0, MeanVarPrint(TPR[i,c,2]), 'n.a.' )) );
-	    od: 
+            for i to length(prjNames)-1 do 
+                tab := append(tab, Row( If(i=1,cases[c],''), prjNames[i], 
+                  If(FPR[i,c,1]<>0, MeanVarPrint(FPR[i,c,1]), 'n.a.' ),
+                  If(TPR[i,c,1]<>0, MeanVarPrint(TPR[i,c,1]), 'n.a.' ),
+                  If(FPR[i,c,2]<>0, MeanVarPrint(FPR[i,c,2]), 'n.a.' ),
+                  If(TPR[i,c,2]<>0, MeanVarPrint(TPR[i,c,2]), 'n.a.' )) );
+            od: 
         od:
         if DEBUG then print(tab) fi:
 
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -146,24 +147,24 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
-	    printf('# %s\n0\t0\t0\t0\t0\n\n\n', ref);
-	    plotTab[1,'index']:=0; plotTab[1,'title'] := ref; plotTab[1,'style'] := 1;
+            printf('# %s\n0\t0\t0\t0\t0\n\n\n', ref);
+            plotTab[1,'index']:=0; plotTab[1,'title'] := ref; plotTab[1,'style'] := 1;
             for i to length(prjNames)-1 do 
-	        nrSamp := sum(If(FPR[i,c,1]<>0,1,0),c=1..length(cases));
-		if nrSamp>0 then
-    	            avgFPRq := avg(seq(If(FPR[i,c,1]<>0,FPR[i,c,1,1],NULL),c=1..length(cases)));
-    	            varFPRq := sum(If(FPR[i,c,1]<>0,FPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
-    	            avgTPRq := avg(seq(If(TPR[i,c,1]<>0,TPR[i,c,1,1],NULL),c=1..length(cases)));
-    	            varTPRq := sum(If(TPR[i,c,1]<>0,TPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
-    	            avgFPRr := avg(seq(If(FPR[i,c,2]<>0,FPR[i,c,2,1],NULL),c=1..length(cases)));
-    	            varFPRr := sum(If(FPR[i,c,2]<>0,FPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
-    	            avgTPRr := avg(seq(If(TPR[i,c,2]<>0,TPR[i,c,2,1],NULL),c=1..length(cases)));
-    	            varTPRr := sum(If(TPR[i,c,2]<>0,TPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
-		    ratioFPR:= RatioOfRandVars( avgFPRq-avgFPRr, varFPRq+varFPRr, avgFPRq+avgFPRr, varFPRq+varFPRr );
-		    ratioTPR:= RatioOfRandVars( avgTPRq-avgTPRr, varTPRq+varTPRr, avgTPRq+avgTPRr, varTPRq+varTPRr );
+                nrSamp := sum(If(FPR[i,c,1]<>0,1,0),c=1..length(cases));
+                if nrSamp>0 then
+                    avgFPRq := avg(seq(If(FPR[i,c,1]<>0,FPR[i,c,1,1],NULL),c=1..length(cases)));
+                    varFPRq := sum(If(FPR[i,c,1]<>0,FPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
+                    avgTPRq := avg(seq(If(TPR[i,c,1]<>0,TPR[i,c,1,1],NULL),c=1..length(cases)));
+                    varTPRq := sum(If(TPR[i,c,1]<>0,TPR[i,c,1,2],0),c=1..length(cases))/nrSamp;
+                    avgFPRr := avg(seq(If(FPR[i,c,2]<>0,FPR[i,c,2,1],NULL),c=1..length(cases)));
+                    varFPRr := sum(If(FPR[i,c,2]<>0,FPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
+                    avgTPRr := avg(seq(If(TPR[i,c,2]<>0,TPR[i,c,2,1],NULL),c=1..length(cases)));
+                    varTPRr := sum(If(TPR[i,c,2]<>0,TPR[i,c,2,2],0),c=1..length(cases))/nrSamp;
+                    ratioFPR:= RatioOfRandVars( avgFPRq-avgFPRr, varFPRq+varFPRr, avgFPRq+avgFPRr, varFPRq+varFPRr );
+                    ratioTPR:= RatioOfRandVars( avgTPRq-avgTPRr, varTPRq+varTPRr, avgTPRq+avgTPRr, varTPRq+varTPRr );
                     printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
                          ratioFPR[1], ratioTPR[1], 1.96*sqrt(ratioFPR[2]), 1.96*sqrt(ratioTPR[2]));
-	        else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
+                else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
 
                 plotTab[i+1,'index'] := i; 
                 plotTab[i+1,'title'] := prjNames[i];
@@ -185,7 +186,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi:
 end:
 
@@ -271,7 +272,7 @@ HandleBoxRFFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table)
         tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
             'corLabel'='avg RF distance( genetree , speciestree )' );
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
                 'plotType'='barchart',
@@ -280,7 +281,7 @@ HandleBoxRFFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table)
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi;
 end:
 
@@ -292,34 +293,34 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
         assert( type(RFstat,list(list(Stat))) );
-	ref := RFstat[1,2,'Description'];
+        ref := RFstat[1,2,'Description'];
         tab := Table( border, gutter=2, ColAlign(l,r,c,c),
-	       Row('','',Bold('Query Project'), Bold('Reference Project ('.ref.')')),
+               Row('','',Bold('Query Project'), Bold('Reference Project ('.ref.')')),
                Row(Bold('Project'),Bold('# trees'),Bold('avg RF distance( genetree , speciestree )'),
-	           Bold('avg RF distance( genetree , speciestree )')));
+                   Bold('avg RF distance( genetree , speciestree )')));
         for z in RFstat do 
             tab := append(tab, Row(z[1,Description], z[1,Number], MeanVarPrint(z[1]), MeanVarPrint(z[2]) ));
         od:
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
             t['ylabel'] := 'avg RF distance';
-	    t['nSeries'] := 3*length(RFstat)-1;
-	    t['boxwidth'] := 0.98;
-	    t['xtics'] := ConcatStrings([seq(
-	        sprintf('"%s" %.2f, "%s" %.2f', RFstat[i,1,Description],3*i-2,RFstat[i,2,Description],3*i-1),
-		i=1..length(RFstat))],', ');
+            t['nSeries'] := 3*length(RFstat)-1;
+            t['boxwidth'] := 0.98;
+            t['xtics'] := ConcatStrings([seq(
+                sprintf('"%s" %.2f, "%s" %.2f', RFstat[i,1,Description],3*i-2,RFstat[i,2,Description],3*i-1),
+                i=1..length(RFstat))],', ');
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
             plotTab := [seq(table(), length(RFstat)+1)];
-	    OpenWriting(t['datafile']);
+            OpenWriting(t['datafile']);
             printf('# %s\n',RFstat[1,2,Description]);
-	    plotTab[1,'index']:=0; plotTab[1,'title'] := RFstat[1,2,Description]; plotTab[1,'style'] := 1;
+            plotTab[1,'index']:=0; plotTab[1,'title'] := RFstat[1,2,Description]; plotTab[1,'style'] := 1;
             for i to length(RFstat) do 
                 printf('%d\t%f\t%f\n', 3*i-1, RFstat[i,2,Mean], RFstat[i,2,StdErr]);
-	    od: printf('\n\n');
-	    for i to length(RFstat) do
+            od: printf('\n\n');
+            for i to length(RFstat) do
                 printf('%d\t%f\t%f\n\n\n', 3*i-2, RFstat[i,1,Mean], RFstat[i,1,StdErr]);
                 plotTab[i+1,'index'] := i; 
                 plotTab[i+1,'title'] := RFstat[i,1,Description];
@@ -340,7 +341,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi;
 end:
 
@@ -354,7 +355,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
             'corLabel'='avg RF distance( genetree , speciestree )' );
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
                 'plotType'='2d',
@@ -364,7 +365,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi;
 end:
 
@@ -386,7 +387,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         tab := MakeIntersectTable( Sims, 'covLabel'='# ortholog relations', 
             'corLabel'=measure );
         
-	resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( Sims, resPlotFn, resBase, 
                 'plotType'='2d',
@@ -396,7 +397,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi;
 end:
 
@@ -408,14 +409,14 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
     if Sims=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
     else 
-	ref := Sims[1,2,'Description'];
+        ref := Sims[1,2,'Description'];
         tab := Table( border, gutter=2, ColAlign(l,r,c,r,c), 
             Row('',Bold('Query Project'),SpanPrevious,Bold('Reference Project ('.ref.')'),SpanPrevious),
-	    Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure),
-	        Bold('# ortholog relations'),Bold(measure)));
+            Row(Bold('Project'),Bold('# ortholog relations'),Bold(measure),
+                Bold('# ortholog relations'),Bold(measure)));
         for z in Sims do 
             tab := append(tab, Row(z[1,Description], z[1,Number], MeanVarPrint(z[1]), 
-	                           z[2,Number], MeanVarPrint(z[2]) ));
+                                   z[2,Number], MeanVarPrint(z[2]) ));
         od:
         
         resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
@@ -427,13 +428,13 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
             plotTab := [seq(table(), length(Sims)+1)]:
             OpenWriting(t['datafile']);
-	    printf('#%s\n0\t0\t0\n\n\n',ref);
+            printf('#%s\n0\t0\t0\n\n\n',ref);
             plotTab[1,'index'] := 0; 
             plotTab[1,'title'] := Sims[1,2,Description];
             plotTab[1,'style'] := 1;
             for i to length(Sims) do
-	        diff := traperror(RelativeDifference(Sims[i,1], Sims[i,2])):
-		vals := If(diff=lasterror, '?0\t?0\t?0', sprintf('%f\t%f\t%f', op(diff)) );
+                diff := traperror(RelativeDifference(Sims[i,1], Sims[i,2])):
+                vals := If(diff=lasterror, '?0\t?0\t?0', sprintf('%f\t%f\t%f', op(diff)) );
                 printf('# %s\n#%d\t%f\t%f <--> %d\t%f\t%f\n%s\n\n\n', 
                     Sims[i,1,Description], 
                     Sims[i,1,Number], Sims[i,1,Mean], Sims[i,1,StdErr], 
@@ -458,7 +459,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
         vars['content'] := HTMLC(tab);
         vars['fig'] := imgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
-	vars['resFigReady'] := true;
+        vars['resFigReady'] := true;
     fi;
 end:
 

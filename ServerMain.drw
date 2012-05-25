@@ -158,6 +158,8 @@ elif funcname = 'RunTests' then
 elif funcname = 'CheckResults' then
     lprint(params);
     html := traperror(bsCheckResults(params[1]));
+elif funcname = 'ShowProject' then
+    html := traperror(bsShowProject(params));
 elif funcname = 'Service' then
     html := traperror(bsService());
 # cookies/settings
@@ -202,6 +204,32 @@ vars['logo'] := '/OMAbrowser.gif';
 
 return(GenerateTemplate(wdir.'templates/index.html',vars));
 end:
+
+bsShowProject := proc(param:list)
+    print(param);
+    if length(param)=0 then
+        prjs := GetPublicProjects();
+    elif length(param)=1 then
+        prjs := [GetPKeyData(param[1])];
+    else error('unexpected argument list for ShowProject');
+    fi:
+
+    vars := table(''):
+    cont := []:
+    for p in prjs do
+        t := table('');
+        for key in ['Description','Titel','Website'] do
+            t[key] := p[key];
+        od:
+        path := p['fnBase']; 
+        for k from length(path) to 1 by -1 while path[k]<>'/' do od:
+        t['Predictions'] := rawurl.path[k..-1].'.txt.gz';
+        cont := append(cont, GenerateTemplate(wdir.'templates/secProject.htmlc',vars)) );
+    od:
+    vars['content'] := ConcatStrings(cont,'\n');
+    return( GenerateTemplate(wdir.'templates/showProjects.html',vars)) );
+end:
+
 
 
 ####################################

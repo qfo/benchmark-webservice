@@ -1,0 +1,7 @@
+<div class="projectinfo">
+<h3><DVAR name="Title"></h3>
+<h4>Description</h4>
+<p><DVAR name="Description"></p>
+<h4>Weblink</h4>
+<p><a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a></p>
+</div>
