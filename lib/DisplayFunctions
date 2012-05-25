@@ -1,0 +1,7 @@
+
+ProjectWLink := proc(p:PKeyData)
+    t := sprintf('<a href="cgi-bin/gateway.pl?f=ShowProject&p1=%s" class="external">%s</a>', p['PID'],p['Title']);
+    return(t);
+end:
+
+

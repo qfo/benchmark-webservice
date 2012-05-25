@@ -38,6 +38,13 @@ a:hover { text-decoration: underline; }
     background-position:center right;
 }
 
+.info {
+    color: #4444FF;
+    padding-right:11px;
+    background:url(/imgs/info.png) 0 no-repeat;
+    background-position:center right;
+}
+
 table { 
     border-spacing: 0pt;
     border-width: 0pt;
