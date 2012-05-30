@@ -143,7 +143,7 @@ if funcname = 'Index' then
     html := traperror(bsIndex(op(params)));
 elif funcname = 'UploadData' then 
     html := traperror(bsUploadData(op(params)));
-elif funcname = 'RedoProjectMapping' and length(params)=4 then
+elif funcname = 'RedoProjectMapping' and length(params)=8 then
     html := traperror(bsUploadData(op(params)));
 elif funcname = 'MapData' then
     html := traperror(bsMapData(op(params)));
@@ -235,10 +235,12 @@ end:
 ####################################
 # Upload Data                      #
 ####################################
-bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference)
+bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference,
+    isPublic, methDesc, methURL)
     lprint(args);
     id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
-        'reference'=reference,'description'=methDesc):
+        'reference'=reference,'description'=methDesc,'url'=methURL,
+        'isPublic'=isPublic):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 

@@ -472,6 +472,10 @@ sub process_datafiles{
     my $methDesc = $req->param("methDesc");
     $methDesc =~ tr/'/"/;
 
+    my $methURL = $req->param("methURL");
+    $methURL =~ s/([^?]*).*/\1/g;
+
+
     print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
     my $nrProt=0; my $nrOrth=0;
     my $prot2spec = 0;
@@ -524,8 +528,8 @@ sub process_datafiles{
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
         print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
     }
-    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'");
-    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'");
+    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
+    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'");
     $cache->set($session,[1,[\@p,\@a]]);
 } 
 
