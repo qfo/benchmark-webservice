@@ -4,4 +4,12 @@
 <p><DVAR name="Description"></p>
 <h4>Weblink</h4>
 <p><a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a></p>
+<h4>Predictions</h4>
+<p><DBOOL name="hasData">
+ <a href="
+ </DBOOL>
+ <DVAR name="Predictions">
+ <DBOOL name="hasData">
+ " target="_new">Uploaded Data</a>
+ </DBOOL></p>
 </div>

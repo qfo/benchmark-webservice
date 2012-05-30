@@ -8,8 +8,9 @@ use File::stat;
 use File::Basename;
 use Time::localtime;
 use IO::Zlib;
-use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
-use IO::Uncompress::Gunzip qw(gunzip $GunzipError) ;
+use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+use IO::Compress::Gzip qw(gzip $GzipError);
 use IO::File;
 
 use XML::SAX;
@@ -29,7 +30,6 @@ use strict;
 srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
 my $cook = '';
 my $debug = 0;
-my $storeRaw = 1;
 my $error_log = '/local/BenchmarkService/output';
 my $dbg_log = '/local/BenchmarkService/dbg.log';
 my $upload_log = '/local/BenchmarkService/upload.log';
@@ -289,11 +289,9 @@ sub SeqFasta2Drw{
     my %sps = ();
     my $AA = "ACDEFGHIKLMNPQRSTVWXY";
     open(F,">$fnSeq") or die($!);
-    open( RAW, ">$fnSeq.raw") or die($!) if $storeRaw; 
 
     my $cnt=0; my $err=0;
     while( <$fh> ){
-        print RAW $_  if $storeRaw;
         chomp;
         if (/^>(\w[\w\.-_]*)(.*)/) {
 	     my $spc = undef;
@@ -323,7 +321,6 @@ sub SeqFasta2Drw{
     }
     print F "']:\n";
     close(F);
-    close(RAW) if $storeRaw;
     
     open(F, ">$fnSps") or die($!);
     print F "SPS := [\n";
@@ -372,10 +369,8 @@ sub RelText2Drw {
     
     my $cnt = 0;
     open(F,">$fn") or die($!);
-    open( RAW, ">$fn.raw") or die($!) if $storeRaw; 
     print F "PairRelations([\n";
     while( <$fh> ){
-        print RAW $_ if $storeRaw;
         chomp;
     if ( /([\w.-]+)\s+([\w.-]+)/ ){
         print F "['$1','$2'],\n";
@@ -385,7 +380,6 @@ sub RelText2Drw {
     }
     print F "NULL]):\n";
     close(F);
-    close(RAW) if $storeRaw;
     return($cnt);
 }
 
@@ -501,18 +495,20 @@ sub process_datafiles{
         }
         print "[$session] upload of ".$upFile." finished\n";
         $fh = $fh->handle;
-        if ($suffix ne ""){
-            open( my $decmpFh,  ">$fn.tmp");
-            if ($suffix eq ".gz"){
-                gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
-            } elsif ($suffix eq ".bz2"){
-                bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
-            }
-            close( $decmpFh );
-            close( $fh );
-            $fh = new IO::File("$fn.tmp", "r");
-            print "[$session] decompression finished, fh reset\n";
+        
+        open( my $decmpFh,  ">$fn.raw");
+        if ($suffix eq ".gz"){
+            gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
+        } elsif ($suffix eq ".bz2"){
+            bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
+        } elsif ($suffix eq "") {
+            while (<$fh>) { print $decmpFh $!;}
         }
+        close( $decmpFh );
+        close( $fh );
+        $fh = new IO::File("$fn.raw", "r");
+        print "[$session] decompression finished, fh reset\n";
+        
         if( $upFile eq "seqs"){
            if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
            } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
@@ -527,6 +523,11 @@ sub process_datafiles{
         }
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
         print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
+        my $status = gzip "$fn.raw" => "$fn.raw.gz" or die "gzip failed: $GzipError\n";
+        my $lnkFn = "$fnBase.raw.gz";
+        $lnkFn =~ s/projects/htdocs\/raw/;
+        $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild: $!\n";
+        unlink( "$fn.raw" )
     }
     push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
     push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'");
