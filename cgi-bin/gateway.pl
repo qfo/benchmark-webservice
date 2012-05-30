@@ -468,6 +468,9 @@ sub process_datafiles{
 
     my $methURL = $req->param("methURL");
     $methURL =~ s/([^?]*).*/\1/g;
+    if ( $methURL !~ /^http:\/\// ){
+        $methURL = "http://$methURL";
+    }
 
 
     print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
