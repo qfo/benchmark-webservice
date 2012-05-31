@@ -52,7 +52,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
     else
         prj := [seq(GetPKeyData(z), z=PIDs)];
-        prjNames := [seq(z['Title'],prj)];
+        prjNames := [seq(z['Title'],z=prj)];
         tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
                  Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
