@@ -234,11 +234,12 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     totNrTrees := sum(length(z),z=cases):
     for i to nP do
         if FileExists(resFnParts[i].'.gz') then
-            RFstat := RawDatFn := 0;
+            RFstat := RawDataFn := 0;
             ReadProgram(resFnParts[i]): 
             assert(type(RFstat,Stat)); 
+            assert(type(RawDataFn,string));
             RFstats[i] := RFstat;
-            rawDataFn[i] := RawDatFn;
+            rawDataFn[i] := RawDataFn;
         else
             compRes := ComputeCongruenceStat([prjNrs[i]], cases[i], 
                 totNrTrees):
