@@ -75,3 +75,4 @@ ParseAllPrefixParams := noeval(ReadLibrary(wdir.'lib/Parsing',ParseAllPrefixPara
 ParseParam := noeval(ReadLibrary(wdir.'lib/Parsing',ParseParam));
 
 ProjectWLink := noeval(ReadLibrary(wdir.'lib/DisplayFunctions', ProjectWLink));
+RawDataWLink := noeval(ReadLibrary(wdir.'lib/DisplayFunctions', RawDataWLink));

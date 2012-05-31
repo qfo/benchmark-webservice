@@ -205,15 +205,22 @@ Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string,
     m(args[2..-1]);
 end:
 
-MakeIntersectTable := proc(data:list(Stat) ;
+MakeIntersectTable := proc(data:list(Stat), rawDataFn:list ;
     'covLabel'=((covLabel='# ortholog relations'):string),
     'corLabel'=((corLabel='avg similarity'):string))
-
-    tab := Table( border, gutter=2, ColAlign(l,r,c),
-        Row(Bold('Project'),Bold(covLabel),Bold(corLabel)));
-    for z in data do
-        tab := append(tab, Row(z['Description'], z['Number'], MeanVarPrint(z)) );
+    if length(data)<>length(rawDataFn) then
+        lprint(data, rawDataFn);
+        error('arrays not of equal length');
+    fi:
+    n := length(data):
+    tab := Table( border, gutter=2, ColAlign(l,r,c,c),
+        Row(Bold('Project'),Bold(covLabel),Bold(corLabel),Bold('Raw Data')));
+    for i to n do 
+        tab := append(tab, Row(data[i,'Description'], data[i,'Number'], 
+            MeanVarPrint(data[i]), RawDataWLink(rawDataFn[i])) );
     od:
+    prints(HTMLC(tab));
+    print(tab);
     return( tab );
 end:
 
@@ -346,13 +353,14 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
 end:
 
 HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
-    global RFstat;
-    RFstat := 0;
+    global RFstat,RawDataFn;
+    RFstat := RawDataFn := 0;
     traperror(ReadProgram(resFn)):
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
-        tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
+        if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
+        tab := MakeIntersectTable( RFstat, RawDataFn, 'covLabel'='# trees', 
             'corLabel'='avg RF distance( genetree , speciestree )' );
         
         resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
@@ -377,14 +385,17 @@ end:
 
 Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         'measure'=((measure='avg Lin'):string))
-    global Sims;
-    Sims := 0;
+    global Sims, RawDataFn;
+    Sims := RawDataFn := 0;
+    lprint(resFn);
     traperror(ReadProgram(resFn)):
     #Sims := eval( symbol(datavar) ):
     if Sims=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
     else
-        tab := MakeIntersectTable( Sims, 'covLabel'='# ortholog relations', 
+        if RawDataFn=0 then RawDataFn := CreateArray(1..length(Sims)) fi:
+        tab := MakeIntersectTable( Sims, RawDataFn, 
+            'covLabel'='# ortholog relations', 
             'corLabel'=measure );
         
         resPlotFn := sprintf('%s/%s.png', imgdir, resBase);

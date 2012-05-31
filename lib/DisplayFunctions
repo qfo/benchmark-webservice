@@ -4,4 +4,12 @@ ProjectWLink := proc(p:PKeyData)
     return(t);
 end:
 
+RawDataWLink := proc()
+    if nargs=0 or nargs=1 and args[1]=0 then 
+        t := 'n/a';
+    elif nargs=1 and type(args[1],string) then
+        t := sprintf('<a href="%s/%s"><img src="imgs/dload.img"/></a>\n', rawurl, args[1]);
+    else error('unexpected arguments in RawDataWLink'); fi:
+    return( t );
+end:
 
