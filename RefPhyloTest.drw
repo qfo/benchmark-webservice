@@ -26,6 +26,8 @@ ComputePerformance := proc(iSet, prjNrs:list)
     fpr  := CreateArray(1..nrProb,1..np,0);
     tpr  := CreateArray(1..nrProb,1..np,0);
     DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
+    rawData := CreateArray(1..nrProb, 1..np,[]):
+    lprint('start computing...');
     for prNr to nrProb do 
         rels := ReconciledTrees[problems[prNr],'Relations']: 
         prts := intersect(iSet, ReconciledTrees[problems[prNr],'MappedProts']); 
@@ -45,33 +47,74 @@ ComputePerformance := proc(iSet, prjNrs:list)
                 DB := dbs[prjNrs[pNr]];
                 # iteration over the proteins in iSet and current reconciled tree
                 fp := tp := fn := tn := 1; #uniform prior probability
+
+                raw := []:
                 for oE1 in prts do
                     eNr1 := If(prj[prjNrs[pNr],'directMap'], oE1, DbEntryNrFromENr(oE1));
                     vps := ParseLongList(SearchTag('VP',Entry(eNr1)));
                     vps := {op(vps)} intersect prts;
-                        
-                    tp := tp + length( intersect(vps, specs[oE1]) )/2;
-                    tn := tn + length( minus(dups[oE1], vps) )/2;
-                    fp := fp + length( intersect(vps, dups[oE1]) )/2;
-                    fn := fn + length( minus(specs[oE1], vps) )/2;
+                    
+                    tpp := intersect(vps, specs[oE1]):
+                    tp := tp + length( tpp )/2;
+                    raw := append(raw, seq([oE1,If(z>oE1,z,NULL),'TP'],z=tpp) ):
+
+                    tnp := minus(dups[oE1], vps):
+                    tn := tn + length( tnp )/2;
+                    raw := append(raw, seq([oE1,If(z>oE1,z,NULL),'TN'],z=tnp) ):
+
+                    fpp := intersect(vps, dups[oE1]);
+                    fp := fp + length( fpp )/2;
+                    raw := append(raw, seq([oE1,If(z>oE1,z,NULL),'FP'],z=fpp) ):
+
+                    fnp := minus(specs[oE1], vps):
+                    fn := fn + length( fnp )/2;
+                    raw := append(raw, seq([oE1,If(z>oE1,z,NULL),'FN'],z=fnp) ):
                 od:
                 # compute the fpr and tpr and their variances
                 p := fp/(fp+tn); 
                 fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];
                 p := tp/(tp+fn); 
                 tpr[prNr,pNr] := [p, p*(1-p)/(tp+fn)];
+                lprint('fp/tp estimated for '.prNr.', '.pNr);
+                rawData[prNr, pNr] := raw;
             od:
         else 
             printf('too few (%d) proteins in %a\n',nProt,problems[prNr]);
         fi:
     od:
-    return( [fpr, tpr] );
+    return( [fpr, tpr, rawData] );
 end:
 
-StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth)
+StoreRawData := proc(rawData, PIDs, measure, problems, meth, testset)
+    lprint('storing raw data...');
+    RawDataFn := CreateArray(1..length(PIDs)):
+    for p to length(PIDs) do
+        fn := sprintf('RefPhylo/%s.%a.tsv.gz', testset, hash([PIDs[p],problems,measure,meth]));
+        OpenWriting(rawdir.fn[1..-4]);
+        printf('# Dataset<tab>Protein ID 1<tab>Protein ID 2<tab>Correctness (TP:True '.
+            'positive, FP: False positive, TN: True Negative. FN: False Negative)\n');
+        for i to length(problems) do
+            pNam := problems[i];
+            for z in rawData[i,p] do
+                id1 := ENr2XRef(z[1], dataset);
+                id2 := ENr2XRef(z[2], dataset);
+                printf('%s\t%s\t%s\t%s\n', pNam, id1, id2, z[3]);
+            od:
+        od:
+        OpenWriting(previous);
+        CallSystem('gzip -9f '.rawdir.fn[1..-4]);
+        RawDataFn[p] := fn;
+    od:
+    return(RawDataFn);
+end:
+
+StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth ;
+        'rawDataFn'=((RawDataFn=CreateArray(1..length(PIDs))):list) )
+    lprint('storing results...');
     OpenWriting(fn):
     printf('# created on %s\n', date());
     printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
+    printf('RawDataFn := %A:\n', RawDataFn):
     printf('#PIDs := %A:\n', PIDs );
     printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
     OpenWriting(previous):
@@ -83,7 +126,8 @@ if meth='INTERSECT' or meth='REFSET5' then
     prjNrs:= [seq(i,i=1..nP)];
     curP := 1; maxP := 1;
     Res := ComputePerformance(iSet, prjNrs):
-    StoreResult(resFn, Res[1], Res[2], [seq(prj[i,'PID'], i=prjNrs)], measure, problems, meth);
+    rawDataFn := StoreRawData( Res[3], [seq(prj[i,'PID'], i=prjNrs)], measure, problems, meth, testset);
+    StoreResult(resFn, Res[1], Res[2], [seq(prj[i,'PID'], i=prjNrs)], measure, problems, meth, 'rawDataFn'=rawDataFn);
 elif meth='PAIRWISE' then
     maxP := nP-1;
     Res := CreateArray(1..maxP):
@@ -103,22 +147,7 @@ elif meth='PAIRWISE' then
     od:
     StoreResult(resFn, [seq(Res[i,1],i=1..maxP)], [seq(Res[i,2],i=1..maxP)], 
                 [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], measure, problems, meth);
-#elif length(meth)>=6 and meth[1..6]='REFSET' then
-#    Res := CreateArray(1..nP): maxP := nP;
-#    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-#    for curP to nP do
-#        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,problems,meth]) );
-#        if FileExists(resFnPart.'.gz') then
-#            Res[curP] := 0; ReadProgram(resFnPart):  Res[curP] := [FPR, TPR];
-#        else
-#            Res[curP] := ComputePerformance(intersect(), [curP]):
-#            StoreResult(resFnPart, Res[curP,1], Res[curP,2], [prj[curP,'PID']], 
-#                        measure, problems, meth);
-#        fi:
-#    od:
-#    StoreResult(resFn, [seq(Res[i,1],i=1..nP)], [seq(Res[i,2],i=1..nP)], 
-#                [seq(prj[i,'PID'],i=1..nP)], measure, problems, meth);
-#
+
 else error('unknown strategy method:'.meth);
 fi:
 
