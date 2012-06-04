@@ -212,7 +212,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     SimsRes := CreateArray(1..nP):
     RawDataFnRes := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-    maxP := 1:
+    maxP := nP:
     for curP to nP do 
         resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
         if FileExists(resFnPart.'.gz') then 
@@ -222,6 +222,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             assert(type(RawDataFn,string)); 
             SimsRes[curP] := Sims;
             RawDataFnRes[curP] := RawDataFn; 
+            maxP := maxP - 1;
         else
             freqs := ECFreqs(intersect()):
             perf := ComputePerformance(intersect(), [curP]):
