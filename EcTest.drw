@@ -99,6 +99,8 @@ ComputePerformance := proc(iSet, prjNrs:list)
     Sims := [seq(Stat(prj[z,'Title']), z=prjNrs)];
     directMap := evalb(iSet=intersect());
     nProt := If(directMap,length(EC),length(iSet));
+    rawData := CreateArray(1..length(prjNrs),[]):
+
     for pNr to length(prjNrs) do 
         DB := dbs[prjNrs[pNr]];
         for i to nProt do 
@@ -129,7 +131,9 @@ ComputePerformance := proc(iSet, prjNrs:list)
                         pairs := append(pairs, [1, simRun, infoRun, ig1, ig2] );
                     od od:
                     if length(pairs)>0 then
-                        Sims[pNr] + ComputeSimilarity(pairs, 'method'=measure);
+                        simPair :=  ComputeSimilarity(pairs, 'method'=measure);
+                        Sims[pNr] + simPair;
+                        rawData[pNr] := append(rawData[pNr], [oE1, vp, simPair]);
                     fi:
                 od:
             fi;
@@ -139,13 +143,40 @@ ComputePerformance := proc(iSet, prjNrs:list)
             fi:
         od:
     od:
-    return(Sims);
+    return(Sims,rawData);
 end:
            
-StoreResult := proc(fn:string, Sims, PIDs, filter, measure, meth)
+StoreRawData := proc(rawData_, prjs_, filter, measure, meth)
+    if type(prjs_, list) then
+        prjs := prjs_; rawData := rawData_;
+    elif type(prjs_,PKeyData) then
+        prjs := [prjs_]; rawData := [rawData_];
+    else error('unexpected prjs parameter'); fi:
+
+    RawDataFn := CreateArray(1..length(prjs)):
+    for p to length(prjs) do
+        fn := sprintf('EC/EC.%a.tsv.gz', hash([prjs[p,'PID'],filter,measure,meth]));
+        OpenWriting(rawdir.fn[1..-4]);
+        printf('# EC Similarities between orthologs from %s\n',prjs[p,'Title']);
+        printf('# Protein ID 1<tab>Protein ID 2<tab>EC Similarity\n');
+        for z in rawData[p] do
+            id1 := ENr2XRef(z[1], dataset);
+            id2 := ENr2XRef(z[2], dataset);
+            printf('%s\t%s\t%f\n', id1, id2, z[3]);
+        od:
+        OpenWriting(previous);
+        CallSystem('gzip -9f '.rawdir.fn[1..-4]);
+        RawDataFn[p] := fn;
+    od:
+    return( If(length(prjs)>1,RawDataFn,RawDataFn[1]) );
+end:
+
+
+StoreResult := proc(fn:string, Sims, PIDs, filter, measure, meth; RawDataFn:{string,list(string)} )
     OpenWriting(fn):
     printf('Sims := %A:\n', Sims):
-    printf('PIDs := %A:\n', PIDs );
+    printf('PIDs := %A:\n', PIDs);
+    if assigned(RawDataFn) then printf('RawDataFn := %A:\n', RawDataFn); fi;
     printf('# filter := %A:\n# measure := %A:\n#meth := %A:\n', filter, measure, meth);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
@@ -157,7 +188,8 @@ if meth='INTERSECT' then
     freqs := ECFreqs(iSet):
     curP := 1; maxP := 1;
     SimsRes := ComputePerformance(iSet, prjNrs):
-    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=prjNrs)], filter, measure, meth);
+    RawDataFn := StoreRawData( SimRes[2], [seq(prj[i], i=prjNrs)], filter, measure, meth);
+    StoreResult(resFn, SimsRes[1], [seq(prj[i,'PID'], i=prjNrs)], filter, measure, meth, RawDataFn);
 elif meth='PAIRWISE' then
     maxP := nP-1;
     SimsRes := CreateArray(1..maxP):
@@ -171,26 +203,35 @@ elif meth='PAIRWISE' then
         else
             iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
             freqs := ECFreqs(iSet):
-            SimsRes[curP] := ComputePerformance(iSet, prjNrs[curP]):
+            SimsRes[curP] := ComputePerformance(iSet, prjNrs[curP])[1]:
             StoreResult(resFnPart, SimsRes[curP], [seq(prj[j,'PID'], j=prjNrs[curP])], filter, measure, 'INTERSECT');
         fi:
     od:
     StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);
 elif length(meth)>=6 and meth[1..6]='REFSET' then
     SimsRes := CreateArray(1..nP):
+    RawDataFnRes := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     maxP := 1:
     for curP to nP do 
         resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
         if FileExists(resFnPart.'.gz') then 
-            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(type(Sims,Stat)); SimsRes[curP] := Sims;
+            SimsRes[curP] := 0; 
+            ReadProgram(resFnPart): 
+            assert(type(Sims,Stat));
+            assert(type(RawDataFn,string)); 
+            SimsRes[curP] := Sims;
+            RawDataFnRes[curP] := RawDataFn; 
         else
             freqs := ECFreqs(intersect()):
-            SimsRes[curP] := ComputePerformance(intersect(), [curP])[1]:
-            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth);
+            perf := ComputePerformance(intersect(), [curP]):
+            SimsRes[curP] := perf[1,1]; 
+            RawDataFnRes[curP] := StoreRawData(perf[2,1], prj[curP], filter, measure, meth);
+            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth, 
+                RawDataFnRes[curP]);
         fi:
     od:
-    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth);
+    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth, RawDataFnRes);
 
 else error('unknown strategy method:'.meth); 
 fi:
