@@ -136,7 +136,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
                   If(TPR[i,c,2]<>0, MeanVarPrint(TPR[i,c,2]), 'n.a.' )) );
             od: 
         od:
-        if DEBUG then print(tab) fi:
+        Logger(tab,'DEBUG'):
 
         resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
         if not FileExists(resPlotFn) then
@@ -199,7 +199,7 @@ Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string,
         'aggregate'=((aggregate='sample variance'):string),
         'FPRLabel'=((fprLabel='false positive rate'):string),
         'TPRLabel'=((tprLabel='true positive rate'):string))
-    if DEBUG then print(args) fi:
+    Logger(args, 'DEBUG'):
     method := If(length(meth)>=6 and meth[1..6]='REFSET',meth[1..6],meth):
     m := symbol(procname.'_'.method);
     m(args[2..-1]);
@@ -209,7 +209,7 @@ MakeIntersectTable := proc(data:list(Stat), rawDataFn:list ;
     'covLabel'=((covLabel='# ortholog relations'):string),
     'corLabel'=((corLabel='avg similarity'):string))
     if length(data)<>length(rawDataFn) then
-        lprint(data, rawDataFn);
+        Logger( sprintf('array length missmatch: %A <-> %A',data, rawDataFn), 'ERROR');
         error('arrays not of equal length');
     fi:
     n := length(data):
@@ -219,8 +219,6 @@ MakeIntersectTable := proc(data:list(Stat), rawDataFn:list ;
         tab := append(tab, Row(data[i,'Description'], data[i,'Number'], 
             MeanVarPrint(data[i]), RawDataWLink(rawDataFn[i])) );
     od:
-    prints(HTMLC(tab));
-    print(tab);
     return( tab );
 end:
 
@@ -387,7 +385,6 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         'measure'=((measure='avg Lin'):string))
     global Sims, RawDataFn;
     Sims := RawDataFn := 0;
-    lprint(resFn);
     traperror(ReadProgram(resFn)):
     #Sims := eval( symbol(datavar) ):
     if Sims=0 then 

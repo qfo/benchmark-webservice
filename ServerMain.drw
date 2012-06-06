@@ -91,7 +91,7 @@ end:
 # Page to display in case of an error #
 #######################################
 ErrorPage := proc(filename:string,msg:string)
-print(msg);
+Logger( print(msg), 'DEBUG');
 vars := table(''):
 #vars['header'] := MakeHeader('SearchDb','');
 vars['message'] := msg;
@@ -156,7 +156,6 @@ elif funcname = 'TestSelection' then
 elif funcname = 'RunTests' then
     html := traperror(bsRunTests(params,pnames));
 elif funcname = 'CheckResults' then
-    lprint(params);
     html := traperror(bsCheckResults(params[1]));
 elif funcname = 'ShowProject' then
     html := traperror(bsShowProject(If(type(params,list),params[1],NULL)));
@@ -172,7 +171,7 @@ else
 fi;
 
 if html=lasterror then
-    print(lasterror);
+    Logger(lasterror,'ERROR');
     res := '';
     for z in [lasterror] do
         res := res . sprintf('%a ',z);
@@ -243,7 +242,7 @@ end:
 ####################################
 bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference,
     isPublic, methDesc, methURL)
-    lprint(args);
+    Logger(sprintf('Upload: %A', args), 'DEBUG');
     id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
         'reference'=reference,'description'=methDesc,'url'=methURL,
         'isPublic'=isPublic):
@@ -317,8 +316,7 @@ bsMapData := proc(PID:string)
 		  'ReadProgram(''%s/ComputeSeqMapping.drw''); done" '.
                   '| nice -n 19 %s &',
                   wdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, wdir, darwin64);
-    WriteLog('started command: '.cmd);
-    prints(cmd);
+    Logger( 'starting command: '.cmd, 'DEBUG');
 
     CallSystem( cmd );
     vars['content'] := 'Started computing sequence mapping...';
@@ -381,8 +379,7 @@ bsMapRels := proc(PID:string)
                       'relsinfn := ''%s''; lock:=''%s''; orgMap := %A; PID := ''%s''; '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''); done;" | nice -n 19 %s &',
                       wdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, wdir, darwin64);
-        WriteLog('started command: '.cmd);
-        if printlevel>2 then prints(cmd) fi;
+        Logger( 'starting command: '.cmd, 'DEBUG');
     
         CallSystem( cmd );
     fi:
@@ -558,9 +555,8 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
             'problem := ''%s/TreeCat_%s_%s.drw''; projs := %A; lock:=''%s''; meth:=''%s''; '.
             'ReadProgram(''%s/TreeTest.drw''); done;" | nice -n 19 %s &',
             wdir, resFn, datdir, king, vars['ref'], projs, lock, meth, wdir, darwin64);
-        prints(cmd);
+        Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
-        WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
@@ -594,12 +590,10 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
 
     prefix := sprintf('p%sPhyloProb', testset);
     problems := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on' );
-    if DEBUG then print('Do '.testset.'PhyloTest with those projects:',projs) fi;
     
     resBase := sprintf('%sPhyl.%a', testset, hash([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
-    if DEBUG then lprint('base: ',resBase,'lock exists:',FileExists(lock), 'res exists:',FileExists(resFn.'.gz')); fi:
     if FileExists(lock) then 
         vars['content'] := HandleLockFile(lock);
     elif FileExists(resFn.'.gz') then
@@ -611,12 +605,12 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
            'testset := %A: ReadProgram(''%s/RefPhyloTest.drw''); done;" '.
            '| nice -n 19 %s &',
                wdir, resFn, projs, lock, problems, measure, meth, testset, wdir, darwin64);
-        prints(cmd);
+        Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    if DEBUG then print(vars) fi:
+    Logger(sprintf('%a',vars),'INFO'):
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
@@ -651,12 +645,11 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
            'projs := %A; lock:=%A; measure:=%A; meth:=%A; '.
            'ReadProgram(''%s/EcTest.drw''); done;" | nice -n 19 %s &',
                wdir, resFn, projs, lock, measure, meth, wdir, darwin64);
-        prints(cmd);
+        Logger(sprintf('%a',cmd),'INFO'):
+
         CallSystem( cmd );
-        WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    if DEBUG then print('ECTestvars',vars) fi:
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
@@ -696,12 +689,10 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
                'projs := %A; lock:=%A; measure:=%A; meth := %A; '.
 	       'ReadProgram(''%s/GoTest.drw''); done;" | nice -n 19 %s &',
                wdir, resFn, filter, projs, lock, measure, meth, wdir, darwin64);
-        prints(cmd);
+        Logger(sprintf('%a',cmd),'INFO'):
         CallSystem( cmd );
-        WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    if DEBUG then print('GOtestvars:',vars) fi:
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars),isRunning] );
 end:
 
@@ -741,12 +732,10 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
            'projs := %A; problems := %A; measure := %A; lock:=%A; meth:=%A; '.
            'ReadProgram(''%s/HomologyTest.drw''); done;" | nice -n 19 %s &',
                wdir, resFn, projs, problems, measure, lock, meth, wdir, darwin64);
-        prints(cmd);
+        Logger(sprintf('%a',cmd),'INFO'):
         CallSystem( cmd );
-        WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    if DEBUG then print('HomologyTestvars',vars) fi:
     return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
 end:
 
@@ -769,10 +758,11 @@ bsCheckResults := proc(sessionkey)
     global __SessionParams, __SessionPnames; 
     __SessionParams := __SessionPnames := 0;
     fn := sessiondir.string(sessionkey);
-    lprint(fn);
+    Logger( 'SessionFile: '.fn, 'DEBUG');
     traperror(ReadProgram( fn ));
     if __SessionParams=0 or __SessionPnames=0 then
-        lprint(__SessionParams,__SessionParams,lasterror);
+        Logger( sprintf('Session loading failed: %A, %A, %s', 
+            __SessionParams,__SessionParams,lasterror), 'ERROR');
         error('could not load session information') fi;
 
     pnames := __SessionPnames; params := __SessionParams;
@@ -844,7 +834,6 @@ bsCheckResults := proc(sessionkey)
     
     if refresh then vars['reloadin'] := 20 fi;
     vars['refresh'] := refresh;
-    print(vars);
     return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
 end:
 
