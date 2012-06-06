@@ -27,6 +27,8 @@ TrimID := noeval(ReadLibrary( wdir.'/lib/XRefs',TrimID));
 UniProtAC := noeval(ReadLibrary( wdir.'/lib/XRefs',UniProtAC));
 EnsemblID := noeval(ReadLibrary( wdir.'/lib/XRefs',EnsemblID));
 
+Logger := noeval(ReadLibrary(wdir.'/lib/Logging', Logger));
+
 NrOfGenomes := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfGenomes));
 NrOfProteins := noeval(ReadLibrary( wdir.'lib/EntryNav', NrOfProteins));
 GenomeNrFromENr := noeval(ReadLibrary( wdir.'lib/EntryNav', GenomeNrFromENr));
