@@ -1,6 +1,9 @@
-Logger := proc(msg ; (level='INFO'):{'INFO','CRITICAL','DEBUG'})
-    fn := sprintf('/proc/%d/fd/2', getpid());
-    OpenWriting(fn);
+Logger := proc(msg ; (level='INFO'):{'INFO','CRITICAL','DEBUG'}, (fn='stderr'):string)
+    if fn='stderr' then 
+        f := sprintf('/proc/%d/fd/2', getpid());
+    else f := fn 
+    fi:
+    OpenWriting(f);
     printf('%s [%s]: %a\n', date(), level, msg);
     OpenWriting(previous);
 end:
