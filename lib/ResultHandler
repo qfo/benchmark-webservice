@@ -199,7 +199,7 @@ Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string,
         'aggregate'=((aggregate='sample variance'):string),
         'FPRLabel'=((fprLabel='false positive rate'):string),
         'TPRLabel'=((tprLabel='true positive rate'):string))
-    Logger(args, 'DEBUG'):
+    Logger([args], 'DEBUG'):
     method := If(length(meth)>=6 and meth[1..6]='REFSET',meth[1..6],meth):
     m := symbol(procname.'_'.method);
     m(args[2..-1]);

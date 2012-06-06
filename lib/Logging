@@ -1,4 +1,6 @@
-Logger := proc(msg ; (level='INFO'):{'INFO','CRITICAL','DEBUG'}, (fn='stderr'):string)
+Logger := proc(msg ; (level='INFO'):{'INFO','ERROR','CRITICAL','DEBUG'}, (fn='stderr'):string)
+    if printlevel <2 and level='DEBUG' then return() fi:
+
     if fn='stderr' then 
         f := sprintf('/proc/%d/fd/2', getpid());
     else f := fn 
