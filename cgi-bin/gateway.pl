@@ -502,15 +502,17 @@ sub process_datafiles{
         open( my $decmpFh,  ">$fn.raw");
         if ($suffix eq ".gz"){
             gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
+            print "[$session] gz decompression finished\n";
         } elsif ($suffix eq ".bz2"){
             bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
+            print "[$session] gz decompression finished\n";
         } elsif ($suffix eq "") {
-            while (<$fh>) { print $decmpFh $!;}
+            while (<$fh>) { print $decmpFh $_;}
         }
         close( $decmpFh );
         close( $fh );
         $fh = new IO::File("$fn.raw", "r");
-        print "[$session] decompression finished, fh reset\n";
+        print "[$session] fh reset\n";
         
         if( $upFile eq "seqs"){
            if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
@@ -527,10 +529,12 @@ sub process_datafiles{
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
         print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
         my $status = gzip "$fn.raw" => "$fn.raw.gz" or die "gzip failed: $GzipError\n";
-        my $lnkFn = "$fnBase.raw.gz";
-        $lnkFn =~ s/projects/htdocs\/raw/;
-        $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild: $!\n";
-        unlink( "$fn.raw" )
+        unlink( "$fn.raw" );
+        if ($upFile eq "rels") {
+            my $lnkFn = "$fnBase.$upFile.raw.gz";
+            $lnkFn =~ s/projects/htdocs\/raw/;
+            $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild: $!\n";
+        }
     }
     push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
     push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'");
