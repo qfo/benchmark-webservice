@@ -4,7 +4,7 @@
 #  in: resFn, problem, projs, lock
 Set(printgc=false):
 
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
 
 prj := [seq(GetPKeyData(z),z=projs)]:
@@ -84,7 +84,7 @@ FindCases := proc(iSet, prjNrs:list)
     if length(cases) > MAX_NR_TREES then
         cases := Shuffle(cases)[1..MAX_NR_TREES]:
     fi:
-    lprint('nr of cases:',length(cases));
+    Logger( sprintf('nr of cases: %d',length(cases)), 'INFO');
     return(cases):
 end:
 
@@ -132,7 +132,8 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
             Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
         WriteLock(lock,msg);
     od:
-    print('# result for '.ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr);
+    Logger( sprint('TreeTest result for %s:\n  %A\n  %A', 
+        ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
     return( [RFstat, rawDat] );
 end:
 

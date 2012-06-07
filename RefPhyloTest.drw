@@ -27,7 +27,7 @@ ComputePerformance := proc(iSet, prjNrs:list)
     tpr  := CreateArray(1..nrProb,1..np,0);
     DUPL := {':D=Y','D=Y','D','DUPLICATION'}; SPEC := {':D=N','D=N','S','SPECIATION'};
     rawData := CreateArray(1..nrProb, 1..np,[]):
-    lprint('start computing...');
+    Logger('start computing RefPhyloTest Performance...', 'DEBUG');
     for prNr to nrProb do 
         rels := ReconciledTrees[problems[prNr],'Relations']: 
         prts := intersect(iSet, ReconciledTrees[problems[prNr],'MappedProts']); 
@@ -75,18 +75,16 @@ ComputePerformance := proc(iSet, prjNrs:list)
                 fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];
                 p := tp/(tp+fn); 
                 tpr[prNr,pNr] := [p, p*(1-p)/(tp+fn)];
-                lprint('fp/tp estimated for '.prNr.', '.pNr);
                 rawData[prNr, pNr] := raw;
             od:
         else 
-            printf('too few (%d) proteins in %a\n',nProt,problems[prNr]);
+            Logger( sprintf('[RefPhyloTest]: too few (%d) proteins in %a\n',nProt,problems[prNr]),'INFO');
         fi:
     od:
     return( [fpr, tpr, rawData] );
 end:
 
 StoreRawData := proc(rawData, PIDs, measure, problems, meth, testset)
-    lprint('storing raw data...');
     RawDataFn := CreateArray(1..length(PIDs)):
     for p to length(PIDs) do
         fn := sprintf('RefPhylo/%s.%a.tsv.gz', testset, hash([PIDs[p],problems,measure,meth]));
@@ -110,7 +108,6 @@ end:
 
 StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth ;
         'rawDataFn'=((RawDataFn=CreateArray(1..length(PIDs))):list) )
-    lprint('storing results...');
     OpenWriting(fn):
     printf('# created on %s\n', date());
     printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):

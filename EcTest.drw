@@ -9,7 +9,7 @@
 #  in: resFn, filter, projs, lock, measure, meth
 
 Set(printgc=false); Set(gc=5e6): 
-OpenWriting(lock); lprint(getpid()); OpenWriting(previous);
+WriteLock(lock,'initializing computations');
 
 prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];

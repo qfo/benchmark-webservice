@@ -53,8 +53,8 @@ end:
 SPS := 0;
 ReadProgram(spListFn);
 if SPS=0 then 
-   print('faild to read the SpeciesListFile '.spListFn);
-   quit;
+   Logger('faild to read the SpeciesListFile '.spListFn,'ERROR');
+   exit(2);;
 fi;
 SPS := sort(SPS):
 NSPS := length(SPS):
@@ -74,7 +74,10 @@ to 1 do
        if line=EOF then break fi:
        
        cnt := cnt+1;
-       if Protein=0 then print('failed to read line '.cnt.' in '.seqFn); quit fi:
+       if Protein=0 then 
+           Logger('failed to read line '.cnt.' in '.seqFn,'ERROR'); 
+           exit(2); 
+       fi:
        og := SpecNrMap(Protein[2]):
        totProts[og] := totProts[og]+1;
        PepMap := ExactSeq2ENr( Protein[1], Protein[3] );
@@ -103,7 +106,9 @@ od:
 Colls := []:
 for i to DB[TotEntries] do if length( id2nr[i] )>1 then
     z := {op(id2nr[i])}:
-    if length(z)<>length(id2nr[i]) then lprint('doubious: multiple ids: ', id2nr[i]) fi:
+    if length(z)<>length(id2nr[i]) then 
+        Logger( sprintf('doubious: multiple ids: %A', id2nr[i]), 'INFO'); 
+    fi:
     Colls := append(Colls, [z,i]); 
 fi od:
     
@@ -115,5 +120,5 @@ printf('TotProts := %A:\n', totProts);
 OpenWriting(previous):
 
 CallSystem('rm -f '.lock);
-printf('# successfully finished\n');
+Logger( '# successfully finished sequence mapping: '.resFn, 'INFO');
 done;

@@ -40,11 +40,11 @@ LogPairs := proc(pairs,typ)
     for z in pairs do
         k1 := SearchOrderedArray( z[1], oENr2jacob[2] ); 
         if k1<0 or k1>length(oENr2jacob[2]) or oENr2jacob[2,k1]<>z[1] then 
-            lprint('should not happen');
+            Logger( sprintf('LogPairs: should not happen z[1]: %a',z[1]), 'ERROR');
         else id1 := oENr2jacob[1,k1]; fi:
         k2:= SearchOrderedArray( z[2], oENr2jacob[2] ); 
         if k2<0 or k2>length(oENr2jacob[2]) or oENr2jacob[2,k2]<>z[2] then 
-            lprint('should not happen');
+            Logger( sprintf('LogPairs: should not happen z[2]: %a',z[2]), 'ERROR');
         else id2 := oENr2jacob[1,k2]; fi:
         t := append( t, [id1, id2] );
     od:
