@@ -157,7 +157,7 @@ to 1 do
     ReadProgram(relsinfn);
     WriteLock(lock, 'Storing final project data');
     WriteDB(resDBfn, VPs, mapping);
-    ReadDb(resDBfn);
+    ReadDb(resDBfn):
 
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
     orgs := {seq(GenomeCodeFromENr(z,referenceDatSet),z=iSet)}:

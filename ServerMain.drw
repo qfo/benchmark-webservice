@@ -15,20 +15,20 @@ print(getpid());
 version();
 t:=TimedCallSystem('ulimit -a'):
 prints(t[2]);
-ReadProgram(wdir.'nogos.drw');
+ReadProgram(wdir.'/nogos.drw');
 
 
 darwin64 := If(RUNLOCAL,'/local/bin/darwin64 -q', 
                '/home/darwin/v2/source/darwin64 -q');
 
-logfile := wdir.'server.log';
+logfile := getenv('DARWIN_LOG_PATH').'/server.log';
 if FileExists(omaDBpath.'/ServerIndexed.db') then
 else printf('Browser not found\n'); quit fi;
 
 ReadProgram(omaDBpath.'Summaries.drw');
 GS := GenomeSummaries:
 LoadGenomeStartIDs():
-google_analytics := ReadRawFile(wdir.'templates/analytics.htmlc'):
+google_analytics := ReadRawFile(wdir.'/templates/analytics.htmlc'):
 
 
 # --------------------- General Functions -------------------------
@@ -95,7 +95,7 @@ Logger( print(msg), 'DEBUG');
 vars := table(''):
 #vars['header'] := MakeHeader('SearchDb','');
 vars['message'] := msg;
-return(GenerateTemplate(wdir.'templates/error.html',vars));
+return(GenerateTemplate(wdir.'/templates/error.html',vars));
 end:
 
 #########################################
@@ -201,7 +201,7 @@ vars := table('');
 vars['nspecies'] := string(NS);
 vars['logo'] := '/OMAbrowser.gif';
 
-return(GenerateTemplate(wdir.'templates/index.html',vars));
+return(GenerateTemplate(wdir.'/templates/index.html',vars));
 end:
 
 bsShowProject := proc()
@@ -228,11 +228,11 @@ bsShowProject := proc()
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
         fi;
-        cont := append(cont, GenerateTemplate(wdir.'templates/secProject.htmlc',t));
+        cont := append(cont, GenerateTemplate(wdir.'/templates/secProject.htmlc',t));
     od:
     vars['content'] := ConcatStrings(cont,'\n');
     vars['title'] := 'Overview of '.If(nargs=0,'all public projects', prjs[1,'Title']);
-    return( GenerateTemplate(wdir.'templates/showProjects.html',vars));
+    return( GenerateTemplate(wdir.'/templates/showProjects.html',vars));
 end:
 
 
@@ -267,7 +267,7 @@ bsMapData := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(wdir.'templates/uploaded.html',vars) );
+	return( GenerateTemplate(wdir.'/templates/uploaded.html',vars) );
     elif pKey['ref']<>'OMA' then
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     elif FileExists(seqMapResFn) then
@@ -306,7 +306,7 @@ bsMapData := proc(PID:string)
                  
         vars['content'] := t;
         vars['jsMappingArray'] := jsMap;
-        return( GenerateTemplate(wdir.'templates/sequenceMapping.html',vars) );
+        return( GenerateTemplate(wdir.'/templates/sequenceMapping.html',vars) );
     fi:
     
     # the mapping did not start. start it! :-)
@@ -320,7 +320,7 @@ bsMapData := proc(PID:string)
 
     CallSystem( cmd );
     vars['content'] := 'Started computing sequence mapping...';
-    html := GenerateTemplate(wdir.'templates/uploaded.html',vars);
+    html := GenerateTemplate(wdir.'/templates/uploaded.html',vars);
     return(html);
 end:
 
@@ -337,7 +337,7 @@ bsCheckRelMap := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(wdir.'templates/checkRelMapping.html',vars) );
+	return( GenerateTemplate(wdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
         return(bsTestSelection(PID));
     else error('RelMapping not started for '.PID) fi:
@@ -454,44 +454,51 @@ bsTestSelection := proc(PID:string)
     testset := 'SemiAuto';
     autoPhyloProbs := [seq(GetTreeCase( z, dataset,'testset'=testset ), z=GetAllTreeCases(dataset,'testset'=testset))];
     stub := 'pAutoPhyloPrj';
+    if length(autoPhyloProbs) > 0 then
 
-    vars['AutoPhyloProjects'] := ConcatStrings(
-         [seq(If( length(pairwiseOverlap[pNr])>1,
-	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-	                  '<label for="%s%d">%s</label><br/>',
-                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
-	          ''), pNr=1..Npub)],'\n');
-    stub := 'pAutoPhyloProb';
-    vars['AutoPhyloProblems'] := ConcatStrings(
-         [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
-	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
-	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
-                      stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
-		  ''), 
-		  z=autoPhyloProbs)],'\n');
-    vars['AutoPhyloProb1_id'] := 'AutoPhyloProb'.autoPhyloProbs[1,'Name'];
-    vars['hasAutoPhylo'] := SearchString('<input',vars['AutoPhyloProjects'])>=0 and 
-                           SearchString('<input',vars['AutoPhyloProblems'])>=0;
+        vars['AutoPhyloProjects'] := ConcatStrings(
+             [seq(If( length(pairwiseOverlap[pNr])>1,
+    	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+    	                  '<label for="%s%d">%s</label><br/>',
+                              stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
+    	          ''), pNr=1..Npub)],'\n');
+        stub := 'pAutoPhyloProb';
+        vars['AutoPhyloProblems'] := ConcatStrings(
+             [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
+    	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+    	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+                          stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
+    		  ''), 
+    		  z=autoPhyloProbs)],'\n');
+        vars['AutoPhyloProb1_id'] := 'AutoPhyloProb'.autoPhyloProbs[1,'Name'];
+        vars['hasAutoPhylo'] := SearchString('<input',vars['AutoPhyloProjects'])>=0 and 
+                               SearchString('<input',vars['AutoPhyloProblems'])>=0;
+    else 
+        vars['hasAutoPhylo'] := false;
+    fi:
     vars['styleAutoPhylo'] := If(vars['hasAutoPhylo'] or dataset<>'OMA',
         'checked="checked"', 'disabled="disabled"');
-
    
     ##################################
     # Multi Domain Homology 
-    stub := 'pHomPrj';
-    vars['HomProjects'] := ConcatStrings(
-         [seq(If( length(pairwiseOverlap[pNr])>1,
-             sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-                     '<label for="%s%d">%s</label><br/>',
-                         stub, pNr, stub, pNr, stub, pNr, publicProjects[pNr]),
-             ''), pNr=1..Npub)],'\n');
-    stub := 'pHomProb'; name := 'HumMus';
-    vars['HomProblems'] := sprintf(
-        '<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
-        '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
-        stub, name, stub, name, stub, name, 'Song <i>et al</i>, '.
-        'PLOS Comp Biol, 2008', 'Multidomain homologs between Human and Mouse');
-    vars['hasHom'] := SearchString('<input',vars['HomProjects'])>=0;
+    if dataset='OMA' then
+        vars['hasHom'] := false;
+    else 
+        stub := 'pHomPrj';
+        vars['HomProjects'] := ConcatStrings(
+             [seq(If( length(pairwiseOverlap[pNr])>1,
+                 sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
+                         '<label for="%s%d">%s</label><br/>',
+                             stub, pNr, stub, pNr, stub, pNr, publicProjects[pNr]),
+                 ''), pNr=1..Npub)],'\n');
+        stub := 'pHomProb'; name := 'HumMus';
+        vars['HomProblems'] := sprintf(
+            '<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+            '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+            stub, name, stub, name, stub, name, 'Song <i>et al</i>, '.
+            'PLOS Comp Biol, 2008', 'Multidomain homologs between Human and Mouse');
+        vars['hasHom'] := SearchString('<input',vars['HomProjects'])>=0;
+    fi:
     vars['styleHom'] := If(vars['hasHom'] or dataset<>'OMA', 
         'checked="checked"', 'disabled="disabled"');
 
@@ -522,7 +529,7 @@ bsTestSelection := proc(PID:string)
     vars['styleEC'] := If(vars['hasEC'] or dataset<>'OMA', 'checked="checked"', 'disabled="disabled"');
 
     vars['PID'] := PID;
-    return( GenerateTemplate(wdir.'templates/testSelection.html',vars) );
+    return( GenerateTemplate(wdir.'/templates/testSelection.html',vars) );
 end:
 
 StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
@@ -559,7 +566,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
@@ -611,7 +618,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
         vars['content'] := '<p>Computation started...</p>';
     fi:
     Logger(sprintf('%a',vars),'INFO'):
-    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartEcTest := proc(PID:string, params:list, pnames:list)
@@ -650,7 +657,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartGoTest := proc(PID:string, params:list, pnames:list)
@@ -693,7 +700,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars),isRunning] );
+    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars),isRunning] );
 end:
 
 StartHomologyTest := proc(PID:string, params:list, pnames:list)
@@ -736,7 +743,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 
@@ -834,7 +841,7 @@ bsCheckResults := proc(sessionkey)
     
     if refresh then vars['reloadin'] := 20 fi;
     vars['refresh'] := refresh;
-    return( GenerateTemplate(wdir.'templates/testResults.html', vars) );
+    return( GenerateTemplate(wdir.'/templates/testResults.html', vars) );
 end:
 
 ##########################################
@@ -845,7 +852,7 @@ NotImplemented := proc(text:string)
 vars := table('');
 vars['function'] := text;
 
-return(GenerateTemplate(wdir.'templates/notimpl.html',vars));
+return(GenerateTemplate(wdir.'/templates/notimpl.html',vars));
 end:
 
 # -------------------------------------------------------------------------
