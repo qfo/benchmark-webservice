@@ -222,8 +222,8 @@ bsShowProject := proc()
         od:
         path := p['fnBase']; 
         for k from length(path) to 1 by -1 while path[k]<>'/' do od:
-        datafn := rawdir.path[k+1..-1].'.raw.gz';
-        dataUrl := rawurl.path[k+1..-1].'.raw.gz';
+        datafn := rawdir.path[k+1..-1].'.rels.raw.gz';
+        dataUrl := rawurl.path[k+1..-1].'.rels.raw.gz';
         if length(FileStat(datafn))=0 then 
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 

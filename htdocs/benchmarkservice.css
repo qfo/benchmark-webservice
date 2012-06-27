@@ -50,6 +50,15 @@ table {
     border-width: 0pt;
 }
 
+table td{
+    vertical-align: top;
+}
+
+table td.label {
+    font-weight: bold;
+    width: 25%;
+}
+
 .topline {
     border-top: 1px solid #888888;
 }
@@ -93,7 +102,7 @@ pre {
 
 .entryhead {
     font-weight: bold;
-    background-color: #AAFFAA;
+    background-color: #ddffdd;
     padding: 2px;
     border: 1px solid #77BB77;
 }
@@ -336,4 +345,8 @@ div.reset {
    clear: both;
 }
 
+div.projectinfo {
+   width: 100%;
+   margin-bottom: 30pt;
+}
 

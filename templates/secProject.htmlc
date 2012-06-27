@@ -1,15 +1,25 @@
 <div class="projectinfo">
-<h3><DVAR name="Title"></h3>
-<h4>Description</h4>
-<p><DVAR name="Description"></p>
-<h4>Weblink</h4>
-<p><a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a></p>
-<h4>Predictions</h4>
-<p><DBOOL name="hasData">
+<table width="100%">
+<tr><td class="entryhead" colspan="2"><DVAR name="Title"></td></tr>
+<tr class="oddrow">
+ <td class="label">Description</td>
+ <td><DVAR name="Description"></td>
+</tr>
+<tr>
+ <td class="label">Weblink</td>
+ <td><a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a></td>
+</tr>
+<tr class="oddrow">
+ <td class="label">Predictions</td>
+ <td>
+ <DBOOL name="hasData">
  <a href="
  </DBOOL>
  <DVAR name="Predictions">
  <DBOOL name="hasData">
  " target="_new">Uploaded Data</a>
- </DBOOL></p>
+ </DBOOL>
+ </td>
+</tr>
+</table>
 </div>
