@@ -1,75 +1,76 @@
 # darwinit file for the special functions of the OMA browser
-wdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
-imgdir := wdir . '/htdocs/imgs/':
+cdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
+ddir := getenv('DARWIN_ORTHOLOG_BENCHMARK_SHARE');
+imgdir := ddir . '/htdocs/imgs/':
 imgurl := '/imgs/':
-rawdir := wdir . '/htdocs/raw/':
+racdir := ddir . '/htdocs/raw/':
 rawurl := '/raw/':
-brwdat := wdir . '/BrwDat/';
+brwdat := ddir . '/BrwDat/';
 brwrel := 'All.May2010';
 omaDBpath := brwdat.brwrel.'/';
-refset5DBpath := wdir . '/reference5/';
-datdir := wdir . '/data/';
-sessiondir := wdir . '/sessions/';
-resdir := wdir . '/results/';
+refset5DBpath := ddir . '/reference5/';
+datdir := ddir . '/data/';
+sessiondir := ddir . '/sessions/';
+resdir := ddir . '/results/';
 
 ReadProgram( getenv('DARWIN_OMA_REPO_PATH').'/lib/darwinit');
 
-GenerateTemplate := noeval(ReadLibrary( wdir.'/lib/GenerateTemplate', GenerateTemplate)):
-CreateIndex := noeval(ReadLibrary( wdir.'/lib/Index',CreateIndex));
-SearchIndex := noeval(ReadLibrary( wdir.'/lib/Index',SearchIndex));
-LoadIndex := noeval(ReadLibrary( wdir.'/lib/Index',LoadIndex));
-TrimID := noeval(ReadLibrary( wdir.'/lib/XRefs',TrimID));
-UniProtAC := noeval(ReadLibrary( wdir.'/lib/XRefs',UniProtAC));
-EnsemblID := noeval(ReadLibrary( wdir.'/lib/XRefs',EnsemblID));
+GenerateTemplate := noeval(ReadLibrary( cdir.'/lib/GenerateTemplate', GenerateTemplate)):
+CreateIndex := noeval(ReadLibrary( cdir.'/lib/Index',CreateIndex));
+SearchIndex := noeval(ReadLibrary( cdir.'/lib/Index',SearchIndex));
+LoadIndex := noeval(ReadLibrary( cdir.'/lib/Index',LoadIndex));
+TrimID := noeval(ReadLibrary( cdir.'/lib/XRefs',TrimID));
+UniProtAC := noeval(ReadLibrary( cdir.'/lib/XRefs',UniProtAC));
+EnsemblID := noeval(ReadLibrary( cdir.'/lib/XRefs',EnsemblID));
 
-Logger := noeval(ReadLibrary(wdir.'/lib/Logging', Logger));
+Logger := noeval(ReadLibrary(cdir.'/lib/Logging', Logger));
 
-NrOfGenomes := noeval(ReadLibrary( wdir.'/lib/EntryNav', NrOfGenomes));
-NrOfProteins := noeval(ReadLibrary( wdir.'/lib/EntryNav', NrOfProteins));
-GenomeNrFromENr := noeval(ReadLibrary( wdir.'/lib/EntryNav', GenomeNrFromENr));
-GenomeCodeFromENr := noeval(ReadLibrary( wdir.'/lib/EntryNav', GenomeCodeFromENr));
-ENrFromLabel := noeval(ReadLibrary( wdir.'/lib/EntryNav', ENrFromLabel));
-GenomeRange := noeval(ReadLibrary( wdir.'/lib/EntryNav', GenomeRange));
-GenomeNrFromCode := noeval(ReadLibrary( wdir.'/lib/EntryNav', GenomeNrFromCode));
-ENr2Label := noeval(ReadLibrary( wdir.'/lib/EntryNav', ENr2Label));
-ENr2XRef  := noeval(ReadLibrary( wdir.'/lib/EntryNav', ENr2XRef));
-Nr2SEQ := noeval(ReadLibrary( wdir.'/lib/EntryNav', Nr2SEQ));
-DbEntryNrFromENr := noeval(ReadLibrary( wdir.'/lib/EntryNav', DbEntryNrFromENr));
-ParseLongList := noeval(ReadLibrary( wdir.'/lib/EntryNav', ParseLongList));
-KnownSpecies := noeval(ReadLibrary( wdir.'/lib/EntryNav', KnownSpecies));
+NrOfGenomes := noeval(ReadLibrary( cdir.'/lib/EntryNav', NrOfGenomes));
+NrOfProteins := noeval(ReadLibrary( cdir.'/lib/EntryNav', NrOfProteins));
+GenomeNrFromENr := noeval(ReadLibrary( cdir.'/lib/EntryNav', GenomeNrFromENr));
+GenomeCodeFromENr := noeval(ReadLibrary( cdir.'/lib/EntryNav', GenomeCodeFromENr));
+ENrFromLabel := noeval(ReadLibrary( cdir.'/lib/EntryNav', ENrFromLabel));
+GenomeRange := noeval(ReadLibrary( cdir.'/lib/EntryNav', GenomeRange));
+GenomeNrFromCode := noeval(ReadLibrary( cdir.'/lib/EntryNav', GenomeNrFromCode));
+ENr2Label := noeval(ReadLibrary( cdir.'/lib/EntryNav', ENr2Label));
+ENr2XRef  := noeval(ReadLibrary( cdir.'/lib/EntryNav', ENr2XRef));
+Nr2SEQ := noeval(ReadLibrary( cdir.'/lib/EntryNav', Nr2SEQ));
+DbEntryNrFromENr := noeval(ReadLibrary( cdir.'/lib/EntryNav', DbEntryNrFromENr));
+ParseLongList := noeval(ReadLibrary( cdir.'/lib/EntryNav', ParseLongList));
+KnownSpecies := noeval(ReadLibrary( cdir.'/lib/EntryNav', KnownSpecies));
 
-PKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',PKeyData));
-UpdatePKeyDataPermanent := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',UpdatePKeyDataPermanent));
-AddPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',AddPKeyData));
-GetPKeyData := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPKeyData));
-GetPublicProjects := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData',GetPublicProjects));
-GetProjISets := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', GetProjISets));
-ProjMetProperty := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', ProjMetProperty));
-ProjSpeciesOverlap := noeval(ReadLibrary(wdir.'/lib/ProjectKeyData', ProjSpeciesOverlap));
+PKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',PKeyData));
+UpdatePKeyDataPermanent := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',UpdatePKeyDataPermanent));
+AddPKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',AddPKeyData));
+GetPKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',GetPKeyData));
+GetPublicProjects := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',GetPublicProjects));
+GetProjISets := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', GetProjISets));
+ProjMetProperty := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', ProjMetProperty));
+ProjSpeciesOverlap := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', ProjSpeciesOverlap));
 
-TestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',TestProperty));
-GetTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',GetTestProperty));
-AddTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',AddTestProperty));
-EvaluateTreeTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',EvaluateTreeTestProperty)):
-EvaluateRefPhyloTestProperty := noeval(ReadLibrary(wdir.'/lib/TestProperties',EvaluateRefPhyloTestProperty)):
+TestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',TestProperty));
+GetTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',GetTestProperty));
+AddTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',AddTestProperty));
+EvaluateTreeTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',EvaluateTreeTestProperty)):
+EvaluateRefPhyloTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',EvaluateRefPhyloTestProperty)):
 
-IsLockProcessAlive := noeval(ReadLibrary(wdir.'/lib/LockFileOperations', IsLockProcessAlive));
-HandleLockFile := noeval(ReadLibrary(wdir.'/lib/LockFileOperations', HandleLockFile));
-WriteLock := noeval(ReadLibrary(wdir.'/lib/LockFileOperations', WriteLock));
+IsLockProcessAlive := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', IsLockProcessAlive));
+HandleLockFile := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', HandleLockFile));
+WriteLock := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', WriteLock));
 
-Handle2dROCFiles := noeval(ReadLibrary(wdir.'/lib/ResultHandler', Handle2dROCFiles));
-HandleBoxRFFiles := noeval(ReadLibrary(wdir.'/lib/ResultHandler', HandleBoxRFFiles));
-Handle2dSimFiles := noeval(ReadLibrary(wdir.'/lib/ResultHandler', Handle2dSimFiles));
-RatioOfRandVars  := noeval(ReadLibrary(wdir.'/lib/ResultHandler', RatioOfRandVars));
-RelativeDifference := noeval(ReadLibrary(wdir.'/lib/ResultHandler', RelativeDifference));
+Handle2dROCFiles := noeval(ReadLibrary(cdir.'/lib/ResultHandler', Handle2dROCFiles));
+HandleBoxRFFiles := noeval(ReadLibrary(cdir.'/lib/ResultHandler', HandleBoxRFFiles));
+Handle2dSimFiles := noeval(ReadLibrary(cdir.'/lib/ResultHandler', Handle2dSimFiles));
+RatioOfRandVars  := noeval(ReadLibrary(cdir.'/lib/ResultHandler', RatioOfRandVars));
+RelativeDifference := noeval(ReadLibrary(cdir.'/lib/ResultHandler', RelativeDifference));
 
-RecTreeCase := noeval(ReadLibrary(wdir.'/lib/RecTree', RecTreeCase));
-GetTreeCase := noeval(ReadLibrary(wdir.'/lib/RecTree', GetTreeCase));
-GetAllTreeCases := noeval(ReadLibrary(wdir.'/lib/RecTree', GetAllTreeCases));
+RecTreeCase := noeval(ReadLibrary(cdir.'/lib/RecTree', RecTreeCase));
+GetTreeCase := noeval(ReadLibrary(cdir.'/lib/RecTree', GetTreeCase));
+GetAllTreeCases := noeval(ReadLibrary(cdir.'/lib/RecTree', GetAllTreeCases));
 
-ParseStrategy := noeval(ReadLibrary(wdir.'/lib/Parsing', ParseStrategy));
-ParseAllPrefixParams := noeval(ReadLibrary(wdir.'/lib/Parsing',ParseAllPrefixParams)):
-ParseParam := noeval(ReadLibrary(wdir.'/lib/Parsing',ParseParam));
+ParseStrategy := noeval(ReadLibrary(cdir.'/lib/Parsing', ParseStrategy));
+ParseAllPrefixParams := noeval(ReadLibrary(cdir.'/lib/Parsing',ParseAllPrefixParams)):
+ParseParam := noeval(ReadLibrary(cdir.'/lib/Parsing',ParseParam));
 
-ProjectWLink := noeval(ReadLibrary(wdir.'/lib/DisplayFunctions', ProjectWLink));
-RawDataWLink := noeval(ReadLibrary(wdir.'/lib/DisplayFunctions', RawDataWLink));
+ProjectWLink := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectWLink));
+RawDataWLink := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', RawDataWLink));

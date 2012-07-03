@@ -90,7 +90,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             t['plot'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2droc_multi.gp', t) );
+            prints( GenerateTemplate(cdir.'/templates/2droc_multi.gp', t) );
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
@@ -174,7 +174,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
             t['plot'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2droc_multi.gp', t) );
+            prints( GenerateTemplate(cdir.'/templates/2droc_multi.gp', t) );
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
@@ -257,7 +257,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     t['plot'] := plotTab;
     cmdFile := sprintf('/tmp/%s.gp', resBase);
     OpenWriting(cmdFile);
-    prints( GenerateTemplate(wdir.'/templates/'.plotType.'_multi.gp', t) );
+    prints( GenerateTemplate(cdir.'/templates/'.plotType.'_multi.gp', t) );
     OpenWriting(previous);
 
     CallSystem('gnuplot '.cmdFile);
@@ -335,7 +335,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             t['series'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/barchart_multi.gp', t) );
+            prints( GenerateTemplate(cdir.'/templates/barchart_multi.gp', t) );
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
@@ -456,7 +456,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
             t['plot'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
-            prints( GenerateTemplate(wdir.'/templates/2d_multi.gp', t) );
+            prints( GenerateTemplate(cdir.'/templates/2d_multi.gp', t) );
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);

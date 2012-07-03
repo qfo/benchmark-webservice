@@ -15,7 +15,7 @@ print(getpid());
 version();
 t:=TimedCallSystem('ulimit -a'):
 prints(t[2]);
-ReadProgram(wdir.'/nogos.drw');
+ReadProgram(cdir.'/nogos.drw');
 
 
 darwin64 := If(RUNLOCAL,'/local/bin/darwin64 -q', 
@@ -28,7 +28,7 @@ else printf('Browser not found\n'); quit fi;
 ReadProgram(omaDBpath.'Summaries.drw');
 GS := GenomeSummaries:
 LoadGenomeStartIDs():
-google_analytics := ReadRawFile(wdir.'/templates/analytics.htmlc'):
+google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 
 
 # --------------------- General Functions -------------------------
@@ -95,7 +95,7 @@ Logger( print(msg), 'DEBUG');
 vars := table(''):
 #vars['header'] := MakeHeader('SearchDb','');
 vars['message'] := msg;
-return(GenerateTemplate(wdir.'/templates/error.html',vars));
+return(GenerateTemplate(cdir.'/templates/error.html',vars));
 end:
 
 #########################################
@@ -201,7 +201,7 @@ vars := table('');
 vars['nspecies'] := string(NS);
 vars['logo'] := '/OMAbrowser.gif';
 
-return(GenerateTemplate(wdir.'/templates/index.html',vars));
+return(GenerateTemplate(cdir.'/templates/index.html',vars));
 end:
 
 bsShowProject := proc()
@@ -228,11 +228,11 @@ bsShowProject := proc()
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
         fi;
-        cont := append(cont, GenerateTemplate(wdir.'/templates/secProject.htmlc',t));
+        cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
     od:
     vars['content'] := ConcatStrings(cont,'\n');
     vars['title'] := 'Overview of '.If(nargs=0,'all public projects', prjs[1,'Title']);
-    return( GenerateTemplate(wdir.'/templates/showProjects.html',vars));
+    return( GenerateTemplate(cdir.'/templates/showProjects.html',vars));
 end:
 
 
@@ -267,7 +267,7 @@ bsMapData := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(wdir.'/templates/uploaded.html',vars) );
+	return( GenerateTemplate(cdir.'/templates/uploaded.html',vars) );
     elif pKey['ref']<>'OMA' then
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     elif FileExists(seqMapResFn) then
@@ -306,7 +306,7 @@ bsMapData := proc(PID:string)
                  
         vars['content'] := t;
         vars['jsMappingArray'] := jsMap;
-        return( GenerateTemplate(wdir.'/templates/sequenceMapping.html',vars) );
+        return( GenerateTemplate(cdir.'/templates/sequenceMapping.html',vars) );
     fi:
     
     # the mapping did not start. start it! :-)
@@ -315,12 +315,12 @@ bsMapData := proc(PID:string)
                   'resFn := ''%s'': lock:=''%s'': PID := ''%s'': '.
 		  'ReadProgram(''%s/ComputeSeqMapping.drw''): done" '.
                   '| nice -n 19 %s &',
-                  wdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, wdir, darwin64);
+                  cdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, cdir, darwin64);
     Logger( 'starting command: '.cmd, 'DEBUG');
 
     CallSystem( cmd );
     vars['content'] := 'Started computing sequence mapping...';
-    html := GenerateTemplate(wdir.'/templates/uploaded.html',vars);
+    html := GenerateTemplate(cdir.'/templates/uploaded.html',vars);
     return(html);
 end:
 
@@ -337,7 +337,7 @@ bsCheckRelMap := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(wdir.'/templates/checkRelMapping.html',vars) );
+	return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
         return(bsTestSelection(PID));
     else error('RelMapping not started for '.PID) fi:
@@ -378,7 +378,7 @@ bsMapRels := proc(PID:string)
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': seqmapfn:= ''%s'': '.
                       'relsinfn := ''%s'': lock:=''%s'': orgMap := %A: PID := ''%s'': '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
-                      wdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, wdir, darwin64);
+                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
     
         CallSystem( cmd );
@@ -529,7 +529,7 @@ bsTestSelection := proc(PID:string)
     vars['styleEC'] := If(vars['hasEC'] or dataset<>'OMA', 'checked="checked"', 'disabled="disabled"');
 
     vars['PID'] := PID;
-    return( GenerateTemplate(wdir.'/templates/testSelection.html',vars) );
+    return( GenerateTemplate(cdir.'/templates/testSelection.html',vars) );
 end:
 
 StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
@@ -561,12 +561,12 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
             'problem := ''%s/TreeCat_%s_%s.drw'': projs := %A: lock:=''%s'': meth:=''%s'': '.
             'ReadProgram(''%s/TreeTest.drw''): done:" | nice -n 19 %s &',
-            wdir, resFn, datdir, king, vars['ref'], projs, lock, meth, wdir, darwin64);
+            cdir, resFn, datdir, king, vars['ref'], projs, lock, meth, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
@@ -611,14 +611,14 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
            'projs := %A: lock := %A: problems := %A: measure := %A: meth := %A: '.
            'testset := %A: ReadProgram(''%s/RefPhyloTest.drw''): done:" '.
            '| nice -n 19 %s &',
-               wdir, resFn, projs, lock, problems, measure, meth, testset, wdir, darwin64);
+               cdir, resFn, projs, lock, problems, measure, meth, testset, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
     fi:
     Logger(sprintf('%a',vars),'INFO'):
-    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartEcTest := proc(PID:string, params:list, pnames:list)
@@ -651,13 +651,13 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=%A: '.
            'projs := %A: lock:=%A: measure:=%A: meth:=%A: '.
            'ReadProgram(''%s/EcTest.drw''): done;" | nice -n 19 %s &',
-               wdir, resFn, projs, lock, measure, meth, wdir, darwin64);
+               cdir, resFn, projs, lock, measure, meth, cdir, darwin64);
         Logger(sprintf('%a',cmd),'INFO'):
 
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 StartGoTest := proc(PID:string, params:list, pnames:list)
@@ -695,12 +695,12 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=%A: filter := %A:'.
                'projs := %A: lock:=%A: measure:=%A: meth := %A: '.
 	       'ReadProgram(''%s/GoTest.drw''): done:" | nice -n 19 %s &',
-               wdir, resFn, filter, projs, lock, measure, meth, wdir, darwin64);
+               cdir, resFn, filter, projs, lock, measure, meth, cdir, darwin64);
         Logger(sprintf('%a',cmd),'INFO'):
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars),isRunning] );
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars),isRunning] );
 end:
 
 StartHomologyTest := proc(PID:string, params:list, pnames:list)
@@ -738,12 +738,12 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=%A: '.
            'projs := %A: problems := %A: measure := %A: lock:=%A: meth:=%A: '.
            'ReadProgram(''%s/HomologyTest.drw''): done:" | nice -n 19 %s &',
-               wdir, resFn, projs, problems, measure, lock, meth, wdir, darwin64);
+               cdir, resFn, projs, problems, measure, lock, meth, cdir, darwin64);
         Logger(sprintf('%a',cmd),'INFO'):
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(wdir.'/templates/secResult.htmlc', vars), isRunning] );
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
 
 
@@ -841,7 +841,7 @@ bsCheckResults := proc(sessionkey)
     
     if refresh then vars['reloadin'] := 20 fi;
     vars['refresh'] := refresh;
-    return( GenerateTemplate(wdir.'/templates/testResults.html', vars) );
+    return( GenerateTemplate(cdir.'/templates/testResults.html', vars) );
 end:
 
 ##########################################
@@ -852,7 +852,7 @@ NotImplemented := proc(text:string)
 vars := table('');
 vars['function'] := text;
 
-return(GenerateTemplate(wdir.'/templates/notimpl.html',vars));
+return(GenerateTemplate(cdir.'/templates/notimpl.html',vars));
 end:
 
 # -------------------------------------------------------------------------
