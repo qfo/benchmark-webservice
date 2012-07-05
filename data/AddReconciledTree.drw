@@ -32,22 +32,22 @@ MatchID := proc(id:string)
     return(NULL);
 end:
 
-ExtractPairRelR := proc(t:Tree ; (mappings=NULL):table)
+ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
     global __PWR;
-    if type(t, Leaf) and mappings=NULL then
-        oE := MatchID(t[Label],IDIndex):
+    if type(t, Leaf) 
+        if mappings=NULL then mapfun := x->{x['Label']};
+        elif type(mappings,table) then mapfun := x->mappings[x['Label']];
+        elif type(mappings,procedure) then mapfun := mappings;
+        else error('unknown mappings type'); 
+        fi:
+        
+        oE := NULL;
+        for z in mapfun( t ) do
+            oE := MatchID(z,IDIndex);
+            if oE<> NULL then break fi:
+        od:
 	if oE=NULL then  lprint('can''t map protein '''.t[Label].'''') fi:
         return( If(oE=NULL,NULL,{oE}) );
-    elif type(t,Leaf) then
-        if length( mappings[t[Label]] ) = 0 then 
-	    lprint(t[Label].' not found in mappings -> silently skipping');
-	    oE := NULL;
-	else 
-            for z in mappings[t[Label]] while MatchID(z,IDIndex)=NULL do od:
-            oE := MatchID(z,IDIndex);
-	    if oE=NULL then  lprint('can''t map protein '''.t[Label].'''') fi:
-	fi:
-	return( If(oE=NULL,NULL,{oE}) ):
     else
         tL := ExtractPairRelR(t[Left], mappings );
         tR := ExtractPairRelR(t[Right],mappings ); 
@@ -75,7 +75,7 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):table)
     fi:
 end:
 
-ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):table)
+ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):{procedure,table})
     global __PWR; __PWR := table();
     prots := ExtractPairRelR(t, mapping):
     return( [prots, __PWR] );
@@ -154,7 +154,7 @@ OpenAppending(previous);
 AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 
 ###########################################
-# VATB cluster of Brigitte Boeckmann. (2010)
+7# VATB cluster of Brigitte Boeckmann. (2010)
 t := ReadRawFile(datdir.'raw/vatb.nhx');
 mapping := 0; ReadProgram(datdir.'raw/vatb.map'); 
 assert(mapping<>0);
@@ -298,6 +298,198 @@ for fam in fams do
     if tree=lasterror then errT:=errT+1; next fi:
 
     t := traperror(ExtractPairwiseRel(tree,mapping));
+    if t=lasterror then errM := errM+1; next fi:
+    memb := union(memb, t[1]);
+    for z in Indices(t[2]) do 
+        rels[z] := t[2,z];
+    od:
+od:
+case := RecTreeCase( name, label, memb, rels, tree,
+    'Ruan et al, Nucleic Acids Res. 2008 (Database issue)'):
+OpenAppending(outfile_semiauto);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name,'SemiAuto'],UTCTime());
+
+
+
+#########################################
+# Bork study on curated protein families
+# Trachana et al, "Orthology predition methods: A quality assessment using curated protein families", 
+# Bioessays, 33, 769-780, 2011
+
+# define BorkCase datastructure. while reading the cases from a file, the reconciled gene trees are
+# computed on the fly. 
+BorkCase := proc(GrpID:string, FamilyName:string, Cat:list(string), RecTree:{0,Tree}, Seqs:list, IDs:list)
+    if nargs>4 then noeval(procname(args)):
+    elif nargs=3 then
+        gTree := traperror(ParseNewickTree( ReadRawFile( sprintf('%s/raw/bork_study/%s.tree',datdir,GrpID) ))):
+        if gTree=lasterror then warning('cannot parse BorkTree '.GrpID); return( procname( args, 0)); fi:
+        seqs := traperror(ReadFastaWithNames( sprintf('%s/raw/bork_study/%s.fasta',datdir,GrpID) )):
+        if seqs=lasterror then warning('cannot load fasta for BorkTree '.GrpID); return( procname( args, 0)); fi:
+        procname( args, gTree, op(seqs) );
+    else error('undefined constructor for BorkCase'); 
+    fi:
+end:
+CompleteClass(BorkCase):
+
+GetEntriesWithSeq := proc(s:string; db:database)
+    global DB:
+    if assigned(db) then curDB := DB: DB := db fi:
+    pat := SearchSeqDb(s);
+    eNrs := []:
+    for p from pat[1,1] to pat[1,2] do 
+        eNrs := append(eNrs, GetEntryNumber(DB[Pat,p]));
+    od:
+    eNrs := {op(eNrs)};
+    if type(curDB, database) then DB := curDB fi:
+    return(eNrs);
+end:
+
+AlignRange := proc(s:string, dbrange:integer..integer ; 
+    (minScore=250):positive, 
+    (minIdent=.90):nonnegative, 
+    db:database)
+    global DB:
+    if assigned(db) then curDB := DB: DB := db fi:
+    als := []:
+    for i from dbrange[1] to dbrange[2] do
+        s1 := Sequence(Entry(i)):
+        scr0 := DynProgScore(s,s1,DM,JustScoreShort);
+        if scr0>minScore then
+            al := Align(s,s1,DMS,Local);
+            if al[Identity]>=minIdent then 
+                als := append(als, [i,al]);
+            fi;
+        fi:
+    od:    
+    als := sort(als, x->-x[2,'Identity']);
+    if type(curDB,database) then DB := curDB fi:
+    return( als );
+end:
+
+InferSpeciesFromLabel := proc(s:string)
+    if SearchString('ENSP0',s)>-1 then HUMAN;
+    elif SearchString('ENSMUS',s)>-1 then MOUSE;
+    elif SearchString('ENSRNO',s)>-1 then RATNO;
+    elif SearchString('ENSGAL',s)>-1 then CHICK;
+    elif SearchString('ENSDAR',s)>-1 then DANRE;
+    elif SearchString('ENSTNI',s)>-1 then TETNG;
+    elif SearchString('FBpp',s)>-1 then DROME;
+    elif SearchString('Nemve',s)>-1 then NEMVE;
+    elif SearchString('Monbr1',s)>-1 then MONBE;
+    elif length( sscanf(s, '%[A-Z]%[A-Z0-9].%[0-9]%s') )>=3 then CAEEL;
+    else 'unknown';
+    fi;
+end:
+
+SearchIndexHarder := proc( id:string, IDIndex:database )
+    m := SearchIndex(id, IDIndex);
+    if m=NULL and SearchString('|',id)>-1 then
+        for z in SearchDelim('|',id) do
+            m := SearchIndex(trim(z), IDIndex);
+            if m<>NULL then break fi:
+        od:
+    fi:
+    return(m);
+end:
+
+StoreUnknown := proc(lab)
+    global unknown;
+    if not assigned(unknown) then unknown := []: fi:
+    unknown := append(unknown,lab);
+    warning(lab.' is an unknown protein');
+end:
+
+MapTree := proc(t:Tree, bc:BorkCase)
+    global label2org;
+    if type(t, Leaf) then
+        lab := t['Label'];
+        s := bc['Seqs',SearchArray(lab, bc['IDs'])];
+        matchingSeqs := GetEntriesWithSeq(s, SeqDB);
+        print(matchingSeqs);
+        m := SearchIndexHarder(lab, IDIndex);
+
+        if m=NULL then
+            org := InferSpeciesFromLabel(lab);
+            g := '';
+            if length(matchingSeqs)>0 then 
+                for eNr in matchingSeqs do 
+                    g := GenomeCodeFromENr(eNr,'RefSet5');
+                    if g=org then break fi:
+                od:
+            fi:
+            if g<>org then
+                als := traperror(AlignRange(s, GenomeRange(org,'RefSet5')));
+                if als<>lasterror and length(als) > 0 then 
+                    eNr := als[1,1]; g := org;
+                fi:
+            fi:
+            if g=org then
+                mapStat+1;
+            else 
+                StoreUnknown(lab); 
+                mapStat+0;
+                return( NULL );
+            fi:
+        elif member(m,matchingSeqs) then
+            g := GenomeCodeFromENr(m,'RefSet5'); 
+            mapStat+1;
+            eNr := m;
+        else 
+            sDB := Sequence(Entry(m)):
+            al := Align(s,sDB,DMS,'Local');
+            if al[Identity]>.95 then 
+                g := GenomeCodeFromENr(m,'RefSet5');
+                mapStat+1;
+                eNr := m;
+            else 
+                warning(sprintf('%s is too different: %.1f%% identity', lab, al[Identity]*100));
+                StoreUnknown(lab); 
+                mapStat+0;
+                return(NULL);
+            fi:
+        fi:
+        label2org[eNr] := g;
+        return( Leaf(eNr,t[Height]) ):
+    else 
+        tL := procname(t[Left], bc);
+        tR := procname(t[Right], bc);
+        if tL=NULL then return(tR);
+        elif tR=NULL then return(tL);
+        else return( Tree(tL, t[Height], tR) ):
+        fi:
+    fi
+end:
+
+# this call loads 'cases', an array with all the 70 currated genes
+ReadProgram('data/bork_cases.drw');
+SeqDB := ReadDb(refset5DBpath.'/ServerSeqs.db');
+CreateDayMatrices();
+label2org := table(): mapStat := Stat():
+# species tree from ncbi taxonomy
+specTree := Tree(Leaf(MONBE,7),3,Tree(Tree(Tree(Tree(Tree(Leaf(DANRE,29),14,Tree(Tree(Tree(
+Tree(Tree(Leaf(MOUSE,30),27,Leaf(RATNO,29)),21,Tree(Leaf(HUMAN,30),28,Leaf(PANTR
+,30))),20,Leaf(CANFA,26)),19,Leaf(MONDO,25)),17,Leaf(CHICK,31))),9,Leaf(CIOIN,16
+)),7,Leaf(DROME,34)),6,Leaf(CAEEL,15)),5,Leaf(NEMVE,12))):
+g2s := x->label2org[x];
+rels := table(): memb := {}: 
+errT := errM := 0;
+# stupid hack to go from eNr to IDs, which will be converted back to eNrs in ExtractPairwiseRel
+revMap := proc(eNr)
+    global DB:
+    if assigned(DB) then curDB := DB fi:
+    DB := SeqDB:
+    idList := [seq(parse(z),z=SearchDelim('; ', SearchTag('MAPIDS',Entry(eNr))) )]:
+    if type(curDB,database) then DB := curDB fi:
+    return( idList );
+end:
+
+for c in cases do 
+    gTree := MapTree( c['RecTree'], c);
+    rTree := ReconcileTree(gTree, specTree, g2s, true);
+
+    t := traperror(ExtractPairwiseRel(rTree,revMap));
     if t=lasterror then errM := errM+1; next fi:
     memb := union(memb, t[1]);
     for z in Indices(t[2]) do 
