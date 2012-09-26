@@ -11,8 +11,8 @@
 <div id="mainLogo"> <!--<p><center><img src="/imgs/logo.png" alt="Ortholog Benchmarking Webservice" width="300" height="114"/></center></p>--> </div>
 
 <p>Provide us with your own ortholog inference data. After uploading your predictions, you will be able to 
- ompare the quality of your predictions against other orthology inference efforts using several tests.</p>
-<p>On the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">reference proteomes dataset</a>, the <a href="gateway.pl?f=ShowProject">following projects</a> are available for download and comparison.</p> 
+ compare the quality of your predictions against other orthology inference efforts using several tests.</p>
+<p><a href="gateway.pl?f=ShowProject">Click here</a> for a list of ortholog datasets based on the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">QfO reference proteomes</a>.</p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=4k7hS2c1UmL92vF">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
  <fieldset><legend>Protein Reference Dataset</legend>
@@ -20,15 +20,15 @@
   <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
    orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
    proteins are mapped to each other.</p>
-   <p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">reference proteom dataset</a>. You can choose whether your orthology predictions should be assessed on the base of this reference dataset or on the proteom set of OMA.</p>
+   <p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">QfO reference proteome dataset</a>. You can choose whether your orthology predictions should be assessed on the base of this reference dataset or on the proteome set of OMA.</p>
   </div>
   <div>
    <label for="reference">Protein Reference Dataset:</label> <br/>
-   <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />Reference Proteoms v5 (2011-04) <br/>
+   <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />QfO Reference Proteomes v5 (2011-04) <br/>
    <input type="radio" name="reference" value="OMA"  class="inputRadio" onclick="toggleDisableSeqUploadOnDatasetChange(this)"/><a href="http://www.omabrowser.org">OMA Browser May 2010</a>
   </div>
   <div class="addInfo"><h4>Dataset sources</h4>
-  The Reference Proteoms (version 5; 2011-04) is available in 
+  The QfO Reference Proteomes (version 5; 2011-04) is available in 
    <ul>
     <li><a href="http://www.seqxml.org/xml/Reference_proteomes.html">seqxml-format</a> and </li>
     <li><a href="http://www.ebi.ac.uk/reference_proteomes/">fasta-format</a> from EBI.</li>
@@ -100,7 +100,7 @@
   <input type="text" name="methURL"  maxlength="50" class="inputText" /><br/>
   <label for="methVis">Result Visability:</label>
   <input type="radio" name="methVis" value="public" class="inputRadio" checked="checked" />Public
-  <input type="radio" name="methVis" value="private" class="inputRadio" />Private (only I can see results)
+  <input type="radio" name="methVis" value="private" class="inputRadio" />Private (not listed <a href="gateway.pl?f=ShowProject">here</a>)
   </div>
  </fieldset>
 
@@ -111,7 +111,7 @@
  </fieldset>
 </form>
 
-<p><em>&copy;2011, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em></p>
+<p><em>&copy;2011-2012, <a href="http://www.cbrg.ethz.ch">CBRG</a>, <a href="http://www.ethz.ch">ETH Zurich.</a></em></p>
 </div>
 </body>
 </html>
