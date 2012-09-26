@@ -21,5 +21,9 @@
  </DBOOL>
  </td>
 </tr>
+<tr>
+ <td class="label">Upload Date</td>
+ <td><DVAR name="uploadDate"></td>
+</tr>
 </table>
 </div>
