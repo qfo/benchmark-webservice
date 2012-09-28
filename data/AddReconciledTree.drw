@@ -34,7 +34,7 @@ end:
 
 ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
     global __PWR;
-    if type(t, Leaf) 
+    if type(t, Leaf) then
         if mappings=NULL then mapfun := x->{x['Label']};
         elif type(mappings,table) then mapfun := x->mappings[x['Label']];
         elif type(mappings,procedure) then mapfun := mappings;
@@ -466,38 +466,40 @@ end:
 ReadProgram('data/bork_cases.drw');
 SeqDB := ReadDb(refset5DBpath.'/ServerSeqs.db');
 CreateDayMatrices();
-label2org := table(): mapStat := Stat():
 # species tree from ncbi taxonomy
 specTree := Tree(Leaf(MONBE,7),3,Tree(Tree(Tree(Tree(Tree(Leaf(DANRE,29),14,Tree(Tree(Tree(
 Tree(Tree(Leaf(MOUSE,30),27,Leaf(RATNO,29)),21,Tree(Leaf(HUMAN,30),28,Leaf(PANTR
 ,30))),20,Leaf(CANFA,26)),19,Leaf(MONDO,25)),17,Leaf(CHICK,31))),9,Leaf(CIOIN,16
 )),7,Leaf(DROME,34)),6,Leaf(CAEEL,15)),5,Leaf(NEMVE,12))):
+label2org := table(): mapStat := Stat():
 g2s := x->label2org[x];
 rels := table(): memb := {}: 
 errT := errM := 0;
 # stupid hack to go from eNr to IDs, which will be converted back to eNrs in ExtractPairwiseRel
-revMap := proc(eNr)
+revMap := proc(l:Leaf)
     global DB:
     if assigned(DB) then curDB := DB fi:
     DB := SeqDB:
-    idList := [seq(parse(z),z=SearchDelim('; ', SearchTag('MAPIDS',Entry(eNr))) )]:
+    idList := SearchDelim('; ', SearchTag('MAPIDS',Entry(l['Label']))):
     if type(curDB,database) then DB := curDB fi:
     return( idList );
 end:
 
 for c in cases do 
     gTree := MapTree( c['RecTree'], c);
-    rTree := ReconcileTree(gTree, specTree, g2s, true);
+    rTree := ReconcileTree(gTree, specTree, g2s, true)[1];
 
     t := traperror(ExtractPairwiseRel(rTree,revMap));
     if t=lasterror then errM := errM+1; next fi:
+    assert( t[1]={seq(z['Label'],z=indets(rTree,Leaf))} ):
     memb := union(memb, t[1]);
     for z in Indices(t[2]) do 
         rels[z] := t[2,z];
     od:
 od:
-case := RecTreeCase( name, label, memb, rels, tree,
-    'Ruan et al, Nucleic Acids Res. 2008 (Database issue)'):
+name := 'BorkStudy';
+label:= 'OrthoBench dataset compiled for "Trachana et al, Bioessays, 2011"';
+case := RecTreeCase( name, label, memb, rels, rTree,'Trachana et al, Bioessays, 2011'):
 OpenAppending(outfile_semiauto);
 printf('ReconciledTrees[''%s''] := %A:\n', name, case);
 OpenAppending(previous);
