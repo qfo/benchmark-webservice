@@ -20,7 +20,7 @@ PROJECTS['jzTvqxDvrntFVMK'] := PKeyData('jzTvqxDvrntFVMK','mytest2','/local/Benc
 
 PROJECTS['4k7hS2c1UmL92vF'] := PKeyData('4k7hS2c1UmL92vF','OMA Pairs (Refset5)','/local/BenchmarkService/projects/OMA_Pairs_Refset5-.833','Wed Jun  8 15:18:11 2011','RefSet5',true,true,0,2701917,754149,2701917,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1307619913.8519]]],['RPS', [[true, 1322155131.0159]]],['TreeTest_Bac', [[false, 1307619913.6157]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1307619913.5062]]]}, {}, {['HOX', [[true, 1322155129.7749]]],['POP', [[true, 1307619913.8523]]]}, {['TreeFamA', [[true, 1308063658.6394]]]}, {['TreeTest_Fun', [[true, 1307619913.6416]]]}, {['SERC', [[true, 1307619913.8531]]],['VATB', [[true, 1307619913.8534]]]}, {}, {}],unassigned),'http://omabrowser.org/','The OMA Pairs are the primary product of the OMA pipeline. It is a list of high-confidence pairs of orthologous genes.<br>OMA is based on an algorithm that compares genes on the basis of evolutionary distances, considers distance inference uncertainty, and accounts for differential gene losses.'):
 
-PROJECTS['Zd5QPgVNFLsfrve'] := PKeyData('Zd5QPgVNFLsfrve','orthoinspector 1.30 (blast threshold 10-9)','/local/BenchmarkService/projects/orthoinspector_1.30_blast_threshold_10-9-.154','Fri Jun 10 11:39:26 2011','RefSet5',true,true,0,11717718,754149,11717692,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1307699019.6928]]],['RPS', [[true, 1307699019.6936]]],['TreeTest_Bac', [[false, 1307699019.6911]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1307699019.6904]]]}, {}, {['HOX', [[true, 1307699019.6924]]],['POP', [[true, 1307699019.6932]]]}, {}, {['TreeTest_Fun', [[true, 1307699019.6915]]]}, {['SERC', [[true, 1307699019.6940]]],['VATB', [[true, 1307699019.6944]]]}, {}, {}],unassigned),'http://lbgi.igbmc.fr/orthoinspector/'):
+PROJECTS['Zd5QPgVNFLsfrve'] := PKeyData('Zd5QPgVNFLsfrve','orthoinspector 1.30 (blast threshold 10-9)','/local/BenchmarkService/projects/orthoinspector_1.30_blast_threshold_10-9-.154','Fri Jun 10 11:39:26 2011','RefSet5',true,true,0,11717718,754149,11717692,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1307699019.6928]]],['RPS', [[true, 1307699019.6936]]],['TreeTest_Bac', [[false, 1307699019.6911]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1307699019.6904]]]}, {}, {['HOX', [[true, 1307699019.6924]]],['POP', [[true, 1307699019.6932]]]}, {}, {['TreeTest_Fun', [[true, 1307699019.6915]]]}, {['SERC', [[true, 1307699019.6940]]],['VATB', [[true, 1307699019.6944]]]}, {}, {}],unassigned),'http://lbgi.igbmc.fr/orthoinspector/','OrthoInspectoris a software system for orthology/paralogy analysis. It uses an original algorithm based on pairwise inparalog group comparison to detect one-to-one, one-to-many and many-to-many orthologous relations. It is made available as an independent software suite facilitating the installation and the maintenance of a database and providing several visualization tools for a comprehensive orthology analysis.'):
 
 
 
@@ -76,7 +76,7 @@ PROJECTS['W3eNRJtftQXOXhK'] := PKeyData('W3eNRJtftQXOXhK','Ensembl Compara Paral
 
 
 
-PROJECTS['pSMzkc3gemtJiYs'] := PKeyData('pSMzkc3gemtJiYs','Ensembl compara v2','/local/BenchmarkService/projects/Ensembl_compara_v2-.929','Thu Jun 16 15:26:22 2011','RefSet5',true,true,0,5086796,754149,5086796,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1308232054.3598]]]}, {}, {}, {}, {['TreeTest_Fun', [[true, 1308232054.3637]]]}, {}, {}, {}],unassigned),'http://www.ensembl.org'):
+PROJECTS['pSMzkc3gemtJiYs'] := PKeyData('pSMzkc3gemtJiYs','Ensembl compara v2','/local/BenchmarkService/projects/Ensembl_compara_v2-.929','Thu Jun 16 15:26:22 2011','RefSet5',true,true,0,5086796,754149,5086796,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1308232054.3598]]]}, {}, {}, {}, {['TreeTest_Fun', [[true, 1308232054.3637]]]}, {}, {}, {}],unassigned),'http://www.ensembl.org','Modified version of the <a href="http://www.ensembl.org/info/docs/compara/homology_method.html" target="_new">vanilla pipeline</a> to build trees with protein sequences only (no nucleotide sequence, no chromosome coordinates). <br/>Please be aware that the Xenopus tropicalis genes homologies are mostly wrong due to an error in the species tree used in the pipeline'):
 
 
 
@@ -320,7 +320,7 @@ PROJECTS['ArxCvcNSCaUfVhL'] := PKeyData('ArxCvcNSCaUfVhL','HCL: Alpha=0.90','/lo
 
 
 
-PROJECTS['6Jm9hcuC6ORT7nL'] := PKeyData('6Jm9hcuC6ORT7nL','RSD 0.8 1e-5 Deluca','/local/BenchmarkService/projects/rsd_0.8_1e-5_deluca_test-.771','Wed Feb  8 20:28:20 2012','RefSet5',true,true,0,3816597,754149,3816581,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1328729419.6352]]],['RPS', [[true, 1328729419.7278]]],['TreeTest_Bac', [[false, 1328729419.4058]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1328729419.0382]]]}, {}, {['HOX', [[true, 1328729419.5168]]],['POP', [[true, 1328729419.7120]]]}, {['TreeFamA', [[true, 1328729420.0419]]]}, {['TreeTest_Fun', [[true, 1328729419.4538]]]}, {['SERC', [[true, 1328729419.7461]]],['VATB', [[true, 1328729419.7764]]]}, {}, {}],unassigned),'http://roundup.hms.harvard.edu/'):
+PROJECTS['6Jm9hcuC6ORT7nL'] := PKeyData('6Jm9hcuC6ORT7nL','RSD 0.8 1e-5 Deluca','/local/BenchmarkService/projects/rsd_0.8_1e-5_deluca_test-.771','Wed Feb  8 20:28:20 2012','RefSet5',true,true,0,3816597,754149,3816581,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1328729419.6352]]],['RPS', [[true, 1328729419.7278]]],['TreeTest_Bac', [[false, 1328729419.4058]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1328729419.0382]]]}, {}, {['HOX', [[true, 1328729419.5168]]],['POP', [[true, 1328729419.7120]]]}, {['TreeFamA', [[true, 1328729420.0419]]]}, {['TreeTest_Fun', [[true, 1328729419.4538]]]}, {['SERC', [[true, 1328729419.7461]]],['VATB', [[true, 1328729419.7764]]]}, {}, {}],unassigned),'http://roundup.hms.harvard.edu/','Roundup is a large-scale orthology database. The orthologs are computed using the Reciprocal Smallest Distance (RSD) algorithm. <br/>This dataset is computed using a divergence parameter of 0.8 and an E-value cutoff of 1e-5.'):
 
 
 PROJECTS['hbjEWbSKJS2jUMX'] := PKeyData('hbjEWbSKJS2jUMX','o','/local/BenchmarkService/projects/o-.299','Thu Feb  9 18:21:50 2012','RefSet5',false,true,0,20455,754149,151,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1328808158.9336]]],['RPS', [[true, 1328808159.4817]]],['TreeTest_Bac', [[false, 1328808158.4871]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1328808158.0114]]]}, {}, {['HOX', [[true, 1328808158.7963]]],['POP', [[true, 1328808159.3485]]]}, {['TreeFamA', [[true, 1328808159.6153]]]}, {['TreeTest_Fun', [[true, 1328808158.6053]]]}, {['SERC', [[true, 1328808159.5907]]],['VATB', [[true, 1328808159.5922]]]}, {}, {}],unassigned)):
@@ -341,6 +341,78 @@ PROJECTS['EJllns7kWNbDp0b'] := PKeyData('EJllns7kWNbDp0b','test','/local/Benchma
 
 PROJECTS['41TdUHH8HSCAH9L'] := PKeyData('41TdUHH8HSCAH9L','biathegirl','/local/BenchmarkService/projects/biathegirl-.450','Mon May 21 18:11:51 2012','RefSet5',false,true,0,242303,754149,0,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1337616745.8007]]],['RPS', [[true, 1337616745.8024]]],['TreeTest_Bac', [[false, 1337616745.7960]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1337616745.7798]]]}, {}, {['HOX', [[true, 1337616745.7997]]],['POP', [[true, 1337616745.8015]]]}, {['TreeFamA', [[true, 1337616745.9241]]]}, {['TreeTest_Fun', [[true, 1337616745.7972]]]}, {['SERC', [[true, 1337616745.8033]]],['VATB', [[true, 1337616745.8043]]]}, {}, {}],unassigned)):
 PROJECTS['QI2RLC5e91oi1i6'] := PKeyData('QI2RLC5e91oi1i6','test','/local/BenchmarkService/projects/test-.686','Mon Jun 25 16:29:13 2012','RefSet5',false,true,0,20455,754149,151,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1340634589.2287]]],['RPS', [[true, 1340634589.2306]]],['TreeTest_Bac', [[false, 1340634589.2236]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1340634589.2060]]]}, {}, {['HOX', [[true, 1340634589.2276]]],['POP', [[true, 1340634589.2296]]]}, {['TreeFamA', [[true, 1340634589.3850]]]}, {['TreeTest_Fun', [[true, 1340634589.2248]]]}, {['SERC', [[true, 1340634589.2317]]],['VATB', [[true, 1340634589.2327]]]}, {}, {}],unassigned),'http://',''):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['esWCRvYypHDkWQr'] := PKeyData('esWCRvYypHDkWQr','QfO','/local/BenchmarkService/projects/QfO-.968','Mon Jul 30 22:14:04 2012','RefSet5',false,true,0,6,754149,0,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1343679390.7089]]],['RPS', [[true, 1343679390.7109]]],['TreeTest_Bac', [[false, 1343679388.9900]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1343679388.9760]]]}, {}, {['HOX', [[true, 1343679390.6977]]],['POP', [[true, 1343679390.7099]]]}, {['TreeFamA', [[true, 1343679390.8294]]]}, {['TreeTest_Fun', [[true, 1343679388.9912]]]}, {['SERC', [[true, 1343679390.7120]]],['VATB', [[true, 1343679390.7131]]]}, {}, {}],unassigned),'http://','Saccharomyces cerevisiae vs Klactis predicted GAL orthologs (RoundUp, evalue=1e-05 and divergence=0.8)'):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['LPMU0RnBOVIoFSa'] := PKeyData('LPMU0RnBOVIoFSa','QfO','/local/BenchmarkService/projects/QfO-.279','Mon Jul 30 22:21:18 2012','RefSet5',false,true,0,6,754149,0,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1343679815.7281]]],['RPS', [[true, 1343679815.7302]]],['TreeTest_Bac', [[false, 1343679815.7230]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1343679815.7208]]]}, {}, {['HOX', [[true, 1343679815.7270]]],['POP', [[true, 1343679815.7292]]]}, {['TreeFamA', [[true, 1343679815.7505]]]}, {['TreeTest_Fun', [[true, 1343679815.7240]]]}, {['SERC', [[true, 1343679815.7313]]],['VATB', [[true, 1343679815.7324]]]}, {}, {}],unassigned),'http://','Saccharomyces cerevisiae vs Klactis predicted GAL orthologs (RoundUp, evalue=1e-05 and divergence=0.8)'):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['8rYvG2udj5BBTSI'] := PKeyData('8rYvG2udj5BBTSI','','/local/BenchmarkService/projects/-.672','Mon Aug  6 14:55:59 2012','RefSet5',false,true,0,242303,754149,0,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1344257795.0911]]],['RPS', [[true, 1344257795.0932]]],['TreeTest_Bac', [[false, 1344257794.9623]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1344257794.9307]]]}, {}, {['HOX', [[true, 1344257795.0254]]],['POP', [[true, 1344257795.0922]]]}, {['TreeFamA', [[true, 1344257795.1181]]]}, {['TreeTest_Fun', [[true, 1344257794.9633]]]}, {['SERC', [[true, 1344257795.0943]]],['VATB', [[true, 1344257795.0954]]]}, {}, {}],unassigned),'http://',''):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['bKm0d6sfYuThUm5'] := PKeyData('bKm0d6sfYuThUm5','Test1','/local/BenchmarkService/projects/Test1-.41','Tue Aug  7 16:14:11 2012','RefSet5',false,true,0,11153,754149,0,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1344348884.9759]]],['RPS', [[true, 1344348884.9777]]],['TreeTest_Bac', [[false, 1344348884.9565]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1344348884.9413]]]}, {}, {['HOX', [[true, 1344348884.9748]]],['POP', [[true, 1344348884.9768]]]}, {['TreeFamA', [[true, 1344348885.0108]]]}, {['TreeTest_Fun', [[true, 1344348884.9713]]]}, {['SERC', [[true, 1344348884.9788]]],['VATB', [[true, 1344348884.9797]]]}, {}, {}],unassigned),'http://','HSAP,SCER,CELE'):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['0Av0pttHheYV8HR'] := PKeyData('0Av0pttHheYV8HR','PANTHER','/local/BenchmarkService/projects/PANTHER-.360','Thu Sep  6 23:09:41 2012','RefSet5',false,true,0,21606160,754149,21605896,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1346966222.4270]]],['RPS', [[true, 1346966222.4293]]],['TreeTest_Bac', [[false, 1346966222.4216]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1346966222.4055]]]}, {}, {['HOX', [[true, 1346966222.4258]]],['POP', [[true, 1346966222.4281]]]}, {['TreeFamA', [[true, 1346966222.5489]]]}, {['TreeTest_Fun', [[true, 1346966222.4229]]]}, {['SERC', [[true, 1346966222.4304]]],['VATB', [[true, 1346966222.4315]]]}, {}, {}],unassigned),'http://pantherdb.org',''):
+
+
+
+
+
+
+
+
+
+
+
+PROJECTS['B87S72epV2lXa3G'] := PKeyData('B87S72epV2lXa3G','PANTHER (all orthologs)','/local/BenchmarkService/projects/PANTHER_all_orthologs-.82','Fri Sep  7 00:29:45 2012','RefSet5',false,true,0,15495376,754149,15495131,{ANOGA,AQUAE,ARATH,ASPFC,BACSU,BACTN,BOVIN,BRAFL,BRAJA,CAEEL,CANAL,CANFA,CHICK,CHLAA,CHLTA,CIOIN,CRYNE,DANRE,DEIRA,DICDI,DICTD,DROME,ECOLI,FUSNN,GEOSL,GIAIC,GLOVI,HALS3,HUMAN,IXOSC,KORCO,LEIMA,LEPIN,MACMU,METAC,METJA,MONBE,MONDO,MOUSE,MYCTU,NEMVE,NEUCR,ORNAN,PANTR,PHANO,PHYPA,PLAF7,PSEA7,PYRKO,RATNO,RHOBA,SCHMA,SCHPO,SCLS1,SINMA,STRCO,SULSO,SYNY3,TAKRU,THAPS,THEMA,THEYD,TRIVA,USTMA,YARLI,YEAST},table([{['NOX', [[true, 1346970889.7836]]],['RPS', [[true, 1346970889.7857]]],['TreeTest_Bac', [[false, 1346970889.7785]]]}, {}, {}, {}, {}, {['TreeTest_Euk', [[true, 1346970889.7628]]]}, {}, {['HOX', [[true, 1346970889.7825]]],['POP', [[true, 1346970889.7846]]]}, {['TreeFamA', [[true, 1346970889.8987]]]}, {['TreeTest_Fun', [[true, 1346970889.7796]]]}, {['SERC', [[true, 1346970889.7867]]],['VATB', [[true, 1346970889.7876]]]}, {}, {}],unassigned),'http://pantherdb.org','The file we uploaded previously included within-species paralogs.'):
 
 
 

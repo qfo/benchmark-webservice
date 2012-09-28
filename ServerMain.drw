@@ -211,7 +211,7 @@ bsShowProject := proc()
         prjs := GetPublicProjects('RefSet5');
     else error('unexpected parameters');
     fi;
-    prjs := sort(prjs, x->x['Title']);
+    prjs := sort(prjs, x->uppercase(x['Title']));
 
     vars := table(''):
     cont := []:
@@ -228,7 +228,8 @@ bsShowProject := proc()
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
         fi;
-        cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
+        t['uploadDate'] := p['createDat'];
+        cont := append(cont, GenerateTemplate(wdir.'/templates/secProject.htmlc',t));
     od:
     vars['content'] := ConcatStrings(cont,'\n');
     vars['title'] := 'Overview of '.If(nargs=0,'all public projects', prjs[1,'Title']);
