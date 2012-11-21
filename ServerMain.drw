@@ -9,7 +9,7 @@ noRemember := true;
 SetRandSeed();
 Set(printgc=false); Set(gc=1e8):
 
-ReadProgram('lib/darwinit');
+ReadProgram(getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
 
 print(getpid());
 version();
