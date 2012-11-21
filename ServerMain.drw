@@ -17,11 +17,9 @@ t:=TimedCallSystem('ulimit -a'):
 prints(t[2]);
 ReadProgram(cdir.'/nogos.drw');
 
+darwin64 := 'darwin -q'; 
 
-darwin64 := If(RUNLOCAL,'/local/bin/darwin64 -q', 
-               '/home/darwin/v2/source/darwin64 -q');
-
-logfile := getenv('DARWIN_LOG_PATH').'/server.log';
+logfile := getenv('DARWIN_LOG_PATH').'/BS_server.log';
 if FileExists(omaDBpath.'/ServerIndexed.db') then
 else printf('Browser not found\n'); quit fi;
 
@@ -40,7 +38,7 @@ google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 RunServer := proc()
 global StartTime,nReq;
 WriteLog('server started on '.hostname().': '.getpid());
-inpipe := '/tmp/BSin.'.hostname();
+inpipe := getenv('DARWIN_RUN_PATH').'/BSin.'.hostname();
 StartTime := date();
 nReq :=0;
 do 

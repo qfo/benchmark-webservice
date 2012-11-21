@@ -1,18 +1,20 @@
 # darwinit file for the special functions of the OMA browser
 cdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
-ddir := getenv('DARWIN_ORTHOLOG_BENCHMARK_SHARE');
+ddir := getenv('DARWIN_ORTHOLOG_BENCHMARKDATA_PATH');
 imgdir := ddir . '/htdocs/imgs/':
 imgurl := '/imgs/':
+resimgdir := ddir.'/htdocs/resultimgs/':
+resimgurl := '/resultimgs/';
 racdir := ddir . '/htdocs/raw/':
 rawurl := '/raw/':
 brwrel := 'All.May2010';
-omaDBpath := getenv('DARWIN_BROWSER_SHARE').'/'.brwrel.'/data/';
+omaDBpath := getenv('DARWIN_ORTHOLOG_BENCHMARKDATA_PATH').'/';
 refset5DBpath := ddir . '/reference5/';
 datdir := ddir . '/data/';
 sessiondir := ddir . '/sessions/';
 resdir := ddir . '/results/';
 
-ReadProgram( getenv('DARWIN_OMA_REPO_PATH').'/lib/darwinit');
+#ReadProgram( getenv('DARWIN_OMA_REPO_PATH').'/lib/darwinit');
 
 GenerateTemplate := noeval(ReadLibrary( cdir.'/lib/GenerateTemplate', GenerateTemplate)):
 CreateIndex := noeval(ReadLibrary( cdir.'/lib/Index',CreateIndex));

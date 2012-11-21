@@ -30,13 +30,10 @@ use strict;
 srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
 my $cook = '';
 my $debug = 0;
-my $error_log = '/local/BenchmarkService/output';
-my $dbg_log = '/local/BenchmarkService/dbg.log';
-my $upload_log = '/local/BenchmarkService/upload.log';
+my $error_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_error.log';
+my $dbg_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_debug.log';
+my $upload_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_upload.log';
 
-BEGIN {
-    unshift @INC, '/local/BenchmarkService/lib';
-}
 # maximum Post size in bytes 
 $CGI::POST_MAX = 1<<32;
 $|++; # disable buffering of stdout
@@ -45,7 +42,7 @@ $|++; # disable buffering of stdout
 my $hostname = `/bin/hostname`;
 chomp($hostname);
 my $din = 'BSin.'.$hostname;
-my $pDarwin = '/tmp/'.$din;
+my $pDarwin = $ENV{DARWIN_RUN_PATH}.'/'.$din;
 
 
 # in debug mode, open the dbg log file for appending...
@@ -192,7 +189,7 @@ if (time - (stat('/tmp/BSbusy'))[9] < 10 and not $debug) {
 # we create an output file
 my $id = $ENV{REMOTE_ADDR}.'.'.int(100000*rand());
 #$id =~ s/\.//g; 
-my $file = '/tmp/BS'.$id;
+my $file = '/tmp/BS_outpipes/BS'.$id;
 unlink($file);
 unlink($file.'.alive');
 # we do at most three trials
@@ -427,10 +424,6 @@ sub RelCOG2Drw {
 	}
     }
     close(F);
-    open(F, ">/tmp/p2s.txt");
-    foreach my $k (keys(%p2s)){
-         print F $k." --> ".$p2s{$k}."\n";
-    }
     return( ($cnts, \%p2s) );
 }
 

@@ -62,7 +62,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             od: 
         od:
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -100,7 +100,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         fi:
 
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi:
@@ -138,7 +138,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
         od:
         Logger(tab,'DEBUG'):
 
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -184,7 +184,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
         fi:
 
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi:
@@ -277,14 +277,14 @@ HandleBoxRFFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table)
         tab := MakeIntersectTable( RFstat, 'covLabel'='# trees', 
             'corLabel'='avg RF distance( genetree , speciestree )' );
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
                 'plotType'='barchart',
                 'corLabel'='avg RF distance( genetree, speciestree )' );
         fi:
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi;
@@ -307,7 +307,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             tab := append(tab, Row(z[1,Description], z[1,Number], MeanVarPrint(z[1]), MeanVarPrint(z[2]) ));
         od:
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -344,7 +344,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi;
@@ -361,7 +361,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         tab := MakeIntersectTable( RFstat, RawDataFn, 'covLabel'='# trees', 
             'corLabel'='avg RF distance( genetree , speciestree )' );
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
                 'plotType'='2d',
@@ -369,7 +369,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
                 'corLabel'='avg RF distance( genetree, speciestree )' );
         fi:
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi;
@@ -395,7 +395,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
             'covLabel'='# ortholog relations', 
             'corLabel'=measure );
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             GenerateIntersectPlot( Sims, resPlotFn, resBase, 
                 'plotType'='2d',
@@ -403,7 +403,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         fi:
 
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi;
@@ -427,7 +427,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
                                    z[2,Number], MeanVarPrint(z[2]) ));
         od:
         
-        resPlotFn := sprintf('%s/%s.png', imgdir, resBase);
+        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
@@ -465,7 +465,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
         vars['content'] := HTMLC(tab);
-        vars['fig'] := imgurl.resBase.'.png';
+        vars['fig'] := resimgurl.resBase.'.png';
         vars['gp_src'] := rawurl.resBase.'.tgz';
         vars['resFigReady'] := true;
     fi;

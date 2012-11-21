@@ -1,0 +1,98 @@
+#!/bin/sh
+
+target="$1"
+
+usage() {
+   echo "Usage: $0 target_user@target_host"
+}
+
+die_usage() {
+   usage
+   exit 1
+}
+[ -n "$target" ] || die_usage
+
+
+project="benchmark-webservice"
+
+cat | ssh $target "cat | sh" << DONE
+if [ -d ~/$project ]; then
+   (cd ~/$project; git pull)
+else
+   git clone git@cbrg-git.ethz.ch:$project
+fi
+
+# copy darwin binary and library
+mkdir -p ~/darwin/DB 
+cp /home/darwin/v2/source/linux64/darwin ~/darwin/darwin
+cp -r /home/darwin/v2/source/lib ~/darwin/
+cp /home/darwin/DB/GOdata.drw.gz ~/darwin/DB/
+cp /home/darwin/DB/speciescode.drw.gz ~/darwin/DB/
+sed -i -e "s|datadirname\s*:=.*|datadirname := '\${HOME}/darwin/DB':|" ~/darwin/lib/darwinit
+
+# create script to launch darwin in bin dir
+mkdir -p ~/bin
+cat > ~/bin/darwin <<EOF
+#!/bin/bash
+ulimit -s unlimited
+exec ~/darwin/darwin -l ~/darwin/lib/ \\\$*
+EOF
+chmod +x ~/bin/darwin
+if [ -h ~/bin/darwin64 ] ; then 
+    unlink ~/bin/darwin64
+fi
+ln -s ~/bin/darwin ~/bin/darwin64
+
+cat > ~/bin/start.$project <<EOX
+#!/bin/bash
+# source related environment variables
+. ~/.bashrc
+~/bin/darwin << EOY
+ReadProgram( getenv('HOME').'/$project/ServerMain.drw' );
+EOY
+EOX
+chmod +x ~/bin/start.$project
+
+
+cat > ~/.bashrc << EOA
+echo "export DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH=\${HOME}/$project" > ~/.bashrc
+echo "export DARWIN_LOG_PATH=\${HOME}/log" >> ~/.bashrc
+echo "export DARWIN_RUN_PATH=\${HOME}/run" >> ~/.bashrc
+echo "export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH="$DARWIN_PROJECTS_DATA_PATH/cbrg-ortholog-benchmark-service"
+echo "export DARWIN_BROWSERDATA_PATH=$DARWIN_BROWSER_SHARE/All.May2010/data" >> ~/.bashrc
+echo "export DARWIN_OMA_REPO_PATH=\${HOME}/OMA" >> ~/.bashrc
+echo 'echo \$PATH | grep -q \$HOME/bin || export PATH="\$HOME/bin:\$PATH"' >> ~/.bashrc
+echo "export MAFFT_BINARIES=/usr/lib/mafft/lib/mafft" >> ~/.bashrc 
+EOA
+
+# make all directories and symlinks
+. ~/.bashrc
+mkdir -p "/tmp/BS_outpipes"
+mkfifo \${DARWIN_RUN_PATH}/BSin.\${hostname}
+for f in raw resultimgs examples ; do 
+    ln -s \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/$f ~/$project/htdocs/$f    
+done
+
+cat > ~/etc/supervisor.d/$project.conf << EOC
+[fcgi-program:fcgiwrap]
+command = /usr/sbin/fcgiwrap
+numprocs = 2
+process_name=%(program_name)s_%(process_num)02d
+environment=DARWIN_RUN_PATH='\${HOME}/run',DARWIN_LOG_PATH='\${HOME}/log'
+socket = unix://\${HOME}/run/fcgiwrap.socket
+socket_owner = cbrg-oma:www-data
+socket_mode = 0770
+stdout_logfile = \${HOME}/log/%(program_name)s.log
+stderr_logfile = \${HOME}/log/%(program_name)s.log
+redirect_stderr = true
+
+[program:$project]
+command = ~/bin/start.$project
+autorestart = true
+stdout_logfile = \$HOME/log/%(program_name)s.log
+stderr_logfile = \$HOME/log/%(program_name)s.log
+redirect_stderr = true
+EOC
+
+./bin/${project}ctl reload
+DONE
