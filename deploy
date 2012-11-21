@@ -80,19 +80,19 @@ numprocs = 2
 process_name=%(program_name)s_%(process_num)02d
 environment=DARWIN_RUN_PATH='\${HOME}/run',DARWIN_LOG_PATH='\${HOME}/log'
 socket = unix://\${HOME}/run/fcgiwrap.socket
-socket_owner = cbrg-oma:www-data
+socket_owner = cbrg-obs:www-data
 socket_mode = 0770
 stdout_logfile = \${HOME}/log/%(program_name)s.log
 stderr_logfile = \${HOME}/log/%(program_name)s.log
 redirect_stderr = true
 
 [program:$project]
-command = ~/bin/start.$project
+command = \${HOME}/bin/start.$project
 autorestart = true
 stdout_logfile = \$HOME/log/%(program_name)s.log
 stderr_logfile = \$HOME/log/%(program_name)s.log
 redirect_stderr = true
 EOC
 
-./bin/${project}ctl reload
+./bin/svctl reload
 DONE
