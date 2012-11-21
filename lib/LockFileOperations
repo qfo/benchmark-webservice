@@ -1,3 +1,8 @@
+# checks whether a file exists
+FileExists := proc(fname) 
+    return( length(FileStat(fname))>0 );
+end:
+
 #
 # checks if the process created the lock-file is still alive
 IsLockProcessAlive := proc(lock:string)

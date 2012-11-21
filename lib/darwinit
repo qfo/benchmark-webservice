@@ -55,6 +55,7 @@ AddTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',AddTestProperty
 EvaluateTreeTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',EvaluateTreeTestProperty)):
 EvaluateRefPhyloTestProperty := noeval(ReadLibrary(cdir.'/lib/TestProperties',EvaluateRefPhyloTestProperty)):
 
+FileExists := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', FileExists)):
 IsLockProcessAlive := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', IsLockProcessAlive));
 HandleLockFile := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', HandleLockFile));
 WriteLock := noeval(ReadLibrary(cdir.'/lib/LockFileOperations', WriteLock));
