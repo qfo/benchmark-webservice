@@ -17,4 +17,4 @@ plot \
     '<DVAR name="datafile">' index <DLVAR name="index"> using 1:2:3 \
         notit w yerrorbars lt -1 pt -1, \
 </DLOOP> \
-      f(x) = 0
+1/0
