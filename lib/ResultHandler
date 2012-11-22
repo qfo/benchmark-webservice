@@ -94,7 +94,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -178,7 +178,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -261,7 +261,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     OpenWriting(previous);
 
     CallSystem('gnuplot '.cmdFile);
-    CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+    CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
     CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
     CallSystem('mv '.resBase.'.tgz '.rawdir);
 end:
@@ -339,7 +339,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -460,7 +460,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('echo -e ",s/''\\/.*\\//''/g\\nwq\\n" | ed '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
