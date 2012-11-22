@@ -70,7 +70,7 @@ EOA
 mkdir -p "/tmp/BS_outpipes"
 mkfifo \${DARWIN_RUN_PATH}/BSin.\$(hostname)
 for f in raw resultimgs examples ; do 
-    ln -s \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/\${f} ~/$project/htdocs/\${f}    
+    ln -s \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/htdocs/\${f} ~/$project/htdocs/\${f}    
 done
 
 cat > ~/etc/supervisor.d/$project.conf << EOC
