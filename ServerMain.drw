@@ -227,7 +227,7 @@ bsShowProject := proc()
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
         fi;
         t['uploadDate'] := p['createDat'];
-        cont := append(cont, GenerateTemplate(wdir.'/templates/secProject.htmlc',t));
+        cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
     od:
     vars['content'] := ConcatStrings(cont,'\n');
     vars['title'] := 'Overview of '.If(nargs=0,'all public projects', prjs[1,'Title']);
