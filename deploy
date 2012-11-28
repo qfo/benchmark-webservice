@@ -55,14 +55,14 @@ chmod +x ~/bin/start.$project
 
 
 cat > ~/.bashrc << EOA
-echo "export DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH=\${HOME}/$project" > ~/.bashrc
-echo "export DARWIN_LOG_PATH=\${HOME}/log" >> ~/.bashrc
-echo "export DARWIN_RUN_PATH=\${HOME}/run" >> ~/.bashrc
-echo "export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH=$DARWIN_PROJECTS_DATA_PATH/cbrg-ortholog-benchmark-service" >> ~/.bashrc
-echo "export DARWIN_BROWSERDATA_PATH=$DARWIN_BROWSER_SHARE/All.May2010/data" >> ~/.bashrc
-echo "export DARWIN_OMA_REPO_PATH=\${HOME}/OMA" >> ~/.bashrc
-echo 'echo \\\$PATH | grep -q \$HOME/bin || export PATH="\$HOME/bin:\\\$PATH"' >> ~/.bashrc
-echo "export MAFFT_BINARIES=/usr/lib/mafft/lib/mafft" >> ~/.bashrc 
+export DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH=\${HOME}/$project
+export DARWIN_LOG_PATH=\${HOME}/log
+export DARWIN_RUN_PATH=\${HOME}/run
+export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH=$DARWIN_PROJECTS_DATA_PATH/cbrg-ortholog-benchmark-service
+export DARWIN_BROWSERDATA_PATH=$DARWIN_BROWSER_SHARE/All.May2010/data
+export DARWIN_OMA_REPO_PATH=\${HOME}/OMA
+echo \\\$PATH | grep -q \$HOME/bin || export PATH="\$HOME/bin:\\\$PATH"
+export MAFFT_BINARIES=/usr/lib/mafft/lib/mafft
 EOA
 
 # make all directories and symlinks
