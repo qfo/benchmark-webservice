@@ -120,9 +120,11 @@ else {
             }
         } 
         else {
+            print DBLOG "upload data" if $debug;
             $session = getSessionId();
             $cache = getCacheHandle();
             $cache->set($session, [0,""]);
+            print DBGLOG "cache set" if $debug;
 
             if (my $pid = fork) {
                 # parent process
@@ -449,8 +451,10 @@ sub process_datafiles{
     $fnBase =~ s/[^A-Za-z0-9_.-]//g;
     my $timestamp = ""; #strftime("%Y%m%d-%H%M", localtime());
     print DBGLOG "[worker] $fnBase - $timestamp\n" if $debug;
-    $fnBase = "/local/BenchmarkService/projects/".$fnBase."-".$timestamp.
-        ".".int(1000*rand());
+    my $fnRoot = $ENV{DARWIN_ORTHOLOG_BENCHMARKDATA_PATH};
+    my $fnProj = $fnRoot . "/projects";
+    my $fnRawLnk = $fnRoot . "/htdocs/raw";
+    $fnBase .= "-".$timestamp.".".int(1000*rand());
 
     my $vis = $req->param("methVis");
     if ($vis eq "public") {$vis="true"; }
@@ -466,7 +470,7 @@ sub process_datafiles{
     }
 
 
-    print DBGLOG "storing uploaded file with filenamebase $fnBase\n" if $debug;
+    print DBGLOG "storing uploaded file with fnBase $fnBase in $fnProj\n" if $debug;
     my $nrProt=0; my $nrOrth=0;
     my $prot2spec = 0;
     my $reference = $req->param("reference");
@@ -482,7 +486,7 @@ sub process_datafiles{
         }
         
         $cache->set($session,[0,"saving ".$upFile." file"]);
-        my $fn = "$fnBase.$upFile";
+        my $fn = "$fnProj/$fnBase.$upFile";
         my ($fileName,$path,$suffix) = fileparse($req->param($upFile),qr/\.(gz|bz2)/);
         my $fh = $req->upload($upFile);
         if (!$fh && cgi_error) {
@@ -508,8 +512,8 @@ sub process_datafiles{
         print "[$session] fh reset\n";
         
         if( $upFile eq "seqs"){
-           if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, $fnBase.".sps",$prot2spec);
-           } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, $fnBase.".sps");
+           if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, "$fnProj/$fnBase.sps",$prot2spec);
+           } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, "$fnProj/$fnBase.sps");
            } else {die("unknown seqType: ".$req->param("seqType"));}
         }
         else {
@@ -524,12 +528,11 @@ sub process_datafiles{
         my $status = gzip "$fn.raw" => "$fn.raw.gz" or die "gzip failed: $GzipError\n";
         unlink( "$fn.raw" );
         if ($upFile eq "rels") {
-            my $lnkFn = "$fnBase.$upFile.raw.gz";
-            $lnkFn =~ s/projects/htdocs\/raw/;
-            $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild: $!\n";
+            my $lnkFn = "$fnRawLnk/$fnBase.$upFile.raw.gz";
+            $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild for $fn.raw.gz to $lnkFn: $!\n";
         }
     }
-    push(@p, "'".$fnBase."'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
+    push(@p, "'$fnProj/$fnBase'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
     push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'");
     $cache->set($session,[1,[\@p,\@a]]);
 } 

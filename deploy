@@ -78,7 +78,7 @@ cat > ~/etc/supervisor.d/$project.conf << EOC
 command = /usr/sbin/fcgiwrap
 numprocs = 2
 process_name=%(program_name)s_%(process_num)02d
-environment=DARWIN_RUN_PATH='\${HOME}/run',DARWIN_LOG_PATH='\${HOME}/log'
+environment=DARWIN_RUN_PATH='\${HOME}/run',DARWIN_LOG_PATH='\${HOME}/log',DARWIN_ORTHOLOG_BENCHMARKDATA_PATH='\$DARWIN_ORTHOLOG_BENCHMARKDATA_PATH'
 socket = unix://\${HOME}/run/fcgiwrap.socket
 socket_owner = cbrg-obs:www-data
 socket_mode = 0770

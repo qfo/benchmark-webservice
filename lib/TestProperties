@@ -9,7 +9,7 @@ EvaluateTreeTestProperty := proc(p_:{PKeyData,list(PKeyData)}, prop:TestProperty
     pKeys := If( type(p_,PKeyData),[p_],p_ ); 
     dataset := pKeys[1,'ref']:
 
-    ReadProgram(sprintf('%s_%s.drw', prop[Args,1], dataset)); 
+    ReadProgram(sprintf('%s/%s_%s.drw', datdir, prop[Args,1], dataset)); 
   
     orgs := intersect():  
     for pKey in pKeys do orgs := intersect(orgs, pKey['OrgsCovered']) od: 
