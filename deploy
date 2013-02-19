@@ -47,6 +47,11 @@ cat > ~/bin/start.$project <<EOX
 #!/bin/bash
 # source related environment variables
 . ~/.bashrc
+mkdir -p "/tmp/BS_outpipes"
+if [ ! -p \${DARWIN_RUN_PATH}/BSin.\$(hostname) ]; then
+    rm -f \${DARWIN_RUN_PATH}/BSin.\$(hostname)
+    mkfifo \${DARWIN_RUN_PATH}/BSin.\$(hostname)
+fi
 ~/bin/darwin << EOY
 ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/ServerMain.drw' );
 EOY
@@ -69,7 +74,7 @@ EOA
 . ~/.bashrc
 mkdir -p "/tmp/BS_outpipes"
 mkfifo \${DARWIN_RUN_PATH}/BSin.\$(hostname)
-for f in raw resultimgs examples ; do 
+for f in raw resultimgs examples simdata ; do 
     ln -s \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/htdocs/\${f} ~/$project/htdocs/\${f}    
 done
 
