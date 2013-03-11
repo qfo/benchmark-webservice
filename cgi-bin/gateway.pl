@@ -462,6 +462,7 @@ sub process_datafiles{
 
     my $methDesc = $req->param("methDesc");
     $methDesc =~ tr/'/"/;
+    $methDesc =~ s/\n/<br\/>/g;
 
     my $methURL = $req->param("methURL");
     $methURL =~ s/([^?]*).*/\1/g;
