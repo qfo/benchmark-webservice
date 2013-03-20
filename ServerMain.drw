@@ -540,6 +540,8 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     vars['resheader'] := 'Species Tree Discordance Test - Dataset '.king;
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
@@ -576,8 +578,12 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     vars := table('');
     if testset='Ref' then
         vars['resheader'] := 'Agreement with Reference Phylogeny';
+        vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
+        vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484)';
     elif testset='Auto' then
-        vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny';
+        vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny (contributed by Fabian Schreiber)';
+        vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/nar/gkj118';
+        vars['testRef_Desc'] := 'Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484';
     fi:
 
     vars['resFigReady'] := false;
@@ -628,6 +634,8 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     vars['resheader'] := 'Enzyme Classification (EC) conservation test';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
@@ -667,6 +675,8 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     vars['resheader'] := 'Gene Ontology conservation test';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,NR};
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
