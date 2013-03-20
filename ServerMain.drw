@@ -50,7 +50,8 @@ do
         cp := SearchString('cookies=table([{NULL}]',pt);
         if cp>-1 then pt := pt[1..cp-1].pt[cp+35..-1] fi;
         WriteLog(pt[1..-2].' requested');
-        if t[1..7]='Request' then 
+        if t[1..7]='Request' then
+            prints(t);
         e := traperror(eval(parse(t)));
         if e=lasterror then 
              WriteLog(sprintf('*** ERROR: %a',e));
@@ -378,7 +379,7 @@ bsMapRels := proc(PID:string)
                       'relsinfn := ''%s'': lock:=''%s'': orgMap := %A: PID := ''%s'': '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
                       cdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, cdir, darwin64);
-        Logger( 'starting command: '.cmd, 'DEBUG');
+        Logger( 'starting command: '.cmd, 'INFO');
     
         CallSystem( cmd );
     fi:

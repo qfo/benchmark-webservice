@@ -196,7 +196,16 @@ div.modalPopupWindow {
     text-align: left;
 }
 
-
+div.reference{
+    margin:0 5px 0 5px;
+    padding: 0 1px 0 1px;
+    font-size:80%;
+    background-color: #ffffe1;
+    border: 1px solid #555;
+}
+div.reference p.last{
+  margin: 0;
+}
 
 form {
   margin: 0;
