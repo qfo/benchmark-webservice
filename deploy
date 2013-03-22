@@ -52,7 +52,7 @@ if [ ! -p \${DARWIN_RUN_PATH}/BSin.\$(hostname) ]; then
     rm -f \${DARWIN_RUN_PATH}/BSin.\$(hostname)
     mkfifo \${DARWIN_RUN_PATH}/BSin.\$(hostname)
 fi
-~/bin/darwin << EOY
+exec darwin << EOY
 ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/ServerMain.drw' );
 EOY
 EOX
