@@ -44,8 +44,8 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         'FPRLabel'=((fprLabel='false positive rate'):string),
         'TPRLabel'=((tprLabel='true positive rate'):string))
 
-    global FPR, TPR;
-    FPR := TPR := 0;
+    global FPR, TPR, RawDataFn;
+    FPR := TPR := RawDataFn := 0;
     traperror(ReadProgram(resFn));
     if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
              or length(FPR[1])<>length(PIDs) then 
@@ -53,12 +53,13 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
     else
         prj := [seq(GetPKeyData(z), z=PIDs)];
         prjNames := [seq(z['Title'],z=prj)];
-        tab := Table( border, gutter=2, ColAlign('l','l','c','c'),
-                 Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel)) );
+        if RawDataFn=0 then RawDataFn := CreateArray(1..length(prjNames)) fi:
+        tab := Table( border, gutter=2, ColAlign('l','l','c','c','c'),
+                 Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel),Bold('Raw Data')) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
             for i to length(prjNames) do 
                 tab := append(tab, Row( If(i=1,cases[c],''), ProjectWLink(prj[i]),
-                  MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]) ));
+                  MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]), RawDataWLink(RawDataFn[i]) ));
             od: 
         od:
         
