@@ -579,11 +579,13 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     if testset='Ref' then
         vars['resheader'] := 'Agreement with Reference Phylogeny';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
-        vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484)';
+        vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484).';
+        vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     elif testset='Auto' then
         vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny (contributed by Fabian Schreiber)';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/nar/gkj118';
         vars['testRef_Desc'] := 'Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484';
+        vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     fi:
 
     vars['resFigReady'] := false;
@@ -720,6 +722,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     vars['resheader'] := 'Correct Homology Detection of Multi-Domain Proteins';
     vars['contributor'] := '';
     vars['pubref'] := '';
+    vars['testNote'] := '<p>A description of the implementation is provided <a href="/doc/homologyBenchmark.pdf">here</a></p>';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     
