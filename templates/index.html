@@ -14,7 +14,7 @@
  compare the quality of your predictions against other orthology inference efforts using several tests.</p>
 <p><a href="gateway.pl?f=ShowProject">Click here</a> for a list of ortholog datasets based on the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">QfO reference proteomes</a>.</p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=4k7hS2c1UmL92vF">Check out</a> the available test on the OMA predictions.</p>
-<form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data">
+<form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data" onsubmit="return setFormSubmitted(null)">
  <fieldset><legend>Protein Reference Dataset</legend>
   <div class="notes"><h4>Protein Sequence Data</h4>
   <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
@@ -93,20 +93,20 @@
  </div>
  <div>
   <label for="methName">Method Name:</label> 
-  <input type="text" name="methName"  maxlength="50" class="inputText" /><br/>
+  <input type="text" name="methName"  id="methName" maxlength="50" class="inputText" /><br/>
   <label for="methDesc">Description:</label> 
-  <textarea name="methDesc" cols="50" rows="3" class="inputTextarea" ></textarea><br/>
+  <textarea name="methDesc" id="methDesc" cols="50" rows="3" class="inputTextarea" ></textarea><br/>
   <label for="methURL">Project Website:</label> 
-  <input type="text" name="methURL"  maxlength="50" class="inputText" /><br/>
+  <input type="text" id="methURL" name="methURL"  maxlength="50" class="inputText" /><br/>
   <label for="methVis">Result Visability:</label>
-  <input type="radio" name="methVis" value="public" class="inputRadio" checked="checked" />Public
-  <input type="radio" name="methVis" value="private" class="inputRadio" />Private (not listed <a href="gateway.pl?f=ShowProject">here</a>)
+  <input type="radio" id="methVis" name="methVis" value="public" class="inputRadio"/>Public
+  <input type="radio" id="methVis" name="methVis" value="private" class="inputRadio" checked="checked" />Private (not listed <a href="gateway.pl?f=ShowProject">here</a>)
   </div>
  </fieldset>
 
  <fieldset>
   <input type="hidden" name="f" value="UploadData"/>
-  <input type="submit" value="Submit &raquo;" class="inputSubmit" onClick="setFormSubmitted(this);"/>
+  <input type="submit" value="Submit &raquo;" class="inputSubmit" />
   <div id="afterSubmit" style="visibility: hidden;"><img src="/loading.gif"> Please wait while your data get uploaded to the benchmarking server.</div>
  </fieldset>
 </form>

@@ -126,12 +126,18 @@ function toggleDisableSeqUploadOnDatasetChange(rad){
   else {
       document.getElementById("SequencesUpload").style.display = "none";
   }
-//  for (var k=0,elm; elm=rad.form.elements[k]; k++)
-//      if(elm.name=="seqType" || elm.name=="seqs")
-//          elm.disabled = disabledDatasetUpload;
 }
+
 function setFormSubmitted(button) {
-//button.disabled = true;
+    if (document.getElementById("methVis").value == "public"){
+        if ( (document.getElementById("methName").value == "") ||
+             (document.getElementById("methDesc").value == "") || 
+             (document.getElementById("methURL").value == "") ){
+            alert("For public projects, all meta-data fields need to be specified");
+            return false;
+        }
+    }
     document.getElementById("afterSubmit").style.visibility = "visible";
-	document.forms[0].submit();
+    document.forms[0].submit();
+    return true;
 }
