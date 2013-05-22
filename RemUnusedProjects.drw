@@ -1,0 +1,38 @@
+SetRandSeed();
+Set(printgc=false); Set(gc=1e8):
+
+ReadProgram(getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
+
+RemoveProject := proc(PID, cmdfn)
+    resFiles := TimedCallSystem('zgrep -l '''.PID.''' '.resdir.'/*')[2];
+    resFiles := [seq(trim(z),z=SplitLines(resFiles))];
+    k0 := length(resdir)+1;
+    resFileBase := [seq(z[k0..SearchString('.drw.gz',z)], z=resFiles)];
+
+
+    OpenAppending(cmdfn);
+    printf('sed -i ''/'.PID.'/d'' '.datdir.'projectKeys.drw\n');
+    printf('grep -l '''.PID.''' '.sessiondir.'/* | xargs rm\n');
+    if length(resFiles)>0 then 
+        printf('rm %s\n', ConcatStrings(resFiles,' '));
+        for dir in [rawdir, resimgdir] do 
+            printf('rm %s\n', ConcatStrings( [seq(dir.z.'*', z=resFileBase)], ' '));
+        od: 
+    fi:
+    fnbase := GetPKeyData(PID)['fnBase'];
+    printf('rm %s.*\n', fnbase);
+    printf('rm %s/%s.*\n', rawdir, fnbase[SearchAllString('/',fnbase)[-1]+1..-1]);
+    OpenAppending(previous);
+end:
+
+cmdFn := '/tmp/cmds.txt';
+private := GetPrivateProjects():
+
+OpenWriting(cmdFn);
+printf('#!/bin/bash\n');
+OpenWriting(previous);
+
+printlevel := 2;
+for z in private do RemoveProject(z['PID'], cmdFn) od:
+done
+

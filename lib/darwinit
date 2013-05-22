@@ -45,6 +45,7 @@ UpdatePKeyDataPermanent := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',UpdateP
 AddPKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',AddPKeyData));
 GetPKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',GetPKeyData));
 GetPublicProjects := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',GetPublicProjects));
+GetPrivateProjects := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',GetPrivateProjects));
 GetProjISets := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', GetProjISets));
 ProjMetProperty := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', ProjMetProperty));
 ProjSpeciesOverlap := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData', ProjSpeciesOverlap));

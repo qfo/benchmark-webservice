@@ -1,5 +1,5 @@
 module external PKeyData, UpdatePKeyDataPermanent, AddPKeyData, GetPKeyData, GetPublicProjects, 
-                ProjSpeciesOverlap, ProjMetProperty, GetProjISets:
+                GetPrivateProjects, ProjSpeciesOverlap, ProjMetProperty, GetProjISets:
 
 fn := datdir.'projectKeys.drw';
                 
@@ -92,6 +92,19 @@ GetPublicProjects := proc( ; ref:string)
     od;
     return(p);
 end:
+
+GetPrivateProjects := proc( ; ref:sting)
+    LoadPKeyData();
+    p := []:
+    for id in Indices(PROJECTS) do 
+        if not PROJECTS[id, isPublic] and
+             (not assigned(ref) or ref=PROJECTS[id,'ref']) then
+            p := append(p, PROJECTS[id]);
+        fi:
+    od:
+    return(p);
+end:
+
 
 GetProjISets := proc(prjs_:{string,PKeyData,list})
     global ISET:
