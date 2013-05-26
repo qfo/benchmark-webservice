@@ -129,7 +129,7 @@ function toggleDisableSeqUploadOnDatasetChange(rad){
 }
 
 function setFormSubmitted(button) {
-    if (document.getElementById("methVis").value == "public"){
+    if (document.getElementById("methVis_public").checked ){
         if ( (document.getElementById("methName").value == "") ||
              (document.getElementById("methDesc").value == "") || 
              (document.getElementById("methURL").value == "") ){
