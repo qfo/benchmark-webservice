@@ -763,11 +763,18 @@ end:
 #################################
 # Run Tests                     #
 #################################
+fullHash := proc(a)
+    if type(a,{list,set}) then res := sum( procname(z),z=a);
+    else res := hash(a);
+    fi:
+    return( res );
+end:
+
 bsRunTests := proc(params:list, pnames:list)
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
     
-    h := string(hash( [params, pnames] ));
+    h := string(fullHash( [params, pnames] ));
     OpenWriting( sessiondir.h );
     printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
     OpenWriting(previous);
