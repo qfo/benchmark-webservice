@@ -91,6 +91,7 @@ end:
 ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
     global DB, Ndone:
     RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
+    IdentStat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
     rawDat := CreateArray(1..length(prjNrs),[]):
     
     DB := SeqDB: 
@@ -120,6 +121,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
             pruned_st := PruneTree(copy(speciestree), labs);
             rfdist := RobinsonFoulds([genetree, pruned_st])[1,2];
             RFstat[pNr] + rfdist;
+            IdentStat[pNr] + If(rfdist>0,1,0);
             for tree in [genetree, pruned_st] do for l in Leaves(tree) do
                 l['Label'] := cas[pNr, l['Label']]:
             od od:
@@ -134,14 +136,15 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
     od:
     Logger( sprint('TreeTest result for %s:\n  %A\n  %A', 
         ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
-    return( [RFstat, rawDat] );
+    return( [RFstat, rawDat, IdentStat] );
 end:
 
-StoreResult := proc(fn:string, RFstat, RawDataFn, PIDs)
+StoreResult := proc(fn:string, RFstat, IdentStat, RawDataFn, PIDs)
     OpenWriting(fn):
     printf('RFstat := %A:\n', RFstat):
     printf('PIDs := %A:\n', PIDs );
     printf('RawDataFn := %A:\n', RawDataFn);
+    printf('IdentStat := %A:\n', IdentStat);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
 end:
@@ -174,14 +177,15 @@ if meth='INTERSECT' then
     cases := FindCases(iSet, prjNrs);
     t0 := time();
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
-    RFstat := compRes[1]; rawdata := compRes[2];
+    RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('TreeTest/%s.%a.tsv.gz', kingdom,
         hash([prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
-    StoreResult(resFn, RFstat, [seq(prj[i,'PID'], i=prjNrs)]);
+    StoreResult(resFn, RFstat, IdentStat, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
     cases := CreateArray(1..nP-1,[]):
     RFstats := CreateArray(1..nP-1):
+    IdentStats := CreateArray(1..nP-1):
     prjNrs := [seq([i,nP],i=1..nP-1)];
     resFnParts := CreateArray(1..nP-1):
     rawDataFn := CreateArray(1..nP-1):
@@ -204,22 +208,24 @@ elif meth='PAIRWISE' then
             ReadProgram(resFnParts[i]): 
             assert(length(RFstat)=2); 
             RFstats[i] := RFstat;
+            IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
         else
             compRes := ComputeCongruenceStat(prjNrs[i], cases[i], 
                 max(1,totNrTrees) ):
-            RFstats[i] := compRes[1]; rawdata := compRes[2];
+            RFstats[i] := compRes[1]; rawdata := compRes[2]; IdentStats[i] := compRes[3];
             StoreRawData( rawdir.rawDataFn[i,1..-4], rawdata, 
                 [seq(prj[j],j=prjNrs[i])] );
-            StoreResult(resFnParts[i], RFstats[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
                 [seq(prj[j,'PID'],j=prjNrs[i])]);
         fi:
     od:
-    StoreResult(resFn, RFstats, rawDataFn, 
+    StoreResult(resFn, RFstats, IdentStats, rawDataFn, 
         [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)] );
 elif length(meth)>=6 and meth[1..6]='REFSET' then
     cases := CreateArray(1..nP,[]):
     RFstats := CreateArray(1..nP):
+    IdentStats := CreateArray(1..nP):
     RawData := CreateArray(1..nP):
     prjNrs := [seq(i,i=1..nP)];
     resFnParts := CreateArray(1..nP):
@@ -238,20 +244,22 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             RFstat := RawDataFn := 0;
             ReadProgram(resFnParts[i]): 
             assert(type(RFstat,Stat)); 
+            assert(type(IdentStat,Stat)); 
             assert(type(RawDataFn,string));
             RFstats[i] := RFstat;
+            IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
         else
             compRes := ComputeCongruenceStat([prjNrs[i]], cases[i], 
                 totNrTrees):
             # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
-            RFstats[i] := compRes[1,1]; rawdata := compRes[2,1];
+            RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
             StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
             StoreResult(resFnParts[i], RFstats[i], rawDataFn[i], 
                 [prj[i,'PID']]);
         fi:
     od:
-    StoreResult(resFn, RFstats, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
+    StoreResult(resFn, RFstats, IdentStats, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
 else error('unknown strategy method:'.meth); 
 fi:
 
