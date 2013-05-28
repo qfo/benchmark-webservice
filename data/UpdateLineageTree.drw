@@ -47,8 +47,8 @@ for g in genomes do
 od:
 
 hist := [seq(length(z), z=catBins)];
-fn := sprintf('data/TreeCat_%s_%s.drw', dataset,reference);
-OpenWriting(fn);
+fn := sprintf('TreeCat_%s_%s.drw', dataset,reference);
+OpenWriting(datdir.'/'.fn);
 printf('# Histogram of the %d used genomes: %A\n', sum(hist), hist);
 lprint('catBins :=', catBins, ':');
 printf('MAX_NR_TREES := %d:\n', MAX_NR_TREES);
