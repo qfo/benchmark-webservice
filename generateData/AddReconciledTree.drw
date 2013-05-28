@@ -2,7 +2,7 @@
 # This file precomputes the mapping of the reference phylogenetic trees to 
 # the EntryNumbers and stores those files in data/ReconciledTrees.drw
 #
-ReadProgram('lib/darwinit');
+ReadProgram(getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
 DUPL := {':D=T',':D=Y','D=Y','D','DUPLICATION',':Ev=duplication',':Ev=DUPLICATION'};
 SPEC := {':D=F',':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'};
 SPEC_MATCH := SPEC minus {'S','SPECIATION'}:
@@ -278,6 +278,98 @@ OpenAppending(outfile);
 printf('ReconciledTrees[''%s''] := %A:\n', name, case);
 OpenAppending(previous);
 AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# SUMF cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/SUMF_referenceProteome.nhx');
+label:= 'SUMF protein familiy';
+name := 'SUMF';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the SUMF gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# S10/S20 cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/S10-S20_referenceProteome.nhx');
+label:= 'S10/S20 protein familiy';
+name := 'S10/S20';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the S10/S20 gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# ASTER cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/ASTER_referenceProteome.nhx');
+label:= 'ASTER protein familiy';
+name := 'ASTER';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the ASTER gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# BAMBI cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/BAMBI_referenceProteome.nhx');
+label:= 'BAMBI protein familiy';
+name := 'BAMBI';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the BAMBI gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+
+###########################################
+# CITE cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/CITE_referenceProteome.nhx');
+label:= 'CITE protein familiy';
+name := 'CITE';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the CITE gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
+###########################################
+# TRFE cluster of Brigitte Boeckmann. (2010)
+t := ReadRawFile(datdir.'raw/TRFE_referenceProteome.nhx');
+label:= 'TRFE protein familiy';
+name := 'TRFE';
+tree := ParseNewickTree(t):
+map  := ExtractPairwiseRel(tree):
+case := RecTreeCase(name, label, map[1], map[2], tree, 
+      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
+      'the TRFE gene family ');
+OpenAppending(outfile);
+printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+OpenAppending(previous);
+AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+
 
 ############################################
 # All of Treefam A
