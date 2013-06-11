@@ -255,7 +255,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
             RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
             StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
-            StoreResult(resFnParts[i], RFstats[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
                 [prj[i,'PID']]);
         fi:
     od:
