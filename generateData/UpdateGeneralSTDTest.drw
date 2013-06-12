@@ -1,0 +1,49 @@
+
+ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
+rawdir := datdir.'/raw';
+
+dataset := 'RefSet5';
+treeVers := '1';
+
+# read multifurcating species tree from file
+# multifurcating nodes have same tree height, otherwise +1
+treeStr := ReadRawFile(rawdir.'/speciestree_'.dataset.'.v'.treeVers.'.nhx');
+tree := ParseNewickTree(treeStr, 'defaultBranchLength'=1);
+
+ConvertLabelsToUniProtCode := proc(l:Leaf)
+    knownSpecies := {op(KnownSpecies(dataset))};
+    GS := GetGenomeSummaries(dataset):
+    tax := [seq(GS[g,'TAXONID'], g=knownSpecies)];
+        
+    lab := l['Label'];
+    re := MatchRegex('([A-Z][A-Z0-9]*)__([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
+    assert(length(re)=4);
+        
+    codeKnown := member(re[2],knownSpecies);
+    taxKnown :=  member(re[4],tax);
+    r := Leaf(re[2], l['Height']);
+    if not codeKnown and not taxKnown then 
+        lprint(re[2],'unknown');
+        r := NULL;
+    elif not codeKnown then
+        lprint(re[2],'-->',knownSpecies[SearchArray(re[4],tax)]);
+        r['Label'] := knownSpecies[SearchArray(re[4],tax)];
+    fi:
+    return( r );
+end:
+
+ConvertRawTree := proc(t:Tree):
+    if type(t,Leaf) then
+        return( ConvertLabelsToUniProtCode(t) );
+    else
+        tL := procname(t[Left]);
+        tR := procname(t[Right]);
+
+        if tL=NULL then return(tR);
+        elif tR=NULL then return(tL);
+        else
+            return( Tree(tL,t['Height'],tR) );
+        fi:
+    fi:
+end:
+
