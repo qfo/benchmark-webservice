@@ -39,6 +39,7 @@ Nr2SEQ := noeval(ReadLibrary( cdir.'/lib/EntryNav', Nr2SEQ));
 DbEntryNrFromENr := noeval(ReadLibrary( cdir.'/lib/EntryNav', DbEntryNrFromENr));
 ParseLongList := noeval(ReadLibrary( cdir.'/lib/EntryNav', ParseLongList));
 KnownSpecies := noeval(ReadLibrary( cdir.'/lib/EntryNav', KnownSpecies));
+GetGenomeSummaries := noeval(ReadLibrary(cdir.'/lib/EntryNav', GetGenomeSummaries));
 
 PKeyData := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',PKeyData));
 UpdatePKeyDataPermanent := noeval(ReadLibrary(cdir.'/lib/ProjectKeyData',UpdatePKeyDataPermanent));
