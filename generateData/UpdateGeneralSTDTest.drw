@@ -16,12 +16,12 @@ ConvertLabelsToUniProtCode := proc(l:Leaf)
     tax := [seq(GS[g,'TAXONID'], g=knownSpecies)];
         
     lab := l['Label'];
-    re := MatchRegex('([A-Z][A-Z0-9]*)__([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
+    re := MatchRegex('([a-zA-Z][a-zA-Z0-9]*)_{1,2}([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
     assert(length(re)=4);
         
-    codeKnown := member(re[2],knownSpecies);
+    codeKnown := member(uppercase(re[2]),knownSpecies);
     taxKnown :=  member(re[4],tax);
-    r := Leaf(re[2], l['Height']);
+    r := Leaf(uppercase(re[2]), l['Height']);
     if not codeKnown and not taxKnown then 
         lprint(re[2],'unknown');
         r := NULL;
@@ -46,4 +46,32 @@ ConvertRawTree := proc(t:Tree):
         fi:
     fi:
 end:
+
+
+TreeToNestedList := proc(t:Tree ; t0:numeric)
+    t1 := t['Height'];
+    if not assigned(t0) then t0 := t1-1; fi:
+    if type(t,Leaf) then return(t['Label']);
+    else 
+        tL := procname(t[Left], t1);
+        tR := procname(t[Right], t1);
+        res := tL, tR;
+    fi:
+    if |t1-t0|>1e-5 then 
+        res := [res];
+    fi:
+    return(res);
+end:
+
+
+WriteMultifurcatingTree := proc(t; (fn=datdir.'/speciestree_'.dataset.'.drw'):string)
+    OpenWriting(fn);
+    printf('sptree := %A:\n# generated on %s on %s\n', t, date(), hostname());
+    OpenWriting(previous);
+end:
+
+t := ConvertRawTree(tree);
+mftree := TreeToNestedList(t);
+WriteMultifurcatingTree(mftree);
+done
 
