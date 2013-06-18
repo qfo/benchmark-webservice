@@ -1,7 +1,7 @@
 ##
 #  Script to run the species tree discordance test  
 #
-#  in: resFn, problem, projs, lock
+#  in: resFn, projs, lock
 Set(printgc=false):
 
 WriteLock(lock, 'initialize Species Tree discordance test compuation');
@@ -10,12 +10,89 @@ CreateDayMatrices();
 prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];
 
-ReadProgram(problem); # this loads the species tree and the bins containg species
-nrBins := length(catBins);
-catBinsNr := [seq({seq(GenomeNrFromCode(g,dataset),g=catBins[i])}, i=1..nrBins)];
-# lookup table for a genome to which bin it belongs (if any)
-orgNr2Bin := table(0);
-for i to nrBins do for z in catBinsNr[i] do orgNr2Bin[z] := i; od od:
+# load species tree as nested list of list, e.g.
+# sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
+# i.e. the tree is non-binary
+ReadProgram(datdir.'speciestree_'.dataset.'.drw'); 
+
+
+ShuffleTreeOrder := proc(t)
+    cpy := copy(t):
+    for i to length(cpy) do if type(cpy[i],list) then
+        cpy[i] := procname(cpy[i]);
+    fi od:
+    return( Shuffle(cpy) ):
+end:
+
+SelectAcceptedBinarySubTree := proc(t)
+    res := NULL;
+    if type(t,{string,symbol}) then res := t;
+    else 
+        tL := procname(t[1]);
+        tR := procname(t[2]);
+        res := tL,tR;
+    fi:
+    return(res);
+end:
+
+GetAcceptedSpeciesTopology := proc(t;(h0=0):numeric)
+    res := NULL;
+    if type(t,{string,symbol}) then res := Leaf(t,h0);
+    else 
+        tL := procname(t[1],h0+1);
+        tR := procname(t[2],h0+1);
+        res := Tree(tL,h0,tR);
+    fi:
+    return(res);
+end:
+
+TreeToConsecExprSeq := proc(t)
+    if type(t,Leaf) then return(t['Label']);
+    else
+        return( procname(t['Left']), procname(t['Right']) );
+    fi:
+end:
+
+
+GetSeqOfOrthologs := proc( curProt, remSp )
+    res := NULL;
+    vps := ParseLongList(SearchTag('VP',Entry(curProt)));
+    nextSpeciesRange := GenomeRange(remSp[1], dataset);
+    for vp in vps do if member(vp,iSet) then
+        if vp>=nextSpeciesRange[1] and vp<=nextSpeciesRange[2] then
+            if length(remSp)=1 then res := vp;
+            else 
+                res := procname( vp, remSp[2..-1]);
+            fi:
+            if res<>NULL then break fi:
+        fi:
+    fi od:
+    if res<>NULL then 
+        res := curProt, res;
+    fi:
+    return( res );
+end:
+
+
+SelectNextFam := proc()
+    t := ShuffleTreeOrder(sptree):
+    accTree := GetAcceptedSpeciesTopology(t);
+    specList := [TreeToConsecExprSeq(accTree)];
+    
+    startRange := GenomeRange(specList[1], dataset);
+    fnd := false;
+    for xx to 50 do 
+        start := Rand(startRange);
+        if member(start,iSet) then fnd := true; break fi:
+    od:
+    if not fnd then 
+        warning('no start protein in '.specList[1].' found in iSet');
+        return(NULL) 
+    fi:
+    orths := GetSeqOfOrthologs(start, specList[2..-1] );
+    return(orths);
+end:
+
 
 # load the project databases
 nP := length(prj); dbs := CreateArray(1..nP):
@@ -23,7 +100,6 @@ for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
 # load index database
 ddir := eval(symbol(lowercase(dataset).'DBpath'));
-IndDB := ReadDb( ddir.'/ServerIndexed.db');
 SeqDB := ReadDb( ddir.'/ServerSeqs.db');
 
 FindCases := proc(iSet, prjNrs:list)
