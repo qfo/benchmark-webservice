@@ -6,8 +6,8 @@ Set(printgc=false):
 
 WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
-NR_TRIALS := 100000;
-MAX_NR_TREES := 10000;
+NR_TRIALS := 10000;
+MAX_NR_TREES := 1000;
 
 prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];
@@ -93,8 +93,9 @@ SelectNextFam := proc()
         return(NULL) 
     fi:
     orths := GetSeqOfOrthologs(start, specList[2..-1] );
-    if orths<>NULL then orths := [orths] fi:
-    return([accTree,orths]);
+    if orths<>NULL then res := [accTree, [orths]];
+    else res := NULL fi:
+    return( res );
 end:
 
 FindCases := proc(iSet, prjNrs:list)
@@ -134,7 +135,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
                 eNr := cas[2,i];
                 seqs := append(seqs, Sequence(Entry(eNr)));
                 labs := append(labs, eNr);
-                spec := append(spec, GenomeCodeFromENr(eNr));
+                spec := append(spec, GenomeCodeFromENr(eNr,dataset));
             od:
             nseq := length(seqs):
             msa := traperror(MafftMSA(seqs)):
@@ -237,7 +238,7 @@ elif meth='PAIRWISE' then
             hash([curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
-        cases[i] := FindCases( iSet, prjNrs[i] );
+        cases[i] := FindCases( iSet, prjNrs[i] )[1];
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
@@ -270,12 +271,13 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     resFnParts := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     rawDataFn := CreateArray(1..nP):
+    iSet := intersect():
     for i to nP do 
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
         rawDataFn[i] := sprintf('STDTest/%a.%a.tsv.gz', hashOfAllProjPIDs, 
             hash([prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
-        cases[i] := FindCases( intersect(), [i] );
+        cases[i] := FindCases( intersect(), [i] )[1];
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
@@ -290,7 +292,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
         else
-            compRes := ComputeCongruenceStat([prjNrs[i]], cases[i], 
+            compRes := ComputeCongruenceStat([prjNrs[i]], [cases[i]], 
                 totNrTrees):
             # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
             RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
