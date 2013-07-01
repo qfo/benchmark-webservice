@@ -135,7 +135,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
                 seqs := append(seqs, Sequence(Entry(eNr)));
                 labs := append(labs, eNr);
                 spec := append(spec, GenomeCodeFromENr(eNr));
-            fi od:
+            od:
             nseq := length(seqs):
             msa := traperror(MafftMSA(seqs)):
             if msa=lasterror then cErr+1; next fi:
