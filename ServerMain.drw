@@ -427,14 +427,15 @@ bsTestSelection := proc(PID:string)
     od:
   
     # large Species Tree discordance test
-    if datset='OMA' then
+    if dataset='OMA' then
         vars['hasSTD'] := false;
     else
         vars['STDProjects'] := ConcatStrings(
-            [seq(sprintf('<inut type="checkbox" id="pSTDPrj%d" name="pSTDPrj%d" checked="checked"/>'.
-                '<label for="pSTDPrj%d:>%s</label><br/>', pNr, pNr, pNr, publicProjects[pNr]),
+            [seq(sprintf('<input type="checkbox" id="pSTDPrj%d" name="pSTDPrj%d" checked="checked"/>'.
+                '<label for="pSTDPrj%d">%s</label><br/>', pNr, pNr, pNr, publicProjects[pNr]),
                 pNr=1..Npub)], '\n');
         vars['hasSTD'] := SearchString('<input',vars['STDProjects'])>=0;
+        vars['styleSTD'] := If(vars['hasSTD'], 'checked="checked"','');
     fi:
 
     # load the TreeCases of the available reconciled tree problems
@@ -586,7 +587,6 @@ StartSTDTest := proc(PID:string, params:list, pnames:list )
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.STD.lock',fnBase);
     vars := table('');
-    vars['case'] := king;
     vars['resheader'] := 'Species Tree Discordance Test - Large species tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
@@ -595,7 +595,7 @@ StartSTDTest := proc(PID:string, params:list, pnames:list )
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>7 and z[1..7]='pSTDPrj', parse(z[10..-1]), NULL), z=pnames)];
+    sel := [seq(If(length(z)>7 and z[1..7]='pSTDPrj', parse(z[8..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then 
@@ -611,9 +611,9 @@ StartSTDTest := proc(PID:string, params:list, pnames:list )
         HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
-            projs := %A: lock:=''%s'': meth:=''%s'': '.
-            'ReadProgram(''%s/SpeciesTreeDiscordance.drw''): done:" | nice -n 19 %s &',
-            cdir, resFn, datdir, vars['ref'], projs, lock, meth, cdir, darwin64);
+            'projs := %A: lock:=''%s'': meth:=''%s'': '.
+            'ReadProgram(''%s/SpeciesTreeDiscordanceTest.drw''): done:" | nice -n 19 %s &',
+            cdir, resFn, projs, lock, meth, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';

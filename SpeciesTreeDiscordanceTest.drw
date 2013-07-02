@@ -6,7 +6,7 @@ Set(printgc=false):
 
 WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
-NR_TRIALS := 10000;
+NR_TRIALS := 50000;
 MAX_NR_TREES := 1000;
 
 prj := [seq(GetPKeyData(z),z=projs)]:
@@ -100,17 +100,20 @@ end:
 
 FindCases := proc(iSet, prjNrs:list)
     global DB:
-    cases := []; nP := length(prjNrs);
+    nP := length(prjNrs);
+    cases := CreateArray(1..nP,[]):
     for i2pNr to nP do
         pNr := prjNrs[i2pNr];
         assert( prj[pNr,'directMap'] );
         DB := dbs[pNr];
         
-        cand := [seq(SelectNextFam(),NR_TRIALS)];
+        msg := 'sampling possible trees for '.prj[pNr,'Title'];
+        WriteLock(lock, msg);
+        cand := {seq(SelectNextFam(),NR_TRIALS)};
         if length(cand) > MAX_NR_TREES then
             cand := Shuffle(cand)[1..MAX_NR_TREES]:
         fi:
-        cases := append(cases, cand);
+        cases[i2pNr] := [op(cand)];
     od:
    
     Logger( sprintf('nr of cases in total: %d',sum(length(z),z=cases)), 'INFO');
@@ -127,6 +130,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
     cErr := Counter('# errors in PhylogeneticTree');
     if not type(Ndone, integer) then Ndone:=0 fi:
 
+    tLast := 0;
     for pNr to length(prjNrs) do
         for cas in cases[pNr] do
             seqs := labs := spec := [];
@@ -160,13 +164,16 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
             RFstat[pNr] + rfdist;
             IdentStat[pNr] + If(rfdist>0,1,0);
             rawDat[pNr] := append(rawDat[pNr], [genetree, pruned_st, rfdist]);
+            Ndone := Ndone + 1;
+            if time()-tLast>30 then
+               t := Ndone/totNrTrees;
+               msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. '.
+                   'Estimated remaining time: %.1fmin\n', 
+                   Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
+               WriteLock(lock,msg);
+               tLast := time();
+            fi;
         od;
-        
-        Ndone := Ndone+1;
-        t := Ndone/totNrTrees;
-        msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. Estimated remaining time: %.1fmin\n', 
-            Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
-        WriteLock(lock,msg);
     od:
     Logger( sprint('STDTest result for %s:\n  %A\n  %A', 
         ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
@@ -218,7 +225,7 @@ if meth='INTERSECT' then
     t0 := time();
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
-    rawDataFn := [seq(sprintf('STDTest/%a.%a.tsv.gz', hashOfAllProjPIDs, 
+    rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
         hash([prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
     StoreResult(resFn, RFstat, IdentStat, [seq(prj[i,'PID'], i=prjNrs)]);
@@ -234,7 +241,7 @@ elif meth='PAIRWISE' then
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
             hash([curPrjPIDs, 'INTERSECT']) );
-        rawDataFn[i] := sprintf('STDTest/%a.tsv.gz', 
+        rawDataFn[i] := sprintf('STDTest/STD.%a.tsv.gz', 
             hash([curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
@@ -274,7 +281,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     iSet := intersect():
     for i to nP do 
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
-        rawDataFn[i] := sprintf('STDTest/%a.%a.tsv.gz', hashOfAllProjPIDs, 
+        rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
             hash([prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         cases[i] := FindCases( intersect(), [i] )[1];
