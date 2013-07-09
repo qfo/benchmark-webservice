@@ -232,7 +232,7 @@ MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
     fi:
 
     if addCovData=0 then
-        k=1;
+        k := 1;
     else
         if length(addCovData)<>length(covLabel)-1 or length(dataCovData[1])<>length(data[1]) then 
             Logger( sprintf('addCovData has wrong dim: %d,%d', length(addCovData), 
@@ -393,7 +393,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
         tab := MakeIntersectTable( [RFstat,IdentStat], RawDataFn, 'covLabel'=['# trees', '# orthologs'],
             'corLabel'=['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'],
-            'addSensData'=NrOrthologs);
+            'addCovData'=NrOrthologs);
         
         resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
