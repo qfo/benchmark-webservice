@@ -71,6 +71,29 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
+    <h4><input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca">/><label for="pSTDLuca1">Species Tree Discordance Test on all genomes in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <DBOOL name="hasSTDLuca">
+    <div class="testParam">
+     <label class="test" for="pSTDLucaPrj1">Projects to compare with:</label><br/>
+     <div class="testParamList"><DVAR name="STDLucaProjects"></div>
+    </div>
+    </DBOOL>
+   </div>
+
+   <div class="test">
+    <h4><input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk">/><label for="pSTDEuk1">Species Tree Discordance Test on the eukaryotic genomes only in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <DBOOL name="hasSTDEuk">
+    <div class="testParam">
+     <label class="test" for="pSTDEukPrj1">Projects to compare with:</label><br/>
+     <div class="testParamList"><DVAR name="STDEukProjects"></div>
+    </div>
+    </DBOOL>
+   </div>
+  </div>
+
+
+  <div class="test_kind">
+   <div class="test">
   <div class="reference">
    <p class="last"><a href="http://dx.doi.org/10.1093/bib/bbr034">Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484)</a></p>
    <p class="last">A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a>.</p>

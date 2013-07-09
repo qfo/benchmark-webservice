@@ -425,7 +425,21 @@ bsTestSelection := proc(PID:string)
 	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
         fi:
     od:
-   
+  
+    # large Species Tree discordance test
+    for problem in ['Luca','Euk'] do
+        if dataset='OMA' then
+            vars['hasSTD'.problem] := false;
+        else
+            vars['STD'.problem.'Projects'] := ConcatStrings(
+                [seq(sprintf('<input type="checkbox" id="pSTD%sPrj%d" name="pSTD%sPrj%d" '.
+                    'checked="checked"/><label for="pSTD%sPrj%d">%s</label><br/>', 
+                    problem, pNr, problem, pNr, problem, pNr, publicProjects[pNr]), pNr=1..Npub)], '\n');
+            vars['hasSTD'.problem] := SearchString('<input',vars['STD'.problem.'Projects'])>=0;
+            vars['styleSTD'.problem] := If(vars['hasSTD'.problem], 'checked="checked"','');
+        fi:
+    od:
+
     # load the TreeCases of the available reconciled tree problems
     refPhyloProbs := [seq(GetTreeCase( z, dataset ), z=GetAllTreeCases(dataset))];
     stub := 'pRefPhyloPrj';
@@ -570,6 +584,47 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     fi:
     return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
 end:
+
+StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
+    fnBase := GetPKeyData(PID)['fnBase'];
+    lock  := sprintf('%s.STD%s.lock',fnBase, problem);
+    vars := table('');
+    vars['resheader'] := problem.' Species Tree Discordance Test - Large species tree';
+    vars['resFigReady'] := false;
+    vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['testRef_Lnk'] := '';
+    vars['testRef_Desc'] := '';
+    
+    projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
+    projs := sort( projs, x->x['Title'] );
+    baseParam := 'pSTD'.problem.'Prj'; 
+    lenBaseParam := length(baseParam);
+    sel := [seq(If(length(z)>lenBaseParam and z[1..lenBaseParam]=baseParam, 
+        parse(z[lenBaseParam+1..-1]), NULL), z=pnames)];
+    projs := [seq(projs[i,'PID'], i=sel), PID];
+    meth := ParseStrategy(pnames,params):
+    if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
+
+    resBase := sprintf('STDTest.%a', hash([problem,projs,meth]));
+    resFn := sprintf('%s/%s.drw', resdir, resBase );
+    isRunning := true;
+    if FileExists(lock) then
+        vars['content'] := HandleLockFile(lock);
+    elif FileExists(resFn.'.gz') then
+        isRunning := false;
+        HandleBoxRFFiles(meth, resFn, resBase, vars);
+    else 
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
+            'projs := %A: lock:=''%s'': meth:=''%s'': problem := ''%s'': '.
+            'ReadProgram(''%s/SpeciesTreeDiscordanceTest.drw''): done:" | nice -n 19 %s &',
+            cdir, resFn, projs, lock, meth, problem, cdir, darwin64);
+        Logger( 'starting command: '.cmd, 'DEBUG');
+        CallSystem( cmd );
+        vars['content'] := '<p>Computation started...</p>';
+    fi:
+    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
+end:
+
 
 StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     'testset'=((testset='Ref'):{'Ref','Auto'}) )
@@ -821,6 +876,23 @@ bsCheckResults := proc(sessionkey)
         vars['TTBac1'] := t[1]; 
 	if t[2]=true then refresh := true fi:
     fi;
+
+    k := SearchArray('pSTDLuca1', pnames);
+    if k>0 and params[k]='on' then
+        # do large species tree discordance test
+        t := StartSTDTest(PID,'Luca',params,pnames);
+        vars['STDLuca1'] := t[1];
+        if t[2]=true then refresh := true fi:
+    fi;
+
+    k := SearchArray('pSTDEuk1', pnames);
+    if k>0 and params[k]='on' then
+        # do large species tree discordance test
+        t := StartSTDTest(PID,'Euk',params,pnames);
+        vars['STDEuk1'] := t[1];
+        if t[2]=true then refresh := true fi:
+    fi;
+
 
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then

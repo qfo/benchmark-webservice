@@ -1,0 +1,90 @@
+
+ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
+rawdir := datdir.'/raw';
+
+dataset := 'RefSet5';
+treeVers := '1';
+
+# read multifurcating species tree from file
+# multifurcating nodes have same tree height, otherwise +1
+treeStr := ReadRawFile(rawdir.'/speciestree_'.dataset.'.v'.treeVers.'.nhx');
+tree := ParseNewickTree(treeStr, 'defaultBranchLength'=1);
+
+ConvertLabelsToUniProtCode := proc(l:Leaf)
+    knownSpecies := {op(KnownSpecies(dataset))};
+    GS := GetGenomeSummaries(dataset):
+    tax := [seq(GS[g,'TAXONID'], g=knownSpecies)];
+        
+    lab := l['Label'];
+    re := MatchRegex('([a-zA-Z][a-zA-Z0-9]*)_{1,2}([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
+    assert(length(re)=4);
+        
+    codeKnown := member(uppercase(re[2]),knownSpecies);
+    taxKnown :=  member(re[4],tax);
+    r := Leaf(uppercase(re[2]), l['Height']);
+    if not codeKnown and not taxKnown then 
+        lprint(re[2],'unknown');
+        r := NULL;
+    elif not codeKnown then
+        lprint(re[2],'-->',knownSpecies[SearchArray(re[4],tax)]);
+        r['Label'] := knownSpecies[SearchArray(re[4],tax)];
+    fi:
+    return( r );
+end:
+
+ConvertRawTree := proc(t:Tree):
+    if type(t,Leaf) then
+        return( ConvertLabelsToUniProtCode(t) );
+    else
+        tL := procname(t[Left]);
+        tR := procname(t[Right]);
+
+        if tL=NULL then return(tR);
+        elif tR=NULL then return(tL);
+        else
+            return( Tree(tL,t['Height'],tR) );
+        fi:
+    fi:
+end:
+
+filterLineage := proc(z ; lin:string)
+    if not assigned(lin) or lin='all' then return(true); fi:
+    return(member(lin, GS[z,Lineage]));
+end;
+
+
+TreeToNestedList := proc(t:Tree ; t0:numeric)
+    t1 := t['Height'];
+    if not assigned(t0) then t0 := t1-1; fi:
+    if type(t,Leaf) then return(t['Label']);
+    else 
+        tL := procname(t[Left], t1);
+        tR := procname(t[Right], t1);
+        res := tL, tR;
+    fi:
+    if |t1-t0|>1e-5 then 
+        res := [res];
+    fi:
+    return(res);
+end:
+
+
+WriteMultifurcatingTree := proc(t; (fn=datdir.'/speciestree_'.dataset.'.drw'):string)
+    OpenWriting(fn);
+    printf('sptree := %A:\n# generated on %s on %s\n', t, date(), hostname());
+    OpenWriting(previous);
+end:
+
+problems := table():
+problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
+
+t := ConvertRawTree(tree);
+GS := GetGenomeSummaries(dataset):
+for problem in Indices(problems) do 
+    trimedTree := PruneTree(t, z->filterLineage(z['Label'], problems[problem]));
+    mftree := TreeToNestedList(trimedTree);
+    outfn := sprintf('%s/speciestree_%s_%s.drw', datdir, problem, dataset);
+    WriteMultifurcatingTree(mftree, outfn);
+od:
+
+done

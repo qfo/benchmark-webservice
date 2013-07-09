@@ -1,0 +1,317 @@
+##
+#  Script to run the species tree discordance test  
+#
+#  in: resFn, projs, lock
+Set(printgc=false):
+
+WriteLock(lock, 'initialize Species Tree discordance test compuation');
+CreateDayMatrices();
+NR_TRIALS := 50000;
+MAX_NR_TREES := 1000;
+
+prj := [seq(GetPKeyData(z),z=projs)]:
+dataset := prj[-1,'ref'];
+hashOfAllProjPIDs := hash(projs):
+
+# load species tree as nested list of list, e.g.
+# sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
+# i.e. the tree is non-binary
+ReadProgram(datdir.'speciestree_'.problem.'_'.dataset.'.drw'); 
+
+ShuffleTreeOrder := proc(t)
+    cpy := copy(t):
+    for i to length(cpy) do if type(cpy[i],list) then
+        cpy[i] := procname(cpy[i]);
+    fi od:
+    return( Shuffle(cpy) ):
+end:
+
+SelectAcceptedBinarySubTree := proc(t)
+    res := NULL;
+    if type(t,{string,symbol}) then res := t;
+    else 
+        tL := procname(t[1]);
+        tR := procname(t[2]);
+        res := tL,tR;
+    fi:
+    return(res);
+end:
+
+GetAcceptedSpeciesTopology := proc(t;(h0=0):numeric)
+    res := NULL;
+    if type(t,{string,symbol}) then res := Leaf(t,h0);
+    else 
+        tL := procname(t[1],h0+1);
+        tR := procname(t[2],h0+1);
+        res := Tree(tL,h0,tR);
+    fi:
+    return(res);
+end:
+
+TreeToConsecExprSeq := proc(t)
+    if type(t,Leaf) then return(t['Label']);
+    else
+        return( procname(t['Left']), procname(t['Right']) );
+    fi:
+end:
+
+
+GetSeqOfOrthologs := proc( curProt, remSp )
+    res := NULL;
+    vps := ParseLongList(SearchTag('VP',Entry(curProt)));
+    nextSpeciesRange := GenomeRange(remSp[1], dataset);
+    for vp in vps do if member(vp,iSet) then
+        if vp>=nextSpeciesRange[1] and vp<=nextSpeciesRange[2] then
+            if length(remSp)=1 then res := vp;
+            else 
+                res := remember(procname( vp, remSp[2..-1]));
+            fi:
+            if res<>NULL then break fi:
+        fi:
+    fi od:
+    if res<>NULL then 
+        res := curProt, res;
+    fi:
+    return( res );
+end:
+
+
+SelectNextFam := proc()
+    t := ShuffleTreeOrder(sptree):
+    accTree := GetAcceptedSpeciesTopology(t);
+    specList := [TreeToConsecExprSeq(accTree)];
+    
+    startRange := GenomeRange(specList[1], dataset);
+    fnd := false;
+    for xx to 50 do 
+        start := Rand(startRange);
+        if member(start,iSet) then fnd := true; break fi:
+    od:
+    if not fnd then 
+        warning('no start protein in '.specList[1].' found in iSet');
+        return(NULL) 
+    fi:
+    orths := GetSeqOfOrthologs(start, specList[2..-1] );
+    if orths<>NULL then res := [accTree, [orths]];
+    else res := NULL fi:
+    return( res );
+end:
+
+FindCases := proc(iSet, prjNrs:list)
+    global DB:
+    nP := length(prjNrs);
+    cases := CreateArray(1..nP,[]):
+    for i2pNr to nP do
+        pNr := prjNrs[i2pNr];
+        assert( prj[pNr,'directMap'] );
+        DB := dbs[pNr];
+        
+        msg := 'sampling possible trees for '.prj[pNr,'Title'];
+        WriteLock(lock, msg);
+        cand := {seq(SelectNextFam(),NR_TRIALS)};
+        if length(cand) > MAX_NR_TREES then
+            cand := Shuffle(cand)[1..MAX_NR_TREES]:
+        fi:
+        cases[i2pNr] := [op(cand)];
+    od:
+   
+    Logger( sprintf('nr of cases in total: %d',sum(length(z),z=cases)), 'INFO');
+    return(cases):
+end:
+
+ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
+    global DB, Ndone:
+    RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
+    IdentStat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
+    rawDat := CreateArray(1..length(prjNrs),[]):
+    
+    DB := SeqDB: 
+    cErr := Counter('# errors in PhylogeneticTree');
+    if not type(Ndone, integer) then Ndone:=0 fi:
+
+    tLast := 0;
+    for pNr to length(prjNrs) do
+        for cas in cases[pNr] do
+            seqs := labs := spec := [];
+            speciestree := cas[1];
+            for i to length(cas[2]) do 
+                eNr := cas[2,i];
+                seqs := append(seqs, Sequence(Entry(eNr)));
+                labs := append(labs, eNr);
+                spec := append(spec, GenomeCodeFromENr(eNr,dataset));
+            od:
+            nseq := length(seqs):
+            msa := traperror(MafftMSA(seqs)):
+            if msa=lasterror then cErr+1; next fi:
+            D := CreateArray(1..nseq,1..nseq):
+            V := CreateArray(1..nseq,1..nseq):
+            for i to nseq do for j from i+1 to nseq do
+                 dps := EstimatePam(msa[AlignedSeqs,i],msa[AlignedSeqs,j],DMS):
+                 D[i,j] := D[j,i] := dps[2];
+                 V[i,j] := V[j,i] := dps[3];
+            od od:
+            genetree := traperror( LeastSquaresTree(D,V,labs) ):
+            if genetree=lasterror then cErr+1; next fi;
+            
+            pruned_st := PruneTree(copy(speciestree), spec);
+            for l in Leaves(pruned_st) do 
+                x := SearchArray(l['Label'], spec);
+                l['Label'] := labs[x];
+            od:
+
+            rfdist := RobinsonFoulds([genetree, pruned_st])[1,2];
+            RFstat[pNr] + rfdist;
+            IdentStat[pNr] + If(rfdist>0,1,0);
+            rawDat[pNr] := append(rawDat[pNr], [genetree, pruned_st, rfdist]);
+            Ndone := Ndone + 1;
+            if time()-tLast>30 then
+               t := Ndone/totNrTrees;
+               msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. '.
+                   'Estimated remaining time: %.1fmin\n', 
+                   Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
+               WriteLock(lock,msg);
+               tLast := time();
+            fi;
+        od;
+    od:
+    Logger( sprint('STDTest result for %s:\n  %A\n  %A', 
+        ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
+    return( [RFstat, rawDat, IdentStat] );
+end:
+
+StoreResult := proc(fn:string, RFstat, IdentStat, RawDataFn, PIDs)
+    OpenWriting(fn):
+    printf('RFstat := %A:\n', RFstat):
+    printf('PIDs := %A:\n', PIDs );
+    printf('RawDataFn := %A:\n', RawDataFn);
+    printf('IdentStat := %A:\n', IdentStat);
+    printf('#problem := %A:\n', problem);
+    OpenWriting(previous):
+    CallSystem('gzip -9f '.fn);
+end:
+
+StoreRawData := proc(fn:string, RawData, projects)
+    OpenWriting(fn);
+    printf('# Project <TAB> gene tree <TAB> species tree <TAB> RF distance\n');
+    for pNr to length(projects) do 
+        pName := projects[pNr,'Title'];
+        for z in RawData[pNr] do
+            for k to 2 do for l in Leaves(z[k]) do 
+                oE := l['Label']; 
+                if not type(oE,integer) then next fi:
+                l['Label'] := ENr2XRef(oE, dataset); 
+            od od:
+            printf('%s\t%s\t%s\t%f\n', pName, Tree_Newick(z[1]), 
+                Tree_Newick(z[2]), z[3]);
+        od:
+    od:
+    OpenWriting(previous);
+    CallSystem('gzip -9f '.fn);
+end:
+
+# load the project databases
+nP := length(prj); dbs := CreateArray(1..nP):
+for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
+
+# load index database
+ddir := eval(symbol(lowercase(dataset).'DBpath'));
+SeqDB := ReadDb( ddir.'/ServerSeqs.db');
+
+
+if meth='INTERSECT' then
+    iSet  := GetProjISets(prj);
+    prjNrs:= [seq(i,i=1..nP)];
+    cases := FindCases(iSet, prjNrs);
+    t0 := time();
+    compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
+    RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
+    rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
+        hash([problem, prj[i,'PID'],meth])),  i=1..nP)];
+    for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
+    StoreResult(resFn, RFstat, IdentStat, [seq(prj[i,'PID'], i=prjNrs)]);
+elif meth='PAIRWISE' then
+    cases := CreateArray(1..nP-1,[]):
+    RFstats := CreateArray(1..nP-1):
+    IdentStats := CreateArray(1..nP-1):
+    prjNrs := [seq([i,nP],i=1..nP-1)];
+    resFnParts := CreateArray(1..nP-1):
+    rawDataFn := CreateArray(1..nP-1):
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    for i to nP-1 do 
+        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
+            hash([problem, curPrjPIDs, 'INTERSECT']) );
+        rawDataFn[i] := sprintf('STDTest/STD.%a.tsv.gz', 
+            hash([problem, curPrjPIDs, 'INTERSECT']) );
+        if FileExists(resFnParts[i].'.gz') then next fi:
+        iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
+        cases[i] := FindCases( iSet, prjNrs[i] )[1];
+    od:
+    t0 := time();
+    totNrTrees := sum(length(z),z=cases):
+    for i to nP-1 do
+        if FileExists(resFnParts[i].'.gz') then
+            RFstat := RawDataFn := 0; 
+            ReadProgram(resFnParts[i]): 
+            assert(length(RFstat)=2); 
+            RFstats[i] := RFstat;
+            IdentStats[i] := IdentStat;
+            rawDataFn[i] := RawDataFn;
+        else
+            compRes := ComputeCongruenceStat(prjNrs[i], cases[i], 
+                max(1,totNrTrees) ):
+            RFstats[i] := compRes[1]; rawdata := compRes[2]; IdentStats[i] := compRes[3];
+            StoreRawData( rawdir.rawDataFn[i,1..-4], rawdata, 
+                [seq(prj[j],j=prjNrs[i])] );
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
+                [seq(prj[j,'PID'],j=prjNrs[i])]);
+        fi:
+    od:
+    StoreResult(resFn, RFstats, IdentStats, rawDataFn, 
+        [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)] );
+elif length(meth)>=6 and meth[1..6]='REFSET' then
+    cases := CreateArray(1..nP,[]):
+    RFstats := CreateArray(1..nP):
+    IdentStats := CreateArray(1..nP):
+    RawData := CreateArray(1..nP):
+    prjNrs := [seq(i,i=1..nP)];
+    resFnParts := CreateArray(1..nP):
+    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
+    rawDataFn := CreateArray(1..nP):
+    iSet := intersect():
+    for i to nP do 
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([problem,prj[i,'PID'],meth]) );
+        rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
+            hash([problem, prj[i,'PID'],meth]) );
+        if FileExists(resFnParts[i].'.gz') then next fi:
+        cases[i] := FindCases( intersect(), [i] )[1];
+    od:
+    t0 := time();
+    totNrTrees := sum(length(z),z=cases):
+    for i to nP do
+        if FileExists(resFnParts[i].'.gz') then
+            RFstat := RawDataFn := 0;
+            ReadProgram(resFnParts[i]): 
+            assert(type(RFstat,Stat)); 
+            assert(type(IdentStat,Stat)); 
+            assert(type(RawDataFn,string));
+            RFstats[i] := RFstat;
+            IdentStats[i] := IdentStat;
+            rawDataFn[i] := RawDataFn;
+        else
+            compRes := ComputeCongruenceStat([prjNrs[i]], [cases[i]], 
+                totNrTrees):
+            # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
+            RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
+            StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
+                [prj[i,'PID']]);
+        fi:
+    od:
+    StoreResult(resFn, RFstats, IdentStats, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
+else error('unknown strategy method:'.meth); 
+fi:
+
+CallSystem('rm -f '.lock);
+done;
+
