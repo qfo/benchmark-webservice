@@ -258,7 +258,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
         printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
            If(plotType='2d', data[i,'Number'], i),
            data[i,'Mean'], data[i,'StdErr']);
-        else printf('# %s\n%d\t?0\t?0\n', data[i,'Description'],
+        else printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'],
             If(plotType='2d', data[i,'Number'],i) );
         fi:
         plotTab[i,'index'] := i-1;
