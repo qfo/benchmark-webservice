@@ -71,11 +71,21 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pSTD1" name="pSTD1" <DVAR name="style">/><label for="pSTD1">Species Tree Discordance Test on <a href="">Large Species Phylogeny</a></label></h4>
-    <DBOOL name="hasSTD">
+    <h4><input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca">/><label for="pSTDLuca1">Species Tree Discordance Test on all genomes in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <DBOOL name="hasSTDLuca">
     <div class="testParam">
-     <label class="test" for="pSTDPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="STDProjects"></div>
+     <label class="test" for="pSTDLucaPrj1">Projects to compare with:</label><br/>
+     <div class="testParamList"><DVAR name="STDLucaProjects"></div>
+    </div>
+    </DBOOL>
+   </div>
+
+   <div class="test">
+    <h4><input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk">/><label for="pSTDEuk1">Species Tree Discordance Test on the eukaryotic genomes only in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <DBOOL name="hasSTDEuk">
+    <div class="testParam">
+     <label class="test" for="pSTDEukPrj1">Projects to compare with:</label><br/>
+     <div class="testParamList"><DVAR name="STDEukProjects"></div>
     </div>
     </DBOOL>
    </div>

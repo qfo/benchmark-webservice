@@ -16,8 +16,7 @@ hashOfAllProjPIDs := hash(projs):
 # load species tree as nested list of list, e.g.
 # sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
 # i.e. the tree is non-binary
-ReadProgram(datdir.'speciestree_'.dataset.'.drw'); 
-
+ReadProgram(datdir.'speciestree_'.problem.'_'.dataset.'.drw'); 
 
 ShuffleTreeOrder := proc(t)
     cpy := copy(t):
@@ -186,6 +185,7 @@ StoreResult := proc(fn:string, RFstat, IdentStat, RawDataFn, PIDs)
     printf('PIDs := %A:\n', PIDs );
     printf('RawDataFn := %A:\n', RawDataFn);
     printf('IdentStat := %A:\n', IdentStat);
+    printf('#problem := %A:\n', problem);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
 end:
@@ -226,7 +226,7 @@ if meth='INTERSECT' then
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
-        hash([prj[i,'PID'],meth])),  i=1..nP)];
+        hash([problem, prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
     StoreResult(resFn, RFstat, IdentStat, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
@@ -240,9 +240,9 @@ elif meth='PAIRWISE' then
     for i to nP-1 do 
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
-            hash([curPrjPIDs, 'INTERSECT']) );
+            hash([problem, curPrjPIDs, 'INTERSECT']) );
         rawDataFn[i] := sprintf('STDTest/STD.%a.tsv.gz', 
-            hash([curPrjPIDs, 'INTERSECT']) );
+            hash([problem, curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         cases[i] := FindCases( iSet, prjNrs[i] )[1];
@@ -280,9 +280,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     rawDataFn := CreateArray(1..nP):
     iSet := intersect():
     for i to nP do 
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([problem,prj[i,'PID'],meth]) );
         rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
-            hash([prj[i,'PID'],meth]) );
+            hash([problem, prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         cases[i] := FindCases( intersect(), [i] )[1];
     od:

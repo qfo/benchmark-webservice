@@ -47,6 +47,11 @@ ConvertRawTree := proc(t:Tree):
     fi:
 end:
 
+filterLineage := proc(z ; lin:string)
+    if not assigned(lin) or lin='all' then return(true); fi:
+    return(member(lin, GS[z,Lineage]));
+end;
+
 
 TreeToNestedList := proc(t:Tree ; t0:numeric)
     t1 := t['Height'];
@@ -70,8 +75,16 @@ WriteMultifurcatingTree := proc(t; (fn=datdir.'/speciestree_'.dataset.'.drw'):st
     OpenWriting(previous);
 end:
 
-t := ConvertRawTree(tree);
-mftree := TreeToNestedList(t);
-WriteMultifurcatingTree(mftree);
-done
+problems := table():
+problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
 
+t := ConvertRawTree(tree);
+GS := GetGenomeSummaries(dataset):
+for problem in Indices(problems) do 
+    trimedTree := PruneTree(t, z->filterLineage(z['Label'], problems[problem]));
+    mftree := TreeToNestedList(trimedTree);
+    outfn := sprintf('%s/speciestree_%s_%s.drw', datdir, problem, dataset);
+    WriteMultifurcatingTree(mftree, outfn);
+od:
+
+done
