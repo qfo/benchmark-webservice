@@ -207,10 +207,12 @@ Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string,
 end:
 
 MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
-    'covLabel'=((covLabel='# ortholog relations'):string),
-    'corLabel'=((corLabel='avg similarity'):{list(string),string}))
+    'covLabel'=((covLabel='# ortholog relations'):{string,list(string)}),
+    'corLabel'=((corLabel='avg similarity'):{list(string),string}),
+    'addCovData'=((addCovData=0):{0,list(numeric),matrix(numeric)}))
     if type(data,list(Stat)) then 
-        return( procname([data],rawDataFn,'covLabel'=covLabel, 'corLabel'=[corLabel]));
+        return( procname([data],rawDataFn,'covLabel'=covLabel, 'corLabel'=[corLabel],
+            'addCovData'=addCovData));
     fi:
 
     if type(data,matrix) then
@@ -219,16 +221,33 @@ MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
             error('nr of stats <> number of labels');
         fi:
     fi:
+    if addCovData<>0 and not type(addCovData, matrix) then
+        return( procname(data,rawDataFn,'covLabel'=covLabel, 'corLabel'=corLabel,
+            'addCovData'=[addCovData]));
+    fi:
+
     if length(data[1])<>length(rawDataFn) then
         Logger( sprintf('array length missmatch: %A <-> %A', data[1], rawDataFn), 'ERROR');
         error('arrays not of equal length');
     fi:
+
+    if addCovData=0 then
+        k := 1;
+    else
+        if (length(addCovData)<>length(covLabel)-1) or (length(addCovData[1])<>length(data[1])) then 
+            Logger( sprintf('addCovData has wrong dim: %d,%d vs %d,%d', length(addCovData), 
+                length(addCovData[1]), length(covLabel)-1,length(data[1])), 'ERROR');
+            error('addCovData has wrong dim');
+        fi:
+        k := length(covLabel);
+    fi:
     n := length(data[1]): m:= length(data); 
-    tab := Table( border, gutter=2, ColAlign('l','r',seq('c',m),'c'),
-        Row(Bold('Project'),Bold(covLabel),seq(Bold(corLabel[i]),i=1..m),
+    tab := Table( border, gutter=2, ColAlign('l',seq('r',k),seq('c',m),'c'),
+        Row(Bold('Project'),seq(Bold(covLabel[i]),i=1..k),seq(Bold(corLabel[i]),i=1..m),
         Bold('Raw Data')));
     for i to n do 
         tab := append(tab, Row(data[1,i,'Description'], data[1,i,'Number'], 
+            If(addCovData<>0, seq(addCovData[j,i],j=1..k-1), NULL),
             seq(MeanVarPrint(data[j,i]),j=1..m), RawDataWLink(rawDataFn[i])) );
     od:
     return( tab );
@@ -364,16 +383,17 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
 end:
 
 HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
-    global RFstat,RawDataFn,IdentStat;
-    RFstat := RawDataFn := IdentStat := 0;
+    global RFstat,RawDataFn,IdentStat,NrOrthologs;
+    RFstat := RawDataFn := IdentStat := NrOrthologs := 0;
     traperror(ReadProgram(resFn)):
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
         Logger(sprintf('IdentStat:=%A:',IdentStat),'DEBUG');
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
-        tab := MakeIntersectTable( [RFstat,IdentStat], RawDataFn, 'covLabel'='# trees', 
-            'corLabel'=['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'] );
+        tab := MakeIntersectTable( [RFstat,IdentStat], RawDataFn, 'covLabel'=['# trees', '# orthologs'],
+            'corLabel'=['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'],
+            'addCovData'=NrOrthologs);
         
         resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
         if not FileExists(resPlotFn) then
