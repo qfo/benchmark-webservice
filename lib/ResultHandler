@@ -256,29 +256,41 @@ end:
 GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     'plotType'=((plotType='2d'):{'2d','barchart'}),
     'covLabel'=((covLabel='# ortholog relations'):string),
-    'corLabel'=((corLabel='avg similarity'):string))
+    'corLabel'=((corLabel='avg similarity'):string),
+    'covData'=((passedCovData=0):{list(numeric),0}))
 
     t := table():
     t['outfile'] := resPlotFn;
     t['xlabel'] := covLabel;
     t['ylabel'] := corLabel;
     t['datafile'] := sprintf('/tmp/%s.dat', resBase);
-    plotTab := [seq(table(), length(data))];
+    nData := length(data):
+
+    plotTab := [seq(table(), nData)];
     if plotType='barchart' then
-        t['nSeries'] := length(data);
+        t['nSeries'] := nData;
         t['boxwidth'] := 0.8;
         t['xtics'] := ConcatStrings( [seq(
             sprintf('"%s" %.2f', data[i,'Description'],i),
             i=1..length(data))], ', ' );
+        covData := [seq(i,i=1..nData)];
+    elif plotType='2d' then
+        if passedCovData=0 then 
+            covData := [seq(data[i,'Number'],i=1..nData)];
+        elif length(passedCovData)=nData then
+            covData := passedCovData;
+        else 
+            Logger('passed cov has wrong length: '.length(passedCovData), 'ERROR');
+            error('passed cov has wrong length: '.length(passedCovData));
+        fi:
     fi:
+
     OpenWriting(t['datafile']);
     for i to length(data) do
         if data[i,'Number']>1 then 
         printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
-           If(plotType='2d', data[i,'Number'], i),
-           data[i,'Mean'], data[i,'StdErr']);
-        else printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'],
-            If(plotType='2d', data[i,'Number'],i) );
+            covData[i], data[i,'Mean'], data[i,'StdErr']);
+        else printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'], covData[i] );
         fi:
         plotTab[i,'index'] := i-1;
         plotTab[i,'title'] := data[i,'Description'];
@@ -389,22 +401,36 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
-        Logger(sprintf('IdentStat:=%A:',IdentStat),'DEBUG');
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
-        tab := MakeIntersectTable( [RFstat,IdentStat], RawDataFn, 'covLabel'=['# trees', '# orthologs'],
-            'corLabel'=['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'],
+
+        covLabels := ['# trees','# orthologs'];
+        corLabels := ['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'];
+        statsList := [RFstat, IdentStat]:
+        tab := MakeIntersectTable( statsList, RawDataFn, 
+            'covLabel'=covLabels,
+            'corLabel'=corLabels, 
             'addCovData'=NrOrthologs);
         
-        resPlotFn := sprintf('%s/%s.png', resimgdir, resBase);
-        if not FileExists(resPlotFn) then
-            GenerateIntersectPlot( RFstat, resPlotFn, resBase, 
-                'plotType'='2d',
-                'covLabel'='# trees',
-                'corLabel'='avg RF distance( genetree, speciestree )' );
-        fi:
+        plotTab := []:
+        for i to length(covLabels)-If(NrOrthologs=0,1,0) do for j to length(corLabels) do
+            idx := (i-1)*length(corLabel)+j;
+            
+            plotFn := sprintf('%s_%d.png', resBase, idx);
+            resPlotFn := sprintf('%s/%s', resimgdir, plotFn);
+            if not FileExists(resPlotFn) then
+                GenerateIntersectPlot( statsList[j], resPlotFn, resBase, 
+                    'plotType'='2d',
+                    'covLabel'=covLabels[i],
+                    'corLabel'=corLabels[j],
+                    If(i=2, 'covData'=NrOrthologs, NULL));
+            fi:
+            plotTab := append(plotTab,table()):
+            plotTab[-1, 'fig'] := resimgurl.plotFn;
+            plotTab[-1, 'gp_src'] := rawurl.plotFn[1..-4].'tgz';
+        od od:
         vars['content'] := HTMLC(tab);
-        vars['fig'] := resimgurl.resBase.'.png';
-        vars['gp_src'] := rawurl.resBase.'.tgz';
+        vars['figdivs'] := plotTab;
+        vars['hasMultiFig'] := evalb( idx>1 );
         vars['resFigReady'] := true;
     fi;
 end:

@@ -556,6 +556,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
+    vars['resId'] := 'TT'.king;
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
@@ -582,7 +583,10 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
+    template := If(vars['hasMultiFig']=true, 
+        '/templates/secResultMultifig.htmlc',
+        '/templates/secResult.htmlc');
+    return( [GenerateTemplate(cdir.template, vars), isRunning] );
 end:
 
 StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
@@ -594,6 +598,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := '';
     vars['testRef_Desc'] := '';
+    vars['resId'] := 'STD'.problem;
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
@@ -622,7 +627,10 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
+    template := If(vars['hasMultiFig']=true, 
+        '/templates/secResultMultifig.htmlc',
+        '/templates/secResult.htmlc');
+    return( [GenerateTemplate(cdir.template, vars), isRunning] );
 end:
 
 
