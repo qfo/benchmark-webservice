@@ -401,13 +401,12 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
     else 
-        Logger(sprintf('IdentStat:=%A:',IdentStat),'DEBUG');
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
 
         covLabels := ['# trees','# orthologs'];
         corLabels := ['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'];
         statsList := [RFstat, IdentStat]:
-        tab := MakeIntersectTable( stasList, RawDataFn, 
+        tab := MakeIntersectTable( statsList, RawDataFn, 
             'covLabel'=covLabels,
             'corLabel'=corLabels, 
             'addCovData'=NrOrthologs);
@@ -415,8 +414,9 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         plotTab := []:
         for i to length(covLabels)-If(NrOrthologs=0,1,0) do for j to length(corLabels) do
             idx := (i-1)*length(corLabel)+j;
-
-            resPlotFn := sprintf('%s/%s_%d.png', resimgdir, resBase, idx);
+            
+            plotFn := sprintf('%s_%d.png', resBase, idx);
+            resPlotFn := sprintf('%s/%s', resimgdir, plotFn);
             if not FileExists(resPlotFn) then
                 GenerateIntersectPlot( statsList[j], resPlotFn, resBase, 
                     'plotType'='2d',
@@ -425,15 +425,12 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
                     If(i=2, 'covData'=NrOrthologs, NULL));
             fi:
             plotTab := append(plotTab,table()):
-            plotTab[-1, 'fig'] := resimgurl.resBase.'.png';
-            plotTab[-1, 'gp_src'] := rawurl.resBase.'.tgz';
-            plotTab[-1, 'divStyle'] := If(idx=1,'display: block;','display: none;');
+            plotTab[-1, 'fig'] := resimgurl.plotFn;
+            plotTab[-1, 'gp_src'] := rawurl.plotFn[1..-4].'tgz';
         od od:
         vars['content'] := HTMLC(tab);
         vars['figdivs'] := plotTab;
-        vars['singlefig'] := evalb(idx=1 );
-        vars['multifig'] := evalb( idx>1 );
-
+        vars['hasMultiFig'] := evalb( idx>1 );
         vars['resFigReady'] := true;
     fi;
 end:
