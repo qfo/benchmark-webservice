@@ -77,10 +77,15 @@ end:
 
 
 SelectNextFam := proc()
-    t := ShuffleTreeOrder(sptree):
-    accTree := GetAcceptedSpeciesTopology(t);
-    specList := [TreeToConsecExprSeq(accTree)];
-    
+    maxTry := 10;
+    for x to maxTry do 
+        t := ShuffleTreeOrder(sptree):
+        accTree := GetAcceptedSpeciesTopology(t);
+        specList := [TreeToConsecExprSeq(accTree)];
+        if length(specList)>3 then break fi:
+    od:
+    if x>maxTry then return(NULL) fi:
+
     startRange := GenomeRange(specList[1], dataset);
     fnd := false;
     for xx to 50 do 
@@ -109,10 +114,11 @@ FindCases := proc(iSet, prjNrs:list)
         msg := 'sampling possible trees for '.prj[pNr,'Title'];
         WriteLock(lock, msg);
         cand := {seq(SelectNextFam(),NR_TRIALS)};
+        cand := [op(cand)]:
         if length(cand) > MAX_NR_TREES then
             cand := Shuffle(cand)[1..MAX_NR_TREES]:
         fi:
-        cases[i2pNr] := [op(cand)];
+        cases[i2pNr] := cand;
     od:
    
     Logger( sprintf('nr of cases in total: %d',sum(length(z),z=cases)), 'INFO');
