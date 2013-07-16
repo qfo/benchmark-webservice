@@ -52,13 +52,16 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
     else
         prj := [seq(GetPKeyData(z), z=PIDs)];
+        nrOrgs := length(KnownSpecies(prj[-1,'ref']));
+        partial := [seq( length(z['OrgsCovered'])<nrOrgs, z=prj)];
         prjNames := [seq(z['Title'],z=prj)];
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(prjNames)) fi:
         tab := Table( border, gutter=2, ColAlign('l','l','c','c','c'),
                  Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel),Bold('Raw Data')) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
             for i to length(prjNames) do 
-                tab := append(tab, Row( If(i=1,cases[c],''), ProjectWLink(prj[i]),
+                tab := append(tab, Row( If(i=1,cases[c],''), 
+                  ProjectWLink(prj[i], If(partial[i],'*',NULL)),
                   MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]), RawDataWLink(RawDataFn[i]) ));
             od: 
         od:
@@ -67,8 +70,8 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         if not FileExists(resPlotFn) then
             t := table():
             t['outfile'] := resPlotFn;
-            t['xlabel'] := fprLabel;
-            t['ylabel'] := tprLabel;
+            t['ylabel'] := fprLabel;
+            t['xlabel'] := tprLabel;
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
@@ -79,9 +82,10 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
                     stdFPR := 1.96*sqrt( sum(If(FPR[c,i]<>0,FPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
                     avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
                     stdTPR := 1.96*sqrt( sum(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases)) )/nrSamp;
-                    printf('# %s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], nrSamp,
-                         avgFPR, avgTPR, stdFPR, stdTPR);
-                else printf('# %s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i]); fi:
+                    printf('# %s%s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
+                         If(partial[i],'*',''), nrSamp,
+                         avgTPR, avgFPR, stdTPR, stdFPR);
+                else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],'*','')); fi:
 
                 plotTab[i,'index'] := i-1; 
                 plotTab[i,'title'] := prjNames[i];
@@ -206,12 +210,12 @@ Handle2dROCFiles := proc(meth:string, resFn:string, resBase:string,
     m(args[2..-1]);
 end:
 
-MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
+MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
     'covLabel'=((covLabel='# ortholog relations'):{string,list(string)}),
     'corLabel'=((corLabel='avg similarity'):{list(string),string}),
     'addCovData'=((addCovData=0):{0,list(numeric),matrix(numeric)}))
     if type(data,list(Stat)) then 
-        return( procname([data],rawDataFn,'covLabel'=covLabel, 'corLabel'=[corLabel],
+        return( procname(PIDs, [data],rawDataFn,'covLabel'=covLabel, 'corLabel'=[corLabel],
             'addCovData'=addCovData));
     fi:
 
@@ -222,13 +226,18 @@ MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
         fi:
     fi:
     if addCovData<>0 and not type(addCovData, matrix) then
-        return( procname(data,rawDataFn,'covLabel'=covLabel, 'corLabel'=corLabel,
+        return( procname(PIDs, data,rawDataFn,'covLabel'=covLabel, 'corLabel'=corLabel,
             'addCovData'=[addCovData]));
     fi:
 
     if length(data[1])<>length(rawDataFn) then
         Logger( sprintf('array length missmatch: %A <-> %A', data[1], rawDataFn), 'ERROR');
         error('arrays not of equal length');
+    fi:
+
+    if length(PIDs)<>length(data[1]) then 
+        Logger( 'array length of PIDs and data missmatch', 'ERROR');
+        error( 'array length of PIDs and data missmatch');
     fi:
 
     if addCovData=0 then
@@ -246,7 +255,11 @@ MakeIntersectTable := proc(data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
         Row(Bold('Project'),seq(Bold(covLabel[i]),i=1..k),seq(Bold(corLabel[i]),i=1..m),
         Bold('Raw Data')));
     for i to n do 
-        tab := append(tab, Row(data[1,i,'Description'], data[1,i,'Number'], 
+        pKey := GetPKeyData(PIDs[i]);
+        tab := append(tab, Row(
+            ProjectWLink( pKey, If( length(pKey['OrgsCovered'])<length(KnownSpecies(pKey['ref'])),
+                '*','')),
+            data[1,i,'Number'], 
             If(addCovData<>0, seq(addCovData[j,i],j=1..k-1), NULL),
             seq(MeanVarPrint(data[j,i]),j=1..m), RawDataWLink(rawDataFn[i])) );
     od:
@@ -406,7 +419,8 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         covLabels := ['# trees','# orthologs'];
         corLabels := ['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'];
         statsList := [RFstat, IdentStat]:
-        tab := MakeIntersectTable( statsList, RawDataFn, 
+        PIDs := vars['PIDs'];
+        tab := MakeIntersectTable( PIDs, statsList, RawDataFn, 
             'covLabel'=covLabels,
             'corLabel'=corLabels, 
             'addCovData'=NrOrthologs);
@@ -451,7 +465,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'Sims=0');
     else
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(Sims)) fi:
-        tab := MakeIntersectTable( Sims, RawDataFn, 
+        tab := MakeIntersectTable( PIDs, Sims, RawDataFn, 
             'covLabel'='# ortholog relations', 
             'corLabel'=measure );
         
