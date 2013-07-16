@@ -226,6 +226,17 @@ bsShowProject := proc()
         if length(FileStat(datafn))=0 then 
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
+        fi; 
+        covered := p['OrgsCovered'];
+        if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
+            t['coverage'] := 'covers all genomes';
+        else
+            missing := {op(KnownSpecies(p['ref']))} minus covered;
+            if length(missing)>5 then
+                t['coverage'] := sprintf('%d genomes missing', length(missing));
+            else 
+                t['coverage'] := sprintf('missing genomes: %a', missing);
+            fi:
         fi;
         t['uploadDate'] := p['createDat'];
         cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
