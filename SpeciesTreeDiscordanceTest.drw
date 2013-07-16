@@ -7,7 +7,7 @@ Set(printgc=false):
 WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
 NR_TRIALS := 50000;
-MAX_NR_TREES := 1000;
+MAX_NR_TREES := 3000;
 
 prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];
@@ -119,6 +119,8 @@ FindCases := proc(iSet, prjNrs:list)
         cand := {seq(SelectNextFam(),NR_TRIALS)};
         cand := [op(cand)]:
         if length(cand) > MAX_NR_TREES then
+            Logger( sprint('STDTest %s (%s): %d trees found, trimed to %d', 
+                problem, prj[pNr,'Title'],length(cand),MAX_NR_TREES), 'INFO');
             cand := Shuffle(cand)[1..MAX_NR_TREES]:
         fi:
         cases[i2pNr] := cand;
@@ -318,7 +320,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
                 hash([problem, prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         casesAndCnts := FindCases( intersect(), [i] );
-        cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2,1];
+        cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):

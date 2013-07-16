@@ -77,6 +77,8 @@ end:
 
 problems := table():
 problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
+problems['Ver'] := 'Vertebrata'; problems['Fun'] := 'Fungi';
+
 
 t := ConvertRawTree(tree);
 GS := GetGenomeSummaries(dataset):
