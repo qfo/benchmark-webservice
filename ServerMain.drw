@@ -427,7 +427,7 @@ bsTestSelection := proc(PID:string)
     od:
   
     # large Species Tree discordance test
-    for problem in ['Luca','Euk'] do
+    for problem in ['Luca','Euk','Ver','Fun'] do
         if dataset='OMA' then
             vars['hasSTD'.problem] := false;
         else
@@ -885,22 +885,15 @@ bsCheckResults := proc(sessionkey)
 	if t[2]=true then refresh := true fi:
     fi;
 
-    k := SearchArray('pSTDLuca1', pnames);
-    if k>0 and params[k]='on' then
-        # do large species tree discordance test
-        t := StartSTDTest(PID,'Luca',params,pnames);
-        vars['STDLuca1'] := t[1];
-        if t[2]=true then refresh := true fi:
-    fi;
-
-    k := SearchArray('pSTDEuk1', pnames);
-    if k>0 and params[k]='on' then
-        # do large species tree discordance test
-        t := StartSTDTest(PID,'Euk',params,pnames);
-        vars['STDEuk1'] := t[1];
-        if t[2]=true then refresh := true fi:
-    fi;
-
+    for problem in ['Luca','Euk','Ver','Fun'] do
+        k := SearchArray('pSTD'.problem.'1', pnames);
+        if k>0 and params[k]='on' then
+            # do large species tree discordance test
+            t := StartSTDTest(PID,problem,params,pnames);
+            vars['STD'.problem.'1'] := t[1];
+            if t[2]=true then refresh := true fi:
+       fi;
+    od:
 
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then
