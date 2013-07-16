@@ -226,6 +226,17 @@ bsShowProject := proc()
         if length(FileStat(datafn))=0 then 
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
+        fi; 
+        covered := p['OrgsCovered'];
+        if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
+            t['coverage'] := 'covers all genomes';
+        else
+            missing := {op(KnownSpecies(p['ref']))} minus covered;
+            if length(missing)>5 then
+                t['coverage'] := sprintf('%d genomes missing', length(missing));
+            else 
+                t['coverage'] := sprintf('missing genomes: %a', missing);
+            fi:
         fi;
         t['uploadDate'] := p['createDat'];
         cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
@@ -562,6 +573,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
@@ -607,6 +619,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     sel := [seq(If(length(z)>lenBaseParam and z[1..lenBaseParam]=baseParam, 
         parse(z[lenBaseParam+1..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
 
@@ -706,6 +719,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
 
     measure := params[ SearchArray('pECMeasure',pnames) ];
     meth := ParseStrategy(pnames,params):
@@ -749,6 +763,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', 
                    parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
 
     filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', 
                        parse(z[7..-1]),NULL), z=pnames)};

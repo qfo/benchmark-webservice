@@ -136,6 +136,15 @@ WriteDB := proc(fn:string, VPs, mapping)
     Set(printgc=verb);
 end:
 
+CheckIfOrthologsInGenome := proc(g:string, reference:string)
+    hasOrthologs := false;
+    rng := GenomeRange(g, reference):
+    for eNr from rng[1] to rng[2] do
+        if length(VP[eNr])>0 then hasOrthologs := true; break fi:
+    od:
+    return( hasOrthologs );
+end:
+
 # to break at error
 to 1 do
     pKey := GetPKeyData(PID);
@@ -160,7 +169,8 @@ to 1 do
     ReadDb(resDBfn):
 
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
-    orgs := {seq(GenomeCodeFromENr(z,referenceDatSet),z=iSet)}:
+    orgs := {seq(If(CheckIfOrthologsInGenome(g, referenceDatSet), g, NULL), 
+        g=KnownSpecies(referenceDatSet))}:
     pKey['OrgsCovered'] := orgs:
     if referenceDatSet<>'OMA' and relMapped>0 and 
         pKey['NOrthSub']>0 and relMapped/pKey['NOrthSub']>.01 then

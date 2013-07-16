@@ -1,6 +1,7 @@
 
-ProjectWLink := proc(p:PKeyData)
-    t := sprintf('<a href="gateway.pl?f=ShowProject&p1=%s" class="external">%s</a>', p['PID'],p['Title']);
+ProjectWLink := proc(p:PKeyData; (modif=''):string)
+    t := sprintf('<a href="gateway.pl?f=ShowProject&p1=%s" class="external">%s%s</a>', 
+        p['PID'],p['Title'], modif);
     return(t);
 end:
 

@@ -9,4 +9,4 @@ plot \
 <DLOOP name="plot"> \
   '<DVAR name="datafile">' i <DLVAR name="index"> u 2:3:4:5 tit '<DLVAR name="title">' w xyerror ls <DLVAR name="style">,\
 </DLOOP> \
-1/0
+1/0 notit
