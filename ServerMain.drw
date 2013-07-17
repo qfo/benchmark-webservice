@@ -877,29 +877,17 @@ bsCheckResults := proc(sessionkey)
     vars['tit'] := GetPKeyData(PID)['Title'];
     vars['sessionkey'] := string(sessionkey);
     refresh := false;
-    k := SearchArray('pTTEuk1', pnames);
-    if k>0 and params[k]='on' then
-        # do eukaryotic tree test
-	t := StartTreeTest(PID,'Eukaryota',params, pnames);
-        vars['TTEuk1'] := t[1]; 
-	if t[2]=true then refresh := true fi:
-    fi;
 
-    k := SearchArray('pTTFun1', pnames);
-    if k>0 and params[k]='on' then
-        # do fungi tree test
-	t :=  StartTreeTest(PID,'Fungi',params, pnames);
-        vars['TTFun1'] := t[1];
-	if t[2]=true then refresh := true fi:
-    fi;
-
-    k := SearchArray('pTTBac1', pnames);
-    if k>0 and params[k]='on' then 
-        # do bacteria tree test
-        t := StartTreeTest(PID,'Bacteria',params, pnames);
-        vars['TTBac1'] := t[1]; 
-	if t[2]=true then refresh := true fi:
-    fi;
+    for problem in ['Eukaryota','Fungi','Bacteria'] do
+        short := problem[1..3];
+        k := SearchArray('pTT'.short.'1', pnames);
+        if k>0 and params[k]='on' then
+            # do traditional species tree discordance test
+	    t := StartTreeTest(PID,problem,params, pnames);
+            vars['TT'.short.'1'] := t[1]; 
+            if t[2]=true then refresh := true fi:
+        fi;
+    od:
 
     for problem in ['Luca','Euk','Ver','Fun'] do
         k := SearchArray('pSTD'.problem.'1', pnames);
