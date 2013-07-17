@@ -653,12 +653,12 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     lock  := sprintf('%s.%sPhyl.lock',fnBase,testset);
     vars := table('');
     if testset='Ref' then
-        vars['resheader'] := 'Agreement with Reference Phylogeny';
+        vars['resheader'] := 'Agreement with Reference Gene Phylogenies';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
         vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484).';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     elif testset='Auto' then
-        vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny (contributed by Fabian Schreiber)';
+        vars['resheader'] := 'Agreement with Semi-automated Reference Gene Phylogenies (contributed by Fabian Schreiber)';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/nar/gkj118';
         vars['testRef_Desc'] := 'Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
@@ -672,6 +672,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     prefix := sprintf('p%sPhyloPrj', testset); 
     sel := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on'); 
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     
     k := SearchArray( sprintf('p%sPhylAggMeas',testset), pnames );
     measure := If(k>0,params[k],'sample variance');
@@ -912,7 +913,7 @@ bsCheckResults := proc(sessionkey)
 
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then
-        # do reference phylogeney based test
+        # do reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames);
 	vars['RefPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:
@@ -920,7 +921,7 @@ bsCheckResults := proc(sessionkey)
     
     k := SearchArray('pAutoPhylo1', pnames);
     if k>0 and params[k]='on' then
-        # do reference phylogeney based test
+        # do semi-auto reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames,'testset'='Auto');
 	vars['AutoPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:

@@ -10,26 +10,23 @@ DUPL_MATCH := DUPL minus {'D','DUPLICATION'}:
 overwrite := true:
 
 SetDatasetVariables := proc(;(ref='OMA'):string)
-    global outfile, outfile_semiauto, IDIndex, DB;
+    global outfile, outfile_semiauto, IDIndex, DB, logFn;
     outfile := datdir.'ReconciledTrees_'.ref.'.drw':
     outfile_semiauto := datdir.'ReconciledTreesSemiAuto_'.ref.'.drw':
     ddir := eval(symbol(lowercase(ref).'DBpath'));
     IDIndex := ReadDb(ddir.'IDIndex.db');
+    logFn := datdir.'ReconciledTrees_'.ref.'.log';
 end:
 
 MatchID := proc(id:string)
     oE := SearchIndex(id,IDIndex);
-    if oE<>NULL then return(oE) fi:
-
-    k := SearchString('_',id);
-    oE := SearchIndex(id[1..k], IDIndex);
-    if k=6 and oE<>NULL then return(oE); # we have an uniprot-id -> accession
-    elif oE<>NULL and length(id[k+2..-1])=5 then
-         # double-check if species is the same
-         if GenomeCodeFromENr(oE)=id[k+2..-1] then return(oE) fi:
-#   else lprint('can''t map id:',id);
+    if oE=NULL then 
+        for potId in SearchDelim('_',id) do
+            oE := SearchIndex(potId, IDIndex);
+            if oE<>NULL then break; fi:
+        od:
     fi:
-    return(NULL);
+    return(oE);
 end:
 
 ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
@@ -46,7 +43,10 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
             oE := MatchID(z,IDIndex);
             if oE<> NULL then break fi:
         od:
-	if oE=NULL then  lprint('can''t map protein '''.t[Label].'''') fi:
+	if oE=NULL then 
+            lprint('cannot map protein '''.t[Label].'''');
+        else printf('%a --> %d (internal id)\n', t['Label'], oE) 
+        fi:
         return( If(oE=NULL,NULL,{oE}) );
     else
         tL := ExtractPairRelR(t[Left], mappings );
@@ -58,26 +58,49 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
                 lprint('intersect not empty:'.string(intersect(tL,tR)).If(length(t)>3,' '.t[4],''));
                 tL := minus(tL, tR);
             fi;
+            
+            xtra := If(length(t)=3, [], If(type(t['xtra'],list),t['xtra'], [t['xtra']])):
+            ev := 'S';
+            for z in xtra do 
+                if member(z, SPEC_MATCH) then ev := 'S'; break;
+                elif member(z, DUPL_MATCH) then ev := 'D'; break;
+                elif max(seq(SearchString(x,z),x=SPEC_MATCH))>0 then ev := 'S'; break;
+                elif max(seq(SearchString(x,z),x=DUPL_MATCH))>0 then ev := 'D'; break;
+                else 
+                    asciiSeq := [seq( AsciiToInt(z[i]),i=1..length(z))];
+                    if min(asciiSeq)>=AsciiToInt('0') and max(asciiSeq)<=AsciiToInt('9') then
+                        # most probably a bootstrap value. ignore this one.
+                        next;
+                    else
+                        printf('dubious event: %a', z);
+                        ev := z;
+                    fi:
+                fi;
+            od:
+ 
             for p1 in tL do for p2 in tR do
-                if not __PWR[{p1,p2}]=unassigned then
-                    lprint('assertion failure:',p1,p2);
-                    assert( __PWR[{p1,p2}] = unassigned );
+                if __PWR[{p1,p2}]=unassigned then
+                    __PWR[{p1,p2}] := ev;
+                else
+                    printf('WARNING: dubious pair ('.p1.'/'.p2.'), annotated multiple times\n');
+                    if __PWR[{p1,p2}]<>ev then 
+                        printf(' --> ERROR: different events for same pair\n');
+                    fi:
                 fi:
-                if length(t)=3 or member(t['xtra'], SPEC) then ev := 'S';
-                elif member(t['xtra'],DUPL) then ev:='D';
-		elif max( seq(SearchString(z,t['xtra']), z=SPEC_MATCH) )>=0 then ev := 'S';
-		elif max( seq(SearchString(z,t['xtra']), z=DUPL_MATCH) )>=0 then ev := 'D';
-		else lprint('dubious event: ',t['xtra']); ev := t['xtra']; fi:
-                __PWR[{p1,p2}] := ev;
+                 __PWR[{p1,p2}] := ev;
             od od:
             return( union(tL,tR) );
         fi:
     fi:
 end:
 
-ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):{procedure,table})
+ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):{procedure,table},
+    (logFn=NULL):string)
     global __PWR; __PWR := table();
+    if logFn<>NULL then OpenAppending(logFn); fi:
     prots := ExtractPairRelR(t, mapping):
+    printf(' --> %d/%d proteins mapped\n', length(prots), length(indets(t,Leaf)));
+    if logFn<>NULL then OpenAppending(previous); fi:
     return( [prots, __PWR] );
 end:
 
@@ -189,186 +212,28 @@ if overwrite=true then
     od:
 fi:
 
-###########################################
-# NOX cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/NOX1-4_referenceProteome.nhx');
-label:= 'NOX protein familiy';
-name := 'NOX';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the NOX gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+treeVersion := '_v2';
+fams := ['NOX1-4','POP','VATB','SERC','HOX9-14','SUMF','S10-S20','ASTER','CITE','BAMBI'];
 
-###########################################
-# POP cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/POP_referenceProteome.nhx');
-label:= 'POP protein familiy';
-name := 'POP';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the POP gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+for fam in fams do
+    t := ReadRawFile(sprintf('%s/raw/%s_referenceProteome%s.nhx', datdir, fam, treeVersion));
+    label := fam.' protein family';
+    name := fam;
+    tree := ParseNewickTree(t);
+    if logFn<>NULL then 
+        OpenAppending(logFn); printf('\n\n%s\n', label); OpenAppending(previous);
+    fi:
+    map  := ExtractPairwiseRel(tree,logFn):
 
-###########################################
-# VATB cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/VATB_referenceProteome.nhx');
-label:= 'VATB protein familiy';
-name := 'VATB';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
+    case := RecTreeCase(name, label, map[1], map[2], tree, 
       'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the VATB gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+      'the '.label );
 
-###########################################
-# SERC cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/SERC_referenceProteome.nhx');
-label:= 'SERC protein familiy';
-name := 'SERC';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the SERC gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# HOX cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/HOX9-14_referenceProteome.nhx');
-label:= 'HOX protein familiy';
-name := 'HOX';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the HOX gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# RPS cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/RPS10_referenceProteome.nhx');
-label:= 'RPS protein familiy';
-name := 'RPS';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the RPS gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# SUMF cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/SUMF_referenceProteome.nhx');
-label:= 'SUMF protein familiy';
-name := 'SUMF';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the SUMF gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# S10/S20 cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/S10-S20_referenceProteome.nhx');
-label:= 'S10/S20 protein familiy';
-name := 'S10/S20';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the S10/S20 gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# ASTER cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/ASTER_referenceProteome.nhx');
-label:= 'ASTER protein familiy';
-name := 'ASTER';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the ASTER gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# BAMBI cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/BAMBI_referenceProteome.nhx');
-label:= 'BAMBI protein familiy';
-name := 'BAMBI';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the BAMBI gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-
-###########################################
-# CITE cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/CITE_referenceProteome.nhx');
-label:= 'CITE protein familiy';
-name := 'CITE';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the CITE gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# TRFE cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/TRFE_referenceProteome.nhx');
-label:= 'TRFE protein familiy';
-name := 'TRFE';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the TRFE gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+    OpenAppending(outfile);
+    printf('ReconciledTrees[''%s''] := %A:\n', name, case);
+    OpenAppending(previous);
+    AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
+od:
 
 
 ############################################
