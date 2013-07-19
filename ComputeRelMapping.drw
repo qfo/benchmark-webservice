@@ -140,7 +140,7 @@ CheckIfOrthologsInGenome := proc(g:string, reference:string)
     hasOrthologs := false;
     rng := GenomeRange(g, reference):
     for eNr from rng[1] to rng[2] do
-        if length(VP[eNr])>0 then hasOrthologs := true; break fi:
+        if length(VPs[eNr])>0 then hasOrthologs := true; break fi:
     od:
     return( hasOrthologs );
 end:
