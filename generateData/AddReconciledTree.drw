@@ -214,11 +214,13 @@ fi:
 
 treeVersion := '_v2';
 fams := ['NOX1-4','POP','VATB','SERC','HOX9-14','SUMF','S10-S20','ASTER','CITE','BAMBI'];
+famIds := ['NOX','POP','VATB','SERC','HOX','SUMF','RPS','ASTER','CITE','BAMBI'];
 
-for fam in fams do
+for famNr to length(fams) do
+    fam := fams[famNr];
+    name := famIds[famNr];
     t := ReadRawFile(sprintf('%s/raw/%s_referenceProteome%s.nhx', datdir, fam, treeVersion));
     label := fam.' protein family';
-    name := fam;
     tree := ParseNewickTree(t);
     if logFn<>NULL then 
         OpenAppending(logFn); printf('\n\n%s\n', label); OpenAppending(previous);
