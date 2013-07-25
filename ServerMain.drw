@@ -429,8 +429,7 @@ bsTestSelection := proc(PID:string)
             vars['TT'.z.'Projects'] := ConcatStrings(
               [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
 	                   '<label for="pTT%sPrj%d">%s</label><br/>', z,pNr,z,pNr,
-			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)) and 
-			      length(pairwiseOverlap[pNr])>5,'checked="checked"','disabled="disabled"'),
+			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 'checked="checked"','disabled="disabled"'),
 		           z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
 	vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
 	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
