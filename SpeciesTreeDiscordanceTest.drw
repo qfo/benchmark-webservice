@@ -118,11 +118,6 @@ FindCases := proc(iSet, prjNrs:list)
         WriteLock(lock, msg);
         cand := {seq(SelectNextFam(),NR_TRIALS)};
         cand := [op(cand)]:
-        if length(cand) > MAX_NR_TREES then
-            Logger( sprint('STDTest %s (%s): %d trees found, trimed to %d', 
-                problem, prj[pNr,'Title'],length(cand),MAX_NR_TREES), 'INFO');
-            cand := Shuffle(cand)[1..MAX_NR_TREES]:
-        fi:
         cases[i2pNr] := cand;
         NrOrthologs[i2pNr] := CntOrthologs( protSet ):
     od:
@@ -208,13 +203,14 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
     return( [RFstat, rawDat, IdentStat] );
 end:
 
-StoreResult := proc(fn:string, RFstat, IdentStat, NrOrthologs, RawDataFn, PIDs)
+StoreResult := proc(fn:string, RFstat, IdentStat, NrOrthologs, NrTrees, RawDataFn, PIDs)
     OpenWriting(fn):
     printf('RFstat := %A:\n', RFstat):
     printf('PIDs := %A:\n', PIDs );
     printf('RawDataFn := %A:\n', RawDataFn);
     printf('IdentStat := %A:\n', IdentStat);
     printf('NrOrthologs := %A:\n', NrOrthologs);
+    printf('NrTrees := %A:\n', NrTrees);
     printf('#problem := %A:\n', problem);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
@@ -253,18 +249,21 @@ if meth='INTERSECT' then
     prjNrs:= [seq(i,i=1..nP)];
     casesAndCnts := FindCases(iSet, prjNrs);
     cases := casesAndCnts[1]; NrOrthologs := casesAndCnts[2];
+    NrTrees := [seq(length(z),z=cases)]: 
+    cases := [seq( If(NrTrees[i]>MAX_NR_TREES, Shuffle(cases[i])[1..MAX_NR_TREES], cases[i]), i=1..nP)]:
     t0 := time();
-    compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
+    compRes := ComputeCongruenceStat(prjNrs, cases, sum(length(z),z=cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
          hash([problem, prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
-    StoreResult(resFn, RFstat, IdentStat, NrOrthologs, [seq(prj[i,'PID'], i=prjNrs)]);
+    StoreResult(resFn, RFstat, IdentStat, NrOrthologs, NrTrees, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
     cases := CreateArray(1..nP-1,[]):
     RFstats := CreateArray(1..nP-1):
     IdentStats := CreateArray(1..nP-1):
     NrOrthologList := CreateArray(1..nP-1):
+    NrTreesList := CreateArray(1..nP-1):
     prjNrs := [seq([i,nP],i=1..nP-1)];
     resFnParts := CreateArray(1..nP-1):
     rawDataFn := CreateArray(1..nP-1):
@@ -279,6 +278,8 @@ elif meth='PAIRWISE' then
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         casesAndCnts := FindCases( iSet, prjNrs[i] );
         cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2]; 
+        NrTreesList[i] := [seq(length(z),z=cases[i])]: 
+        cases[i] := [seq( If(NrTreesKust[j]>MAX_NR_TREES, Shuffle(cases[i,j])[1..MAX_NR_TREES], cases[i,j]), j=1..2)]:
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
@@ -291,23 +292,25 @@ elif meth='PAIRWISE' then
             IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
             NrOrthologList[i] := NrOrthologs;
+            NrTreesList[i] := NrTrees;
         else
             compRes := ComputeCongruenceStat(prjNrs[i], cases[i], 
                 max(1,totNrTrees) ):
             RFstats[i] := compRes[1]; rawdata := compRes[2]; IdentStats[i] := compRes[3];
             StoreRawData( rawdir.rawDataFn[i,1..-4], rawdata, 
                 [seq(prj[j],j=prjNrs[i])] );
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], NrTreesList[i], rawDataFn[i], 
                 [seq(prj[j,'PID'],j=prjNrs[i])]);
         fi:
     od:
-    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, rawDataFn, 
+    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, NrTreesList, rawDataFn, 
         [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)] );
 elif length(meth)>=6 and meth[1..6]='REFSET' then
     cases := CreateArray(1..nP,[]):
     RFstats := CreateArray(1..nP):
     IdentStats := CreateArray(1..nP):
     NrOrthologList := CreateArray(1..nP):
+    NrTreesList := CreateArray(1..nP):
     RawData := CreateArray(1..nP):
     prjNrs := [seq(i,i=1..nP)];
     resFnParts := CreateArray(1..nP):
@@ -321,6 +324,8 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
         if FileExists(resFnParts[i].'.gz') then next fi:
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];
+        NrTreesList[i] := length(cases[i]);
+        cases[i] := Shuffle(cases[i])[1..MAX_NR_TREES]:
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
@@ -335,17 +340,18 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
             NrOrthologList[i] := NrOrthologs;
+            NrTreesList[i] := NrTrees;
         else
             compRes := ComputeCongruenceStat([prjNrs[i]], [cases[i]], 
                 totNrTrees):
             # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
             RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
             StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], NrTreesList[i], rawDataFn[i], 
                 [prj[i,'PID']]);
         fi:
     od:
-    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
+    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, NrTreesList, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
 else error('unknown strategy method:'.meth); 
 fi: 
 

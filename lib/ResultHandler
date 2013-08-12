@@ -213,10 +213,10 @@ end:
 MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:list ;
     'covLabel'=((covLabel='# ortholog relations'):{string,list(string)}),
     'corLabel'=((corLabel='avg similarity'):{list(string),string}),
-    'addCovData'=((addCovData=0):{0,list(numeric),matrix(numeric)}))
+    'covData'=((covData=0):{0,list(numeric),matrix(numeric)}))
     if type(data,list(Stat)) then 
-        return( procname(PIDs, [data],rawDataFn,'covLabel'=covLabel, 'corLabel'=[corLabel],
-            'addCovData'=addCovData));
+        return( procname(PIDs, [data],rawDataFn,'covLabel'=[covLabel], 'corLabel'=[corLabel],
+            'covData'=covData));
     fi:
 
     if type(data,matrix) then
@@ -225,9 +225,13 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
             error('nr of stats <> number of labels');
         fi:
     fi:
-    if addCovData<>0 and not type(addCovData, matrix) then
+    if covData=0 then 
+        return( procname(PIDs, data, rawDataFn, 'covLabel'=covLabel, 'corLabel'=corLabel,
+            'covData'=[[seq(z['Number'], z=data[1])]]));
+    elif not type(covData, matrix) then
+        # it is a list, make it a matrix
         return( procname(PIDs, data,rawDataFn,'covLabel'=covLabel, 'corLabel'=corLabel,
-            'addCovData'=[addCovData]));
+            'covData'=[covData]));
     fi:
 
     if length(data[1])<>length(rawDataFn) then
@@ -240,16 +244,12 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
         error( 'array length of PIDs and data missmatch');
     fi:
 
-    if addCovData=0 then
-        k := 1;
-    else
-        if (length(addCovData)<>length(covLabel)-1) or (length(addCovData[1])<>length(data[1])) then 
-            Logger( sprintf('addCovData has wrong dim: %d,%d vs %d,%d', length(addCovData), 
-                length(addCovData[1]), length(covLabel)-1,length(data[1])), 'ERROR');
-            error('addCovData has wrong dim');
-        fi:
-        k := length(covLabel);
+    if (length(covData)<>length(covLabel)) or (length(covData[1])<>length(data[1])) then 
+            Logger( sprintf('covData has wrong dim: %d,%d vs %d,%d', length(covData), 
+                length(covData[1]), length(covLabel),length(data[1])), 'ERROR');
+            error('covData has wrong dim');
     fi:
+    k := length(covLabel);
     n := length(data[1]): m:= length(data); 
     tab := Table( border, gutter=2, ColAlign('l',seq('r',k),seq('c',m),'c'),
         Row(Bold('Project'),seq(Bold(covLabel[i]),i=1..k),seq(Bold(corLabel[i]),i=1..m),
@@ -259,8 +259,7 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
         tab := append(tab, Row(
             ProjectWLink( pKey, If( length(pKey['OrgsCovered'])<length(KnownSpecies(pKey['ref'])),
                 '*','')),
-            data[1,i,'Number'], 
-            If(addCovData<>0, seq(addCovData[j,i],j=1..k-1), NULL),
+            seq(covData[j,i],j=1..k),
             seq(MeanVarPrint(data[j,i]),j=1..m), RawDataWLink(rawDataFn[i])) );
     od:
     return( tab );
@@ -408,8 +407,8 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
 end:
 
 HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
-    global RFstat,RawDataFn,IdentStat,NrOrthologs;
-    RFstat := RawDataFn := IdentStat := NrOrthologs := 0;
+    global RFstat,RawDataFn,IdentStat,NrOrthologs,NrTrees;
+    RFstat := RawDataFn := IdentStat := NrOrthologs := NrTrees := 0;
     traperror(ReadProgram(resFn)):
     if RFstat=0 then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'RFstat=0');
@@ -420,10 +419,11 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         corLabels := ['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'];
         statsList := [RFstat, IdentStat]:
         PIDs := vars['PIDs'];
+        covData := [If(NrTrees=0,[seq(z['Number'],z=RFstat)],NrTrees), NrOrthologs]:
         tab := MakeIntersectTable( PIDs, statsList, RawDataFn, 
             'covLabel'=covLabels,
             'corLabel'=corLabels, 
-            'addCovData'=NrOrthologs);
+            'covData'=covData);
         
         plotTab := []:
         for i to length(covLabels)-If(NrOrthologs=0,1,0) do for j to length(corLabels) do
@@ -436,7 +436,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
                     'plotType'='2d',
                     'covLabel'=covLabels[i],
                     'corLabel'=corLabels[j],
-                    If(i=2, 'covData'=NrOrthologs, NULL));
+                    If(i=2, 'covData'=NrOrthologs, If(NrTrees=0,NULL,NrTrees)) );
             fi:
             plotTab := append(plotTab,table()):
             plotTab[-1, 'fig'] := resimgurl.plotFn;
