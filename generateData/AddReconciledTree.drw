@@ -67,12 +67,12 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
                 elif max(seq(SearchString(x,z),x=SPEC_MATCH))>0 then ev := 'S'; break;
                 elif max(seq(SearchString(x,z),x=DUPL_MATCH))>0 then ev := 'D'; break;
                 else 
-                    asciiSeq := [seq( AsciiToInt(z[i]),i=1..length(z))];
-                    if min(asciiSeq)>=AsciiToInt('0') and max(asciiSeq)<=AsciiToInt('9') then
+                    numMatch := MatchRegex('[0-9.]*', z);
+                    if length(numMatch)=1 then 
                         # most probably a bootstrap value. ignore this one.
                         next;
                     else
-                        printf('dubious event: %a', z);
+                        printf('dubious event: %a\n', z);
                         ev := z;
                     fi:
                 fi;

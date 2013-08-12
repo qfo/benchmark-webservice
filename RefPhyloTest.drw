@@ -39,7 +39,8 @@ ComputePerformance := proc(iSet, prjNrs:list)
             for rel in Indices(rels) do 
                 ev := rels[rel];
                 if member(ev,DUPL) then dups[rel[1]] := append(dups[rel[1]], rel[2]);
-                elif member(ev,SPEC) then specs[rel[1]] := append(specs[rel[1]], rel[2]); fi:
+                elif member(ev,SPEC) then specs[rel[1]] := append(specs[rel[1]], rel[2]);
+                else warning('ignoring relation: '.string([rel, ev])); fi:
             od:
             
             # we iterate over all the projects
