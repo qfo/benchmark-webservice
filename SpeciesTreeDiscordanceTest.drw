@@ -279,7 +279,7 @@ elif meth='PAIRWISE' then
         casesAndCnts := FindCases( iSet, prjNrs[i] );
         cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2]; 
         NrTreesList[i] := [seq(length(z),z=cases[i])]: 
-        cases[i] := [seq( If(NrTreesKust[j]>MAX_NR_TREES, Shuffle(cases[i,j])[1..MAX_NR_TREES], cases[i,j]), j=1..2)]:
+        cases[i] := [seq( If(NrTreesList[j]>MAX_NR_TREES, Shuffle(cases[i,j])[1..MAX_NR_TREES], cases[i,j]), j=1..2)]:
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
@@ -325,7 +325,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];
         NrTreesList[i] := length(cases[i]);
-        cases[i] := Shuffle(cases[i])[1..MAX_NR_TREES]:
+        cases[i] := If(NrTreesList[i]>MAX_NR_TREES, Shuffle(cases[i])[1..MAX_NR_TREES], cases[i]):
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
