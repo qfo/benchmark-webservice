@@ -652,7 +652,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     lock  := sprintf('%s.%sPhyl.lock',fnBase,testset);
     vars := table('');
     if testset='Ref' then
-        vars['resheader'] := 'Agreement with Reference Gene Phylogenies';
+        vars['resheader'] := 'Agreement with Reference Gene Phylogenies of <a href="http://wiki.isb-sib.ch/swisstree" target="_new">SwissTrees</a>';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
         vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484).';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
@@ -873,7 +873,10 @@ bsCheckResults := proc(sessionkey)
     pnames := __SessionPnames; params := __SessionParams;
     PID := params[SearchArray('pPID',pnames)];
     vars := table('');
-    vars['tit'] := GetPKeyData(PID)['Title'];
+    pData := GetPKeyData(PID):
+    if pData['ref']='OMA' or not pData['isPublic'] then
+        vars['tit'] := pData['Title'];
+    fi:
     vars['sessionkey'] := string(sessionkey);
     refresh := false;
 
