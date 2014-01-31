@@ -1,0 +1,7 @@
+#!/bin/sh
+# Created by cdist __user_supervisor
+# Do not change. Changes will be overwritten.
+#
+# Run supervisorctl with our own config file
+#
+supervisorctl -c ~/etc/supervisord.conf $@

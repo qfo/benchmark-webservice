@@ -1,0 +1,47 @@
+cdist-type__cbrg_local_home(7)
+==============================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__cbrg_local_home - create home directories
+
+
+DESCRIPTION
+-----------
+- create home directory, e.g. /local/home/$user
+- create home base directory, e.g. /local/home
+- set permissions to $user and $group
+
+
+REQUIRED PARAMETERS
+-------------------
+user::
+   for use with chown
+group::
+   for use with chgrp
+
+
+OPTIONAL PARAMETERS
+-------------------
+None.
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+__cbrg_local_home /local/home/cbrg-oma --user cbrg-oma --group cbrg-oma
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2012 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).

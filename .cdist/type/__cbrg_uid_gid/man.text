@@ -1,0 +1,43 @@
+cdist-type__cbrg_uid_gid(7)
+===========================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__cbrg_uid_gid - Control ranges for automatic uid/gid selection
+
+
+DESCRIPTION
+-----------
+Control ranges for automatic uid/gid selection so that they don't interfere
+with ldap accounts.
+
+
+REQUIRED PARAMETERS
+-------------------
+None.
+
+
+OPTIONAL PARAMETERS
+-------------------
+None.
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+__cbrg_uid_gid
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2012 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).

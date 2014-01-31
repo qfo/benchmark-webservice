@@ -1,0 +1,61 @@
+cdist-type__nginx_site(7)
+=========================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__nginx_site - configure a nginx site
+
+
+DESCRIPTION
+-----------
+Configures nginx websites.
+Currently just stores the config given as --source 
+as /etc/nginx/sites-enabled/$__object_id.
+
+
+REQUIRED PARAMETERS
+-------------------
+source::
+   path to the config file or '-' to read config from stdin
+
+
+OPTIONAL PARAMETERS
+-------------------
+state::
+   present or absent, defaults to present
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+# Config from file
+__nginx_site name-of-site \
+   --source /path/to/config/file
+
+# Config from stdin
+__nginx_site localhost \
+   --source - << DONE
+server {
+   root /usr/share/nginx/www;
+   index index.html index.htm;
+   server_name localhost;
+   location / {
+      try_files \$uri \$uri/ /index.html;
+   }
+}
+DONE
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2011 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).

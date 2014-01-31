@@ -1,0 +1,24 @@
+# Created by cdist __nginx_default_site
+# Do not change. Changes will be overwritten.
+#
+
+server {
+   listen 80 default_server;
+
+   root /usr/share/nginx/www;
+   index index.html index.htm;
+
+   # This is just an invalid value which will never trigger on a real hostname.
+   server_name _; 
+
+   access_log off;
+   error_log off;
+
+   location / {
+      # First attempt to serve request as file, then
+      # as directory, then fall back to index.html
+      try_files $uri $uri/ /index.html;
+      # Uncomment to enable naxsi on this location
+      # include /etc/nginx/naxsi.rules
+   }
+}

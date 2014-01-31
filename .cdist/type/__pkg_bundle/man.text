@@ -1,0 +1,55 @@
+cdist-type__pkg_bundle(7)
+============================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__pkg_bundle - Manage packages as named bundles
+
+
+DESCRIPTION
+-----------
+Reads list of packages from a file or stdin and makes sure they are installed.
+
+
+REQUIRED PARAMETERS
+-------------------
+None.
+
+
+OPTIONAL PARAMETERS
+-------------------
+state::
+   present or absent defaults to present
+
+file::
+   read packages from given file. Defaults to '-' (dash).
+   If file is '-' (dash), take what was written to stdin as the file content.
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+__pkg_bundle base --file /path/to/package/list
+
+__pkg_bundle desktop --file - << DONE
+i3-wm
+i3lock
+xss-lock
+rxvt-unicode
+xorg-xrandr
+DONE
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2013 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).

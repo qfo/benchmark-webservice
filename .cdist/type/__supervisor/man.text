@@ -1,0 +1,43 @@
+cdist-type__supervisor(7)
+=========================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__supervisor - TODOC
+
+
+DESCRIPTION
+-----------
+This cdist type allows you to TODOC
+
+
+REQUIRED PARAMETERS
+-------------------
+foobar::
+   TODOC
+
+
+OPTIONAL PARAMETERS
+-------------------
+None.
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+__supervisor
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2012 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).
