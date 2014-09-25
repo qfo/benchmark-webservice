@@ -427,9 +427,10 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         
         plotTab := []:
         for i to length(covLabels)-If(NrOrthologs=0,1,0) do for j to length(corLabels) do
-            idx := (i-1)*length(corLabel)+j;
+            idx := (i-1)*length(corLabels)+j;
             
-            plotFn := sprintf('%s_%d.png', resBase, idx);
+            baseFn := sprintf('%s_%d', resBase, idx);
+            plotFn := baseFn.'.png';
             resPlotFn := sprintf('%s/%s', resimgdir, plotFn);
             if not FileExists(resPlotFn) then
                 covD := NULL;
@@ -439,7 +440,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
                     covD := 'covData'=NrTrees;
                 fi:
 
-                GenerateIntersectPlot( statsList[j], resPlotFn, resBase, 
+                GenerateIntersectPlot( statsList[j], resPlotFn, baseFn, 
                     'plotType'='2d',
                     'covLabel'=covLabels[i],
                     'corLabel'=corLabels[j],
