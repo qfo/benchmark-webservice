@@ -13,10 +13,17 @@ prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];
 hashOfAllProjPIDs := hash(projs):
 
+if not assigned(confidence) then
+    confidence := NULL;
+elif type(confidence, posint) then
+    confidence := '_conf'.confidence;
+else error('unexpected type for confidence parameter');
+fi:
+
 # load species tree as nested list of list, e.g.
 # sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
 # i.e. the tree is non-binary
-ReadProgram(datdir.'speciestree_'.problem.'_'.dataset.'.drw'); 
+ReadProgram(datdir.'speciestree_'.problem.'_'.dataset.string(confidence).'.drw'); 
 
 ShuffleTreeOrder := proc(t)
     cpy := copy(t):
@@ -318,9 +325,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     rawDataFn := CreateArray(1..nP):
     iSet := intersect():
     for i to nP do 
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([problem,prj[i,'PID'],meth]) );
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([problem,prj[i,'PID'],meth, confidence]) );
         rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
-                hash([problem, prj[i,'PID'],meth]) );
+                hash([problem, prj[i,'PID'],meth, confidence]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];

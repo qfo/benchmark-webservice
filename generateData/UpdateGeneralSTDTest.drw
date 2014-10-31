@@ -5,9 +5,6 @@ rawdir := datdir.'/raw';
 dataset := 'RefSet5';
 treeVers := '.v1';
 treeVers := '_conf_20141027';
-if not assigned(confidence) then 
-    confidence := 70;
-fi:
 
 # read multifurcating species tree from file
 # multifurcating nodes have same tree height, otherwise +1
@@ -92,16 +89,17 @@ filterLineage := proc(z ; lin:string)
 end;
 
 
-TreeToNestedList := proc(t:Tree ; t0:numeric)
+TreeToNestedList := proc(t:Tree ; (confidence=0):nonnegative, t0:numeric) 
     t1 := t['Height'];
     if not assigned(t0) then t0 := t1-1; fi:
     if type(t,Leaf) then return(t['Label']);
     else 
-        tL := procname(t[Left], t1);
-        tR := procname(t[Right], t1);
+        tL := procname(t[Left], confidence, t1);
+        tR := procname(t[Right], confidence, t1);
         res := tL, tR;
     fi:
-    if |t1-t0|>1e-5 then 
+    # furcation if hight is non-zero and - if set - support confidence above threshold
+    if |t1-t0|>1e-5 and (length(t)<4 or t[4]>confidence) then 
         res := [res];
     fi:
     return(res);
@@ -119,13 +117,16 @@ problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
 problems['Ver'] := 'Vertebrata'; problems['Fun'] := 'Fungi';
 
 t := ConvertRawTree(tree);
-t_col := CollapseNodes(t,Bootstrapping=confidence);
 GS := GetGenomeSummaries(dataset):
 for problem in Indices(problems) do 
     trimedTree := PruneTree(t, z->filterLineage(z['Label'], problems[problem]));
-    mftree := TreeToNestedList(trimedTree);
-    outfn := sprintf('%s/speciestree_%s_%s.drw', datdir, problem, dataset);
-    WriteMultifurcatingTree(mftree, outfn);
+    for confidence in [11,31,51,71] do
+        mftree := TreeToNestedList(trimedTree, confidence);
+        # if root node gets multifurcated then we need to create list anyways
+        if length([mftree])>1 then mftree := [mftree] fi: 
+        outfn := sprintf('%s/speciestree_%s_%s_conf%d.drw', 
+            datdir, problem, dataset, confidence);
+        WriteMultifurcatingTree(mftree, outfn);
+    od:
 od:
-
 done
