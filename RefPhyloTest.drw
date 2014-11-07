@@ -71,9 +71,9 @@ ComputePerformance := proc(iSet, prjNrs:list)
                     fn := fn + length( fnp )/2;
                     raw := append(raw, seq([oE1,If(z>oE1,z,NULL),'FN'],z=fnp) ):
                 od:
-                # compute the fpr and tpr and their variances
-                p := fp/(fp+tn); 
-                fpr[prNr,pNr] := [p, p*(1-p)/(fp+tn)];
+                # compute the ppv and tpr and their variances
+                p := tp/(tp+fp); # positive predictive value
+                fpr[prNr,pNr] := [p, p*(1-p)/(tp+fp)];
                 p := tp/(tp+fn); 
                 tpr[prNr,pNr] := [p, p*(1-p)/(tp+fn)];
                 rawData[prNr, pNr] := raw;
@@ -113,6 +113,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth ;
     printf('# created on %s\n', date());
     printf('FPR := %A:\nTPR := %A:\n', FPR, TPR):
     printf('RawDataFn := %A:\n', RawDataFn):
+    printf('_LABEL_FPR := %A:\n', 'pos. predictive value rate'):
     printf('#PIDs := %A:\n', PIDs );
     printf('#problems: %A;\n#measure: %A:\n#meth := %A:\n', problems, measure, meth);
     OpenWriting(previous):

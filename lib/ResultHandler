@@ -41,11 +41,11 @@ end:
 Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string, 
         cases:list(string), PIDs:list(string), vars:table;
         'aggregate'=((aggregate='sample variance'):string),
-        'FPRLabel'=((fprLabel='false positive rate'):string),
-        'TPRLabel'=((tprLabel='true positive rate'):string))
+        'FPRLabel'=((fprLabel_='false positive rate'):string),
+        'TPRLabel'=((tprLabel_='true positive rate'):string))
 
-    global FPR, TPR, RawDataFn;
-    FPR := TPR := RawDataFn := 0;
+    global FPR, TPR, RawDataFn, _LABEL_FPR, _LABEL_TPR;
+    FPR := TPR := RawDataFn := _LABEL_FPR := _LABEL_TPR := 0;
     traperror(ReadProgram(resFn));
     if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
              or length(FPR[1])<>length(PIDs) then 
@@ -56,6 +56,8 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         partial := [seq( length(z['OrgsCovered'])<nrOrgs, z=prj)];
         prjNames := [seq(z['Title'],z=prj)];
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(prjNames)) fi:
+        fprLabel := If(_LABEL_FPR<>0, _LABEL_FPR, fprLabel_); 
+        tprLabel := If(_LABEL_TPR<>0, _LABEL_TPR, tprLabel_); 
         tab := Table( border, gutter=2, ColAlign('l','l','c','c','c'),
                  Row(Bold('Case'),Bold('Project'),Bold(fprLabel),Bold(tprLabel),Bold('Raw Data')) );
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
