@@ -212,11 +212,16 @@ if overwrite=true then
     od:
 fi:
 
-treeVersion := '_v4';
-fams := ['NOX1-4','POP','VATB','SERC','HOX9-14','SUMF','S10-S20','ASTER',
-    'CITE','BAMBI','APP','Clusterin','BIN1','Presenilin','MAPT'];
-famIds := ['NOX','POP','VATB','SERC','HOX','SUMF','RPS','ASTER',
-    'CITE','BAMBI','APP','Clusterin','BIN1','Presenilin','MAPT'];
+treeVersion := '_v5';
+fams := ['NOX1-4','POP','VATB_1','VATB_2', 'VATB_3','SERC',
+    'HOX9-14','SUMF_1','SUMF_2','S10-S20_1', 'S10-S20_2','ASTER',
+    'CITE','BAMBI','APP','CLUS','BAR_1','BAR_2','PSEN_1','PSEN_2',
+    'MAPT', 'CASP','GH14','TRFE_1','TRFE_2','TRFE_3','TRFE_4'];
+famIds := ['NOX','POP','VATB1','VATB2','VATB3',
+    'SERC','HOX','SUMF1','SUMF2','RPS1',
+    'RPS2','ASTER','CITE','BAMBI','APP','Clusterin',
+    'BAR1','BAR2','PSEN1','PSEN2',
+    'MAPT','CASP','GH14','TRFE1','TRFE2','TRFE3','TRFE4'];
 
 for famNr to length(fams) do
     fam := fams[famNr];
