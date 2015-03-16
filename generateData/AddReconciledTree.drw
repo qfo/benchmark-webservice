@@ -212,9 +212,11 @@ if overwrite=true then
     od:
 fi:
 
-treeVersion := '_v2';
-fams := ['NOX1-4','POP','VATB','SERC','HOX9-14','SUMF','S10-S20','ASTER','CITE','BAMBI'];
-famIds := ['NOX','POP','VATB','SERC','HOX','SUMF','RPS','ASTER','CITE','BAMBI'];
+treeVersion := '_v4';
+fams := ['NOX1-4','POP','VATB','SERC','HOX9-14','SUMF','S10-S20','ASTER',
+    'CITE','BAMBI','APP','Clusterin','BIN1','Presenilin','MAPT'];
+famIds := ['NOX','POP','VATB','SERC','HOX','SUMF','RPS','ASTER',
+    'CITE','BAMBI','APP','Clusterin','BIN1','Presenilin','MAPT'];
 
 for famNr to length(fams) do
     fam := fams[famNr];
