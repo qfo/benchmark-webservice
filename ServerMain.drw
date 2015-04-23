@@ -20,12 +20,8 @@ ReadProgram(cdir.'/nogos.drw');
 darwin64 := 'darwin -q'; 
 
 logfile := getenv('DARWIN_LOG_PATH').'/BS_server.log';
-if FileExists(omaDBpath.'/ServerIndexed.db') then
-else printf('Browser not found\n'); quit fi;
 
-ReadProgram(omaDBpath.'Summaries.drw');
-GS := GenomeSummaries:
-LoadGenomeStartIDs():
+NrGenomes('RefSet5');
 google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 
 
@@ -276,63 +272,10 @@ bsMapData := proc(PID:string)
     vars['reloadin'] := 10;
     vars['PID'] := PID;
 
-    if FileExists(lock) then
-        vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(cdir.'/templates/uploaded.html',vars) );
-    elif pKey['ref']<>'OMA' then
+    if pKey['ref']<>'OMA' then
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
-    elif FileExists(seqMapResFn) then
-        # visualize current mapping
-        ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
-        prNS := length(MappingComb);
-        NS := NrOfGenomes('OMA'); 
-        cnts := CreateArray(1..prNS,1..NS+1):
-        for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
-        
-        t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown" id="species_mapping">\n'.
-             '<tr><th>extracted species</th><th># protein uploaded</th><th>mapped species</th><th># mappable proteins</th></tr>';
-        jsMap := '[';
-        for pg to prNS do
-            t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
-               '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
-                 SPS[pg], TotProts[pg], pg, pg);
-            ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-            hasDefaultSpec := evalb( cnts[pg,ord[1]]/TotProts[pg] > 0.3 );
-            t := t.sprintf('<option value="n.a." %s>no mapping</option>\n', 
-	                   If(hasDefaultSpec,'','selected="selected"'));
-            jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
-            for p to NS while cnts[pg,ord[p]]>0 do 
-                t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
-                       genomes[ord[p]], If(p=1 and hasDefaultSpec,' selected="selected"',''),
-		       genomes[ord[p]], GS[genomes[ord[p]],SCINAME]);
-            jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
-            od:
-            t := t.sprintf('</select></td><td>%d</td></tr>\n', If(hasDefaultSpec, cnts[pg,ord[1]],0));
-        jsMap := jsMap.'}';
-        od:
-        t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
-        t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
-             '<input type="submit" value="Next"/></form>\n';
-        jsMap := jsMap.'];';
-                 
-        vars['content'] := t;
-        vars['jsMappingArray'] := jsMap;
-        return( GenerateTemplate(cdir.'/templates/sequenceMapping.html',vars) );
-    fi:
-    
-    # the mapping did not start. start it! :-)
-    CallSystem('touch '.lock);
-    cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): spListFn:=''%s'': seqFn := ''%s'': '.
-                  'resFn := ''%s'': lock:=''%s'': PID := ''%s'': '.
-		  'ReadProgram(''%s/ComputeSeqMapping.drw''): done" '.
-                  '| nice -n 19 %s &',
-                  cdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, cdir, darwin64);
-    Logger( 'starting command: '.cmd, 'DEBUG');
-
-    CallSystem( cmd );
-    vars['content'] := 'Started computing sequence mapping...';
-    html := GenerateTemplate(cdir.'/templates/uploaded.html',vars);
-    return(html);
+    else 
+        error('OMA as reference dataset is no longer suported');
 end:
 
 bsCheckRelMap := proc(PID:string)

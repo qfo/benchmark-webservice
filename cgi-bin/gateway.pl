@@ -128,6 +128,12 @@ else {
             }
         } 
         else {
+            if ($req->param("reference") eq "OMA"){
+		        print header(-status=>404);
+		        print h1("Reference Dataset \"OMA\" is no longer supported");
+		        print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
+                exit 0;
+            }
             print DBLOG "upload data" if $debug;
             $session = getSessionId();
             $cache = getCacheHandle();

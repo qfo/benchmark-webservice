@@ -1,9 +1,11 @@
 #!/bin/sh
 
 target="$1"
+share_path="${2:-/pub/projects/cbrg-ortholog-benchmark-service}"
+
 
 usage() {
-   echo "Usage: $0 target_user@target_host"
+   echo "Usage: $0 target_user@target_host [remote_share_path]"
 }
 
 die_usage() {
@@ -11,7 +13,6 @@ die_usage() {
    exit 1
 }
 [ -n "$target" ] || die_usage
-
 
 project="benchmark-webservice"
 
@@ -24,10 +25,10 @@ fi
 
 # copy darwin binary and library
 mkdir -p ~/darwin/DB 
-cp /home/darwin/v2/source/linux64/darwin ~/darwin/darwin
-cp -r /home/darwin/v2/source/lib ~/darwin/
-cp /home/darwin/DB/GOdata.drw.gz ~/darwin/DB/
-cp /home/darwin/DB/speciescode.drw.gz ~/darwin/DB/
+scp darwin@linneus52.ethz.ch:v2/source/linux64/darwin ~/darwin/darwin
+scp -r darwin@linneus52.ethz.ch:v2/source/lib ~/darwin/
+scp darwin@linneus52.ethz.ch:DB/GOdata.drw.gz ~/darwin/DB/
+scp darwin@linneus52.ethz.ch:DB/speciescode.drw.gz ~/darwin/DB/
 sed -i -e "s|datadirname\s*:=.*|datadirname := '\${HOME}/darwin/DB':|" ~/darwin/lib/darwinit
 
 # create script to launch darwin in bin dir
@@ -69,8 +70,7 @@ cat > ~/.bashrc << EOA
 export DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH=\${HOME}/$project
 export DARWIN_LOG_PATH=\${HOME}/log
 export DARWIN_RUN_PATH=\${HOME}/run
-export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH=$DARWIN_PROJECTS_DATA_PATH/cbrg-ortholog-benchmark-service
-export DARWIN_BROWSERDATA_PATH=$DARWIN_BROWSER_SHARE/All.May2010/data
+export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH=${share_path}
 export DARWIN_OMA_REPO_PATH=\${HOME}/OMA
 echo \\\$PATH | grep -q \$HOME/bin || export PATH="\$HOME/bin:\\\$PATH"
 export MAFFT_BINARIES=/usr/lib/mafft/lib/mafft
