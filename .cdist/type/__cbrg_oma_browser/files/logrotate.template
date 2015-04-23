@@ -1,0 +1,56 @@
+#!/bin/sh
+set -u
+cat << DONE
+# Created by cdist ${__type##*/}
+# Do not change. Changes will be overwritten.
+#
+
+# cgi, python and darwin created logfiles
+$user_log_dir/oma-server.log
+$user_log_dir/omabrowser.gateway_error.log
+$user_log_dir/pyoma.log
+{
+   copytruncate
+   weekly
+   rotate 52
+   compress
+   delaycompress
+   missingok
+   notifempty
+   sharedscripts
+}
+
+# uwsgi created logfiles
+$user_log_dir/uwsgi.log
+{
+   copytruncate
+   weekly
+   rotate 5
+   compress
+   delaycompress
+   missingok
+   notifempty
+}
+
+# nginx created logfiles
+# based on /etc/logrotate.d/nginx
+$nginx_log_dir/*.log {
+   daily
+   missingok
+   rotate 52
+   compress
+   delaycompress
+   notifempty
+   create 0640 www-data $group
+   sharedscripts
+   prerotate
+      if [ -d /etc/logrotate.d/httpd-prerotate ]; then \\
+         run-parts /etc/logrotate.d/httpd-prerotate; \\
+      fi; \\
+   endscript
+   postrotate
+      [ ! -f /var/run/nginx.pid ] || kill -USR1 \$(cat /var/run/nginx.pid)
+   endscript
+}
+
+DONE

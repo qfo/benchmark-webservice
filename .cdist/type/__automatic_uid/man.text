@@ -1,0 +1,55 @@
+cdist-type__automatic_uid(7)
+============================
+Steven Armstrong <steven-cdist--@--armstrong.cc>
+
+
+NAME
+----
+cdist-type__automatic_uid - min/max values for automatic uid selection
+
+
+DESCRIPTION
+-----------
+This cdist type allows you to configure min/max values for automatic uid
+selection in useradd and adduser.
+
+
+REQUIRED PARAMETERS
+-------------------
+None.
+
+
+OPTIONAL PARAMETERS
+-------------------
+uid_min::
+   minimal user id
+uid_max::
+   maximal user id
+sys_uid_min::
+   minimal user id for system accounts
+sys_uid_max::
+   maximal user id for system accounts
+
+
+EXAMPLES
+--------
+
+--------------------------------------------------------------------------------
+# system accounts: 100 - 399
+# local accounts: 400 - 499
+# ldap accounts: >= 500
+__automatic_uid \
+   --sys_uid_min 100 --sys_uid_max 399 \
+   --uid_min 400 --uid_max 499
+--------------------------------------------------------------------------------
+
+
+SEE ALSO
+--------
+- cdist-type(7)
+
+
+COPYING
+-------
+Copyright \(C) 2011 Steven Armstrong. Free use of this software is
+granted under the terms of the GNU General Public License version 3 (GPLv3).

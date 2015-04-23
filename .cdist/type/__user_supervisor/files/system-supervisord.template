@@ -1,0 +1,12 @@
+#!/bin/sh
+set -u
+cat << DONE
+# Created by cdist ${__type##*/}
+# Do not change. Changes will be overwritten.
+#
+[program:${user}-supervisord]
+command = /usr/bin/supervisord -n -c $conf_dir/supervisord.conf
+directory = $home_dir
+environment = HOME='$home_dir'
+user = $user
+DONE
