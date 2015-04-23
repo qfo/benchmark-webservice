@@ -5,12 +5,12 @@ Steven Armstrong <steven-cdist--@--armstrong.cc>
 
 NAME
 ----
-cdist-type__cbrg_oma_benchmarkservice - TODOC
+cdist-type__cbrg_oma_benchmarkservice - bootstrap oma benchmarkservice
 
 
 DESCRIPTION
 -----------
-This cdist type allows you to TODOC
+Bootstrap a host to run the oma benchmarkservice.
 
 
 REQUIRED PARAMETERS

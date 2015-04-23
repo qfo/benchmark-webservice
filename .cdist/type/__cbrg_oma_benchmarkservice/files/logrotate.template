@@ -6,32 +6,34 @@ cat << DONE
 #
 
 $user_log_dir/*.log {
-  weekly
-  rotate 52
-  compress
-  missingok
-  notifempty
-  sharedscripts
+   copytruncate
+   weekly
+   rotate 52
+   compress
+   delaycompress
+   missingok
+   notifempty
+   sharedscripts
 }
 
 # based on /etc/logrotate.d/nginx
 $nginx_log_dir/*.log {
-   daily
-   missingok
-   rotate 52
-   compress
-   delaycompress
-   notifempty
-   create 0640 www-data $group
-   sharedscripts
-   prerotate
-      if [ -d /etc/logrotate.d/httpd-prerotate ]; then \\
-         run-parts /etc/logrotate.d/httpd-prerotate; \\
-      fi; \\
-   endscript
-   postrotate
-      [ ! -f /var/run/nginx.pid ] || kill -USR1 \$(cat /var/run/nginx.pid)
-   endscript
+    daily
+    missingok
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 0640 www-data $group
+    sharedscripts
+    prerotate
+       if [ -d /etc/logrotate.d/httpd-prerotate ]; then \\
+          run-parts /etc/logrotate.d/httpd-prerotate; \\
+       fi; \\
+    endscript
+    postrotate
+       [ ! -f /var/run/nginx.pid ] || kill -USR1 \$(cat /var/run/nginx.pid)
+    endscript
 }
 
 DONE

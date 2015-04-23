@@ -3,11 +3,15 @@
 set -e
 
 case "$__target_host" in
-   cbrg-oma.ethz.ch)
+
+   "omadev.cs.ucl.ac.uk" | "cbrg-oma.ethz.ch" )
       project_name=oma-benchmarkservice
       user_name=cbrg-obs
-      user_group=cbrg-obs
+      user_group=cbrg-oma
       user_home="/local/home/$user_name"
+      server_name=orthology.benchmarkservice.org
+      host="$__target_host"
+
       # User and directories
       __cbrg_uid_gid
       require="__cbrg_uid_gid" \
@@ -17,66 +21,21 @@ case "$__target_host" in
             --gid "$user_group" \
             --home "$user_home" \
             --shell "/bin/bash"
-
+         
       require="__user/$user_name __group/$user_group" \
          __cbrg_oma_benchmarkservice $project_name \
             --user $user_name \
             --group $user_group \
-            --server-name orthology.benchmarkservice.org \
+            --server-name $server_name \
             --server-alias orthology.benchmark-service.org \
             --server-alias orthology.benchmark-service.com
-
-      require="__user/$user_name" __ssh_authorized_keys "${user_name}-admins" \
-         --owner "$user_name" \
-         --key "$(cat "$__manifest/ssh/adriaal")"
+   
+      require="__cbrg_oma_benchmarkservice/$project_name" \
+         __ssh_authorized_keys "${user_name}-admins" \
+            --owner "$user_name" \
+            --key "$(cat "$__manifest/ssh/adriaal")" \
+            --key "$(cat "$__manifest/ssh/cdessimoz")"
    ;;
 
-   oma.cs.ucl.ac.uk)
-      # how to use:
-      # cd /path/to/oma/browser
-      # cdist config --conf-dir ~/.cdist oma.cs.ucl.ac.uk
 
-
-      # TODO: what if user is defined with no password?
- 
-      project_name=oma-browser
-      user_name=cbrg-oma
-      user_group=cbrg-oma
-      user_home="/local/home/$user_name"
-      host=oma.cs.ucl.ac.uk
-      # User and directories
-      __cbrg_uid_gid
-      require="__cbrg_uid_gid" \
-         __group "$user_group"
-      require="__cbrg_uid_gid __group/$user_group" \
-         __user "$user_name" \
-            --gid "$user_group" \
-            --home "$user_home" \
-            --shell "/bin/bash"
-
-      require="__user/$user_name __group/$user_group" \
-         __cbrg_oma_browser $project_name \
-            --user $user_name \
-            --group $user_group \
-            --use-cache \
-            --cache-max-size 1g \
-            --cache-keys-zone oma:1000m \
-            --server-name $host \
-            --server-alias www.$host \
-            --server-alias omabrowser.com \
-            --server-alias www.omabrowser.com \
-            --server-alias omabrowser.net \
-            --server-alias www.omabrowser.net \
-            --server-alias oma-browser.com \
-            --server-alias www.oma-browser.com \
-            --server-alias oma-browser.net \
-            --server-alias www.oma-browser.net \
-            --server-alias oma-browser.org \
-            --server-alias www.oma-browser.org
-
-        require="__user/$user_name" __ssh_authorized_keys "${user_name}-admins" \
-           --owner "$user_name" \
-           --key "$(cat "$__manifest/ssh/adriaal")"
-
-   ;;
 esac
