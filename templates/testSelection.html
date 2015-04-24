@@ -29,7 +29,7 @@ orthology inference project you would like to compare your predictions
   <input type="hidden" name="pTestStrategy" value="<DVAR name="ref">" />
  </DBOOL>
 
- <fieldset><legend>Phylogeny-Based Definition Tests</legend>
+ <fieldset><legend>Phylogeny-Based Definition Benchmarks</legend>
   <div class="notes"><h4>Phylogeny-Based Definition</h4>
    <p class="last">According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
   </div>
@@ -39,7 +39,7 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pTTEuk1" name="pTTEuk1" <DVAR name="styleEuk">/><label for="pTTEuk1">Eukaryotic Species Tree Discordance Test</label></h4>
+    <h4><input type="checkbox" id="pTTEuk1" name="pTTEuk1" <DVAR name="styleEuk">/><label for="pTTEuk1">Eukaryotic Species Tree Discordance Benchmark</label></h4>
     <DBOOL name="hasEuk">
     <div class="testParam">
      <label class="test" for="pTTEukPrj1">Projects to compare with:</label><br/>
@@ -49,7 +49,7 @@ orthology inference project you would like to compare your predictions
    </div>
    
    <div class="test">
-    <h4><input type="checkbox" id="pTTFun1" name="pTTFun1" <DVAR name="styleFun">/><label for="pTTFun1">Fungi Species Tree Discordance Test</label></h4>
+    <h4><input type="checkbox" id="pTTFun1" name="pTTFun1" <DVAR name="styleFun">/><label for="pTTFun1">Fungi Species Tree Discordance Benchmark</label></h4>
     <DBOOL name="hasFun">
     <div class="testParam">
      <label class="test" for="pTTFunPrj1">Projects to compare with:</label>
@@ -59,7 +59,7 @@ orthology inference project you would like to compare your predictions
    </div>
    
    <div class="test">
-    <h4><input type="checkbox" id="pTTBac1" name="pTTBac1" <DVAR name="styleBac">/><label for="pTTBac1">Bacteria Species Tree Discordance Test</label></h4>
+    <h4><input type="checkbox" id="pTTBac1" name="pTTBac1" <DVAR name="styleBac">/><label for="pTTBac1">Bacteria Species Tree Discordance Benchmark</label></h4>
     <DBOOL name="hasBac">
     <div class="testParam">
      <label class="test" for="pTTBacPrj1">Projects to compare with:</label>
@@ -71,7 +71,7 @@ orthology inference project you would like to compare your predictions
 
   <div class="test_kind">
    <div class="test">
-    <h4><input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca">/><label for="pSTDLuca1">Species Tree Discordance Test on all genomes in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <h4><input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca">/><label for="pSTDLuca1">Generalized Species Tree Discordance Benchmark based on all genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
     <DBOOL name="hasSTDLuca">
     <div class="testParam">
      <label class="test" for="pSTDLucaPrj1">Projects to compare with:</label><br/>
@@ -81,7 +81,7 @@ orthology inference project you would like to compare your predictions
    </div>
 
    <div class="test">
-    <h4><input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk">/><label for="pSTDEuk1">Species Tree Discordance Test on the eukaryotic genomes only in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <h4><input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk">/><label for="pSTDEuk1">Generalized Species Tree Discordance Benchmark on the eukaryotic genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
     <DBOOL name="hasSTDEuk">
     <div class="testParam">
      <label class="test" for="pSTDEukPrj1">Projects to compare with:</label><br/>
@@ -91,7 +91,7 @@ orthology inference project you would like to compare your predictions
    </div>
    
    <div class="test">
-    <h4><input type="checkbox" id="pSTDVer1" name="pSTDVer1" <DVAR name="styleSTDVer">/><label for="pSTDVer1">Species Tree Discordance Test on the vertebrate genomes only in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <h4><input type="checkbox" id="pSTDVer1" name="pSTDVer1" <DVAR name="styleSTDVer">/><label for="pSTDVer1">Generalized Species Tree Discordance Benchmark on the vertebrate genomes in the <a href="http://swisstree.vital-it.ch/species_tree" htarget="_new">QfO Species Phylogeny</a></label></h4>
     <DBOOL name="hasSTDVer">
     <div class="testParam">
      <label class="test" for="pSTDVerPrj1">Projects to compare with:</label><br/>
@@ -101,7 +101,7 @@ orthology inference project you would like to compare your predictions
    </div>
 
    <div class="test">
-    <h4><input type="checkbox" id="pSTDFun1" name="pSTDFun1" <DVAR name="styleSTDFun">/><label for="pSTDFun1">Species Tree Discordance Test on the fungal genomes only in the <a href="https://wiki.isb-sib.ch/swisstree/Species_tree_for_Quest_for_Orthologs_reference_proteomes_2011" target="_new">Large Species Phylogeny</a></label></h4>
+    <h4><input type="checkbox" id="pSTDFun1" name="pSTDFun1" <DVAR name="styleSTDFun">/><label for="pSTDFun1">Generalized Species Tree Discordance Benchmark on the fungal genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
     <DBOOL name="hasSTDFun">
     <div class="testParam">
      <label class="test" for="pSTDFunPrj1">Projects to compare with:</label><br/>
@@ -172,7 +172,7 @@ orthology inference project you would like to compare your predictions
   </div>
  </fieldset>
 -->
- <fieldset><legend>Function-Based Definition Test</legend>
+ <fieldset><legend>Function-Based Definition Benchmarks</legend>
   <div class="notes"><h4>Function-Based Definition</h4>
    <p class="last">One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
   </div>
@@ -184,7 +184,7 @@ orthology inference project you would like to compare your predictions
   <div class="reference">
    <p class="last"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a></p>
   </div> 
-    <h4><input type="checkbox" id="pGO1" name="pGO1" <DVAR name="styleGO"> /><label for="pGO1">Gene Ontology Test</label></h4>
+    <h4><input type="checkbox" id="pGO1" name="pGO1" <DVAR name="styleGO"> /><label for="pGO1">Gene Ontology Benchmark</label></h4>
     <DBOOL name="hasGO">
     <div class="testParam">
      <label class="test" for="pGOPrj1">Projects to compare with</label>
@@ -232,7 +232,7 @@ orthology inference project you would like to compare your predictions
   <div class="reference">
    <p class="last"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a></p>
   </div> 
-   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" <DVAR name="styleEC"> /><label for="pEC1">Enzyme Classification (EC) Test</label></h4>
+   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" <DVAR name="styleEC"> /><label for="pEC1">Enzyme Classification (EC) Benchmark</label></h4>
    <DBOOL name="hasEC">
    <div class="testParam">
     <label for="pECPrj1">Projects to compare with</label>

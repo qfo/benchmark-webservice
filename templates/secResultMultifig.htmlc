@@ -1,4 +1,4 @@
-<h4><DVAR name="resheader"></h4>
+<h3><DVAR name="resheader"></h3>
 <div class="reference"><p class="last">
 <a href="<DVAR name="testRef_Lnk">"><DVAR name="testRef_Desc"></a>
 </p><DVAR name="testNote"></div>
