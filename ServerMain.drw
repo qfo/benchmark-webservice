@@ -547,7 +547,7 @@ end:
 StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.STD%s.lock',fnBase, problem);
-    datasets := ['Eukaryota', 'Fungi', 'Bacteria'];
+    datasets := ['Eukaryota', 'Fungi', 'Bacteria', 'Vertebrata'];
     vars := table('');
     for k to length(datasets) while SearchString(problem, datasets[k])<0 do od:
     vars['resheader'] := If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree';
