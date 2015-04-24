@@ -55,11 +55,11 @@ if [ ! -p \${DARWIN_RUN_PATH}/BSin.\$(hostname) ]; then
 fi
 
 debug="false"
-if [[ "\$1" == "-d" ]] ; then
+if [[ "\\\$1" == "-d" ]] ; then
     debug="true";
 fi
 exec darwin << EOY
-DEBUG := \${debug};
+DEBUG := \\\${debug};
 ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/ServerMain.drw' );
 EOY
 EOX

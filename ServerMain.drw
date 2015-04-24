@@ -276,6 +276,7 @@ bsMapData := proc(PID:string)
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     else 
         error('OMA as reference dataset is no longer suported');
+    fi
 end:
 
 bsCheckRelMap := proc(PID:string)
