@@ -547,8 +547,10 @@ end:
 StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.STD%s.lock',fnBase, problem);
+    datasets := ['Eukaryota', 'Fungi', 'Bacteria'];
     vars := table('');
-    vars['resheader'] := problem.' Generalized Species Tree';
+    for k to length(datasets) while SearchString(problem, datasets[k])<0 do od:
+    vars['resheader'] := If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testNote'] := '<p>A species phylogeny assembeled by the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Tree Working Group</a> is used as the reference phylogeny.</p>';
