@@ -15,7 +15,6 @@ print(getpid());
 version();
 t:=TimedCallSystem('ulimit -a'):
 prints(t[2]);
-ReadProgram(cdir.'/nogos.drw');
 
 darwin64 := 'darwin -q'; 
 
