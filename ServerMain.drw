@@ -20,12 +20,8 @@ ReadProgram(cdir.'/nogos.drw');
 darwin64 := 'darwin -q'; 
 
 logfile := getenv('DARWIN_LOG_PATH').'/BS_server.log';
-if FileExists(omaDBpath.'/ServerIndexed.db') then
-else printf('Browser not found\n'); quit fi;
 
-ReadProgram(omaDBpath.'Summaries.drw');
-GS := GenomeSummaries:
-LoadGenomeStartIDs():
+NrGenomes('RefSet5');
 google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 
 
@@ -226,6 +222,17 @@ bsShowProject := proc()
         if length(FileStat(datafn))=0 then 
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
+        fi; 
+        covered := p['OrgsCovered'];
+        if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
+            t['coverage'] := 'covers all genomes';
+        else
+            missing := {op(KnownSpecies(p['ref']))} minus covered;
+            if length(missing)>5 then
+                t['coverage'] := sprintf('%d genomes missing', length(missing));
+            else 
+                t['coverage'] := sprintf('missing genomes: %a', missing);
+            fi:
         fi;
         t['uploadDate'] := p['createDat'];
         cont := append(cont, GenerateTemplate(cdir.'/templates/secProject.htmlc',t));
@@ -265,63 +272,11 @@ bsMapData := proc(PID:string)
     vars['reloadin'] := 10;
     vars['PID'] := PID;
 
-    if FileExists(lock) then
-        vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(cdir.'/templates/uploaded.html',vars) );
-    elif pKey['ref']<>'OMA' then
+    if pKey['ref']<>'OMA' then
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
-    elif FileExists(seqMapResFn) then
-        # visualize current mapping
-        ReadProgram(seqMapResFn); #load MappingComb, TotProts, SPS and Colls
-        prNS := length(MappingComb);
-        NS := NrOfGenomes('OMA'); 
-        cnts := CreateArray(1..prNS,1..NS+1):
-        for pg to prNS do for g to NS+1 do cnts[pg,g] := length(MappingComb[pg,g]) od od:
-        
-        t := '<form name="specmap" action="gateway.pl" method="post">\n<table class="dropdown" id="species_mapping">\n'.
-             '<tr><th>extracted species</th><th># protein uploaded</th><th>mapped species</th><th># mappable proteins</th></tr>';
-        jsMap := '[';
-        for pg to prNS do
-            t := t.sprintf('<tr><td>%a</td><td>%d</td><td>'.
-               '<select name="p%04d" onChange="changeMapCnt(%d);">\n', 
-                 SPS[pg], TotProts[pg], pg, pg);
-            ord := sort([seq(g,g=1..NS)], x->-cnts[pg,x]);
-            hasDefaultSpec := evalb( cnts[pg,ord[1]]/TotProts[pg] > 0.3 );
-            t := t.sprintf('<option value="n.a." %s>no mapping</option>\n', 
-	                   If(hasDefaultSpec,'','selected="selected"'));
-            jsMap := jsMap . If(pg=1,'',',') . '{"n.a.":0';
-            for p to NS while cnts[pg,ord[p]]>0 do 
-                t := t.sprintf(' <option value="%s"%s>%s - %s</option>\n',
-                       genomes[ord[p]], If(p=1 and hasDefaultSpec,' selected="selected"',''),
-		       genomes[ord[p]], GS[genomes[ord[p]],SCINAME]);
-            jsMap := jsMap.sprintf(',"%s":%d', genomes[ord[p]], cnts[pg,ord[p]]);
-            od:
-            t := t.sprintf('</select></td><td>%d</td></tr>\n', If(hasDefaultSpec, cnts[pg,ord[1]],0));
-        jsMap := jsMap.'}';
-        od:
-        t := t.sprintf('</table>\n<input type="hidden" name="p0" value="%s" />\n',PID);
-        t := t.'<input type="hidden" name="f" value="MapRels"/>\n'.
-             '<input type="submit" value="Next"/></form>\n';
-        jsMap := jsMap.'];';
-                 
-        vars['content'] := t;
-        vars['jsMappingArray'] := jsMap;
-        return( GenerateTemplate(cdir.'/templates/sequenceMapping.html',vars) );
-    fi:
-    
-    # the mapping did not start. start it! :-)
-    CallSystem('touch '.lock);
-    cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): spListFn:=''%s'': seqFn := ''%s'': '.
-                  'resFn := ''%s'': lock:=''%s'': PID := ''%s'': '.
-		  'ReadProgram(''%s/ComputeSeqMapping.drw''): done" '.
-                  '| nice -n 19 %s &',
-                  cdir, fnBase.'.sps', fnBase.'.seqs', seqMapResFn, lock, PID, cdir, darwin64);
-    Logger( 'starting command: '.cmd, 'DEBUG');
-
-    CallSystem( cmd );
-    vars['content'] := 'Started computing sequence mapping...';
-    html := GenerateTemplate(cdir.'/templates/uploaded.html',vars);
-    return(html);
+    else 
+        error('OMA as reference dataset is no longer suported');
+    fi
 end:
 
 bsCheckRelMap := proc(PID:string)
@@ -329,6 +284,7 @@ bsCheckRelMap := proc(PID:string)
     fnBase := pKey['fnBase'];
     dbFn := fnBase.'.db';
     lock := fnBase.'.rel.lock';
+    log := fnBase.'.rel.log';
     
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
@@ -337,7 +293,8 @@ bsCheckRelMap := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
+        if FileExists(log) then vars['log'] := ReadRawFile(log) fi:
+        return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
         return(bsTestSelection(PID));
     else error('RelMapping not started for '.PID) fi:
@@ -357,14 +314,12 @@ bsMapRels := proc(PID:string)
     # in general, this should not be the case!
     if FileExists(dbFn) then
         # provide test selection page:
-	WriteLog('Strange program flow! Attack?');
         return( bsTestSelection(PID) );
     fi:
 
     # check if mapping process is already running
     if FileExists(lock) and IsLockProcessAlive(lock) then
         vars['content'] := '<p>Still computing...</p>';
-	WriteLog('DOS-ATTACK?'); sleep(5);
     else 
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
@@ -418,8 +373,7 @@ bsTestSelection := proc(PID:string)
             vars['TT'.z.'Projects'] := ConcatStrings(
               [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
 	                   '<label for="pTT%sPrj%d">%s</label><br/>', z,pNr,z,pNr,
-			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)) and 
-			      length(pairwiseOverlap[pNr])>5,'checked="checked"','disabled="disabled"'),
+			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 'checked="checked"','disabled="disabled"'),
 		           z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
 	vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
 	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
@@ -427,7 +381,7 @@ bsTestSelection := proc(PID:string)
     od:
   
     # large Species Tree discordance test
-    for problem in ['Luca','Euk'] do
+    for problem in ['Luca','Euk','Ver','Fun'] do
         if dataset='OMA' then
             vars['hasSTD'.problem] := false;
         else
@@ -551,16 +505,18 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     lock  := sprintf('%s.%s.lock',fnBase,king);
     vars := table('');
     vars['case'] := king;
-    vars['resheader'] := 'Species Tree Discordance Test - Dataset '.king;
+    vars['resheader'] := king.' Tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
+    vars['resId'] := 'TT'.king;
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
@@ -582,18 +538,25 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
+    template := If(vars['hasMultiFig']=true, 
+        '/templates/secResultMultifig.htmlc',
+        '/templates/secResult.htmlc');
+    return( [GenerateTemplate(cdir.template, vars), isRunning] );
 end:
 
 StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.STD%s.lock',fnBase, problem);
+    datasets := ['Eukaryota', 'Fungi', 'Bacteria', 'Vertebrata'];
     vars := table('');
-    vars['resheader'] := problem.' Species Tree Discordance Test - Large species tree';
+    for k to length(datasets) while SearchString(problem, datasets[k])<0 do od:
+    vars['resheader'] := If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['testNote'] := '<p>A species phylogeny assembeled by the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Tree Working Group</a> is used as the reference phylogeny.</p>';
     vars['testRef_Lnk'] := '';
     vars['testRef_Desc'] := '';
+    vars['resId'] := 'STD'.problem;
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
@@ -602,6 +565,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     sel := [seq(If(length(z)>lenBaseParam and z[1..lenBaseParam]=baseParam, 
         parse(z[lenBaseParam+1..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
     if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
 
@@ -622,7 +586,10 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
-    return( [GenerateTemplate(cdir.'/templates/secResult.htmlc', vars), isRunning] );
+    template := If(vars['hasMultiFig']=true, 
+        '/templates/secResultMultifig.htmlc',
+        '/templates/secResult.htmlc');
+    return( [GenerateTemplate(cdir.template, vars), isRunning] );
 end:
 
 
@@ -632,12 +599,12 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     lock  := sprintf('%s.%sPhyl.lock',fnBase,testset);
     vars := table('');
     if testset='Ref' then
-        vars['resheader'] := 'Agreement with Reference Phylogeny';
+        vars['resheader'] := 'Agreement with Reference Gene Phylogenies of <a href="http://wiki.isb-sib.ch/swisstree" target="_new">SwissTrees</a>';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
         vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484).';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     elif testset='Auto' then
-        vars['resheader'] := 'Agreement with Semi-automated Reference Phylogeny (contributed by Fabian Schreiber)';
+        vars['resheader'] := 'Agreement with Semi-automated Reference Gene Phylogenies (contributed by Fabian Schreiber)';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/nar/gkj118';
         vars['testRef_Desc'] := 'Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
@@ -651,6 +618,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     prefix := sprintf('p%sPhyloPrj', testset); 
     sel := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on'); 
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
     
     k := SearchArray( sprintf('p%sPhylAggMeas',testset), pnames );
     measure := If(k>0,params[k],'sample variance');
@@ -698,6 +666,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     projs := sort( projs, x->x['Title'] );
     sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
 
     measure := params[ SearchArray('pECMeasure',pnames) ];
     meth := ParseStrategy(pnames,params):
@@ -741,6 +710,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', 
                    parse(z[7..-1]), NULL), z=pnames)];
     projs := [seq(projs[i,'PID'], i=sel), PID];
+    vars['PIDs'] := projs:
 
     filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', 
                        parse(z[7..-1]),NULL), z=pnames)};
@@ -850,53 +820,37 @@ bsCheckResults := proc(sessionkey)
     pnames := __SessionPnames; params := __SessionParams;
     PID := params[SearchArray('pPID',pnames)];
     vars := table('');
-    vars['tit'] := GetPKeyData(PID)['Title'];
+    pData := GetPKeyData(PID):
+    if pData['ref']='OMA' or not pData['isPublic'] then
+        vars['tit'] := pData['Title'];
+    fi:
     vars['sessionkey'] := string(sessionkey);
     refresh := false;
-    k := SearchArray('pTTEuk1', pnames);
-    if k>0 and params[k]='on' then
-        # do eukaryotic tree test
-	t := StartTreeTest(PID,'Eukaryota',params, pnames);
-        vars['TTEuk1'] := t[1]; 
-	if t[2]=true then refresh := true fi:
-    fi;
 
-    k := SearchArray('pTTFun1', pnames);
-    if k>0 and params[k]='on' then
-        # do fungi tree test
-	t :=  StartTreeTest(PID,'Fungi',params, pnames);
-        vars['TTFun1'] := t[1];
-	if t[2]=true then refresh := true fi:
-    fi;
+    for problem in ['Eukaryota','Fungi','Bacteria'] do
+        short := problem[1..3];
+        k := SearchArray('pTT'.short.'1', pnames);
+        if k>0 and params[k]='on' then
+            # do traditional species tree discordance test
+	    t := StartTreeTest(PID,problem,params, pnames);
+            vars['TT'.short.'1'] := t[1]; 
+            if t[2]=true then refresh := true fi:
+        fi;
+    od:
 
-    k := SearchArray('pTTBac1', pnames);
-    if k>0 and params[k]='on' then 
-        # do bacteria tree test
-        t := StartTreeTest(PID,'Bacteria',params, pnames);
-        vars['TTBac1'] := t[1]; 
-	if t[2]=true then refresh := true fi:
-    fi;
-
-    k := SearchArray('pSTDLuca1', pnames);
-    if k>0 and params[k]='on' then
-        # do large species tree discordance test
-        t := StartSTDTest(PID,'Luca',params,pnames);
-        vars['STDLuca1'] := t[1];
-        if t[2]=true then refresh := true fi:
-    fi;
-
-    k := SearchArray('pSTDEuk1', pnames);
-    if k>0 and params[k]='on' then
-        # do large species tree discordance test
-        t := StartSTDTest(PID,'Euk',params,pnames);
-        vars['STDEuk1'] := t[1];
-        if t[2]=true then refresh := true fi:
-    fi;
-
+    for problem in ['Luca','Euk','Ver','Fun'] do
+        k := SearchArray('pSTD'.problem.'1', pnames);
+        if k>0 and params[k]='on' then
+            # do large species tree discordance test
+            t := StartSTDTest(PID,problem,params,pnames);
+            vars['STD'.problem.'1'] := t[1];
+            if t[2]=true then refresh := true fi:
+       fi;
+    od:
 
     k := SearchArray('pRefPhylo1', pnames);
     if k>0 and params[k]='on' then
-        # do reference phylogeney based test
+        # do reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames);
 	vars['RefPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:
@@ -904,7 +858,7 @@ bsCheckResults := proc(sessionkey)
     
     k := SearchArray('pAutoPhylo1', pnames);
     if k>0 and params[k]='on' then
-        # do reference phylogeney based test
+        # do semi-auto reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames,'testset'='Auto');
 	vars['AutoPhylo'] := t[1]; 
 	if t[2]=true then refresh := true fi:

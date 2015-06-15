@@ -1,4 +1,4 @@
-<h4><DVAR name="resheader"></h4>
+<h3><DVAR name="resheader"></h3>
 <div class="reference"><p class="last">
 <a href="<DVAR name="testRef_Lnk">"><DVAR name="testRef_Desc"></a>
 </p><DVAR name="testNote"></div>
@@ -6,6 +6,6 @@
 <DVAR name="content">
 </div>
 <div class="Graphics"><DBOOL name="resFigReady">
- <img src="<DVAR name="fig">" alt="comparison graph"/><br/>
+ <img class="result" src="<DVAR name="fig">" alt="comparison graph"/><br/>
  <span class="hint"><a href="<DVAR name="gp_src">">Download Gnuplot sources</a></span></DBOOL>
 </div>

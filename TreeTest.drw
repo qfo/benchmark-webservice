@@ -29,6 +29,7 @@ SeqDB := ReadDb( ddir.'/ServerSeqs.db');
 FindCases := proc(iSet, prjNrs:list)
     global DB:
     cases := []; nP := length(prjNrs);
+    NrOrthologs := CreateArray(1..nP):
     for rootGenome in catBins[1] do 
         ran := GenomeRange(rootGenome,dataset):
         for oE from ran[1] to ran[2] do
@@ -51,7 +52,10 @@ FindCases := proc(iSet, prjNrs:list)
                     if not member(vp,iSet) then next fi;
                     
                     bin := orgNr2Bin[ GenomeNrFromENr(vp,dataset) ]:
-                    if bin>1 then vpCat[bin] := append(vpCat[bin], vp) fi:
+                    if bin>1 then 
+                        vpCat[bin] := append(vpCat[bin], vp);
+                        NrOrthologs[i2pNr] := NrOrthologs[i2pNr]+1;
+                    fi:
                 od:
                 for i from 2 to nrBins do 
                     if length(vpCat[i])>0 then
@@ -85,7 +89,7 @@ FindCases := proc(iSet, prjNrs:list)
         cases := Shuffle(cases)[1..MAX_NR_TREES]:
     fi:
     Logger( sprintf('nr of cases: %d',length(cases)), 'INFO');
-    return(cases):
+    return(cases, NrOrthologs):
 end:
 
 ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
@@ -139,12 +143,13 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
     return( [RFstat, rawDat, IdentStat] );
 end:
 
-StoreResult := proc(fn:string, RFstat, IdentStat, RawDataFn, PIDs)
+StoreResult := proc(fn:string, RFstat, IdentStat, NrOrthologs, RawDataFn, PIDs)
     OpenWriting(fn):
     printf('RFstat := %A:\n', RFstat):
     printf('PIDs := %A:\n', PIDs );
     printf('RawDataFn := %A:\n', RawDataFn);
     printf('IdentStat := %A:\n', IdentStat);
+    printf('NrOrthologs := %A:\n', NrOrthologs);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
 end:
@@ -174,18 +179,20 @@ kingdom := problem[kingdom[1]+1..kingdom[2]-1];
 if meth='INTERSECT' then
     iSet  := GetProjISets(prj);
     prjNrs:= [seq(i,i=1..nP)];
-    cases := FindCases(iSet, prjNrs);
+    casesAndCnts := FindCases(iSet, prjNrs);
+    cases := casesAndCnts[1]; NrOrthologs:=cases[2];
     t0 := time();
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('TreeTest/%s.%a.tsv.gz', kingdom,
         hash([prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
-    StoreResult(resFn, RFstat, IdentStat, [seq(prj[i,'PID'], i=prjNrs)]);
+    StoreResult(resFn, RFstat, IdentStat, NrOrthologs, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
     cases := CreateArray(1..nP-1,[]):
     RFstats := CreateArray(1..nP-1):
     IdentStats := CreateArray(1..nP-1):
+    NrOrthologList := CreateArray(1..nP-1):
     prjNrs := [seq([i,nP],i=1..nP-1)];
     resFnParts := CreateArray(1..nP-1):
     rawDataFn := CreateArray(1..nP-1):
@@ -198,35 +205,39 @@ elif meth='PAIRWISE' then
             kingdom, hash([curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
-        cases[i] := FindCases( iSet, prjNrs[i] );
+        casesAndCnts := FindCases( iSet, prjNrs[i] );
+        cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2];
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
     for i to nP-1 do
         if FileExists(resFnParts[i].'.gz') then
             RFstat := RawDataFn := 0; 
+            NrOrthologs := CreateArray(1..2):
             ReadProgram(resFnParts[i]): 
             assert(length(RFstat)=2); 
             RFstats[i] := RFstat;
             IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
+            NrOrthologList[i] := NrOrthologs;
         else
             compRes := ComputeCongruenceStat(prjNrs[i], cases[i], 
                 max(1,totNrTrees) ):
             RFstats[i] := compRes[1]; rawdata := compRes[2]; IdentStats[i] := compRes[3];
             StoreRawData( rawdir.rawDataFn[i,1..-4], rawdata, 
                 [seq(prj[j],j=prjNrs[i])] );
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], rawDataFn[i], 
                 [seq(prj[j,'PID'],j=prjNrs[i])]);
         fi:
     od:
-    StoreResult(resFn, RFstats, IdentStats, rawDataFn, 
+    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, rawDataFn, 
         [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)] );
 elif length(meth)>=6 and meth[1..6]='REFSET' then
     cases := CreateArray(1..nP,[]):
     RFstats := CreateArray(1..nP):
     IdentStats := CreateArray(1..nP):
     RawData := CreateArray(1..nP):
+    NrOrthologList := CreateArray(1..nP):
     prjNrs := [seq(i,i=1..nP)];
     resFnParts := CreateArray(1..nP):
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
@@ -235,13 +246,14 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
         rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', kingdom, hash([prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
-        cases[i] := FindCases( intersect(), [i] );
+        casesAndCnts := FindCases( intersect(), [i] );
+        cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2,1];
     od:
     t0 := time();
     totNrTrees := sum(length(z),z=cases):
     for i to nP do
         if FileExists(resFnParts[i].'.gz') then
-            RFstat := RawDataFn := 0;
+            RFstat := RawDataFn := IdentStat := NrOrthologs := 0;
             ReadProgram(resFnParts[i]): 
             assert(type(RFstat,Stat)); 
             assert(type(IdentStat,Stat)); 
@@ -249,17 +261,18 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             RFstats[i] := RFstat;
             IdentStats[i] := IdentStat;
             rawDataFn[i] := RawDataFn;
+            NrOrthologList[i] := NrOrthologs;
         else
             compRes := ComputeCongruenceStat([prjNrs[i]], cases[i], 
                 totNrTrees):
             # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
             RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
             StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], rawDataFn[i], 
+            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], rawDataFn[i], 
                 [prj[i,'PID']]);
         fi:
     od:
-    StoreResult(resFn, RFstats, IdentStats, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
+    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
 else error('unknown strategy method:'.meth); 
 fi:
 

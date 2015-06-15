@@ -33,6 +33,7 @@ my $debug = 0;
 my $error_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_error.log';
 my $dbg_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_debug.log';
 my $upload_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_upload.log';
+my $MAXLOAD = 12;
 
 # maximum Post size in bytes 
 $CGI::POST_MAX = 1<<32;
@@ -72,6 +73,13 @@ my @p = ();
 my @a = ();
 my $cache = undef;
 my $session = undef;
+
+# check whether server load is too high
+my $sysload = (getSysLoad())[0];
+if ($sysload > $MAXLOAD) {
+    die "Server too busy, please try again in a few minutes...";
+}
+
 
 if (not defined($req->param('f'))) {
     ($f,@p) = @ARGV;
@@ -120,6 +128,12 @@ else {
             }
         } 
         else {
+            if ($req->param("reference") eq "OMA"){
+		        print header(-status=>404);
+		        print h1("Reference Dataset \"OMA\" is no longer supported");
+		        print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
+                exit 0;
+            }
             print DBLOG "upload data" if $debug;
             $session = getSessionId();
             $cache = getCacheHandle();
@@ -554,5 +568,23 @@ sub getSessionId {
     require Digest::MD5;
 
     Digest::MD5::md5_hex(Digest::MD5::md5_hex(time().{}.rand().$$));
+}
+
+sub getSysLoad {
+    my $fh = new IO::File('/proc/loadavg', 'r');
+    if (defined $fh) {
+        my $line = <$fh>;
+        $fh->close();
+        if ($line =~ /^(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)/) {
+            return ($1, $2, $3);
+        }  # if we can parse /proc/loadavg contents
+    }
+    chomp( my $sysload = `uptime`);
+    if ($sysload =~ /load average: ([\d.]+),\s([\d.]+),\s([\d.]+)/){
+        print "slow version\n" if $debug;
+        return( $1, $2, $3 )
+    } else {
+        die("Cannot find out system load");
+    }
 }
 

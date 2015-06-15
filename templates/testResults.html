@@ -7,14 +7,31 @@
 </DBOOL>
 <link type="text/css" rel="stylesheet" href="/benchmarkservice.css"/>
 <script src="/scripts.js" type="text/javascript"></script>
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script src="http://malsup.github.com/jquery.cycle.all.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(window).load(function(){
+$('div.multipic').each( function(){
+    var ext=this.id.substring(8);
+    $(this).cycle({  
+        speed:  'fast', 
+        timeout: 0, 
+        next:   '#next'+ext, 
+        prev:   '#prev'+ext
+    });
+});
+});
+</script>
 <title>Benchmark Results <DVAR name="tit"></title>
 </head>
 <body>
-<div id="main">
+<div id="mainWide">
 <div id="mainLogo"></div>
-<h2>Benchmark Results for <DVAR name="tit"></h2>
+<h1>Benchmark Results: <DVAR name="tit"></h1>
 
-<h3>Phylogeny-Based Definition Tests</h3>
+<h2>Phylogeny-Based Definition Benchmarks</h2>
+<h3>Species Tree Discordance Benchmark</h3>
 <DVAR name="TTEuk1">
 <div class="reset"></div>
 <DVAR name="TTFun1">
@@ -22,11 +39,17 @@
 <DVAR name="TTBac1">
 <div class="reset"></div>
 
+<h3>Generalized Species Tree Discordance Benchmark</h3>
 <DVAR name="STDLuca1">
 <div class="reset"></div>
 <DVAR name="STDEuk1">
 <div class="reset"></div>
+<DVAR name="STDVer1">
+<div class="reset"></div>
+<DVAR name="STDFun1">
+<div class="reset"></div>
 
+<h3>Reference Phylogeny Benchmarks</h3>
 <DVAR name="RefPhylo">
 <div class="reset"></div>
 <DVAR name="AutoPhylo">
@@ -38,7 +61,7 @@
 <div class="reset"></div>
 -->
 
-<h3>Function-Based Definition Tests</h3>
+<h2>Function-Based Definition Benchmarks</h2>
 <DVAR name="GO">
 <div class="reset"></div>
 <DVAR name="EC">

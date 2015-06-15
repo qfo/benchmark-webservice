@@ -34,7 +34,7 @@ end:
 MapIDtoENr := proc(id:string)
     i := SearchOrderedArray(id, mapping[1]);
     if i<=0 or i>length(mapping[1]) or mapping[1,i]<>id then
-        if printlevel>1 then warning('missing id '''.id.''''); fi:
+        warning('missing id '''.id.''''):
         return(NULL);
     else return(mapping[-1,i]) fi: # return the last column value, i.e. the project eNr
 end:
@@ -136,6 +136,15 @@ WriteDB := proc(fn:string, VPs, mapping)
     Set(printgc=verb);
 end:
 
+CheckIfOrthologsInGenome := proc(g:string, reference:string)
+    hasOrthologs := false;
+    rng := GenomeRange(g, reference):
+    for eNr from rng[1] to rng[2] do
+        if length(VPs[eNr])>0 then hasOrthologs := true; break fi:
+    od:
+    return( hasOrthologs );
+end:
+
 # to break at error
 to 1 do
     pKey := GetPKeyData(PID);
@@ -160,7 +169,8 @@ to 1 do
     ReadDb(resDBfn):
 
     pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
-    orgs := {seq(GenomeCodeFromENr(z,referenceDatSet),z=iSet)}:
+    orgs := {seq(If(CheckIfOrthologsInGenome(g, referenceDatSet), g, NULL), 
+        g=KnownSpecies(referenceDatSet))}:
     pKey['OrgsCovered'] := orgs:
     if referenceDatSet<>'OMA' and relMapped>0 and 
         pKey['NOrthSub']>0 and relMapped/pKey['NOrthSub']>.01 then

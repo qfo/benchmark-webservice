@@ -1,0 +1,24 @@
+<h3><DVAR name="resheader"></h3>
+<div class="reference"><p class="last">
+<a href="<DVAR name="testRef_Lnk">"><DVAR name="testRef_Desc"></a>
+</p><DVAR name="testNote"></div>
+<div class="RawResults"> 
+<DVAR name="content">
+</div>
+<div class="Graphics"><DBOOL name="resFigReady">
+ <div class="multipic" id="multipic<DVAR name="resId">">
+  <DLOOP name="figdivs">
+  <div>
+   <img class="result" src="<DLVAR name="fig">" alt="comparison graph"/><br/>
+   <span class="hint"><a href="<DLVAR name="gp_src">">Download Gnuplot sources</a></span>
+  </div>
+  </DLOOP>
+ </div>
+ <div class="nav">
+  Navigate through all plots: &nbsp;
+  <a href="#" id="prev<DVAR name="resId">">prev</a>&nbsp;
+  <a href="#" id="next<DVAR name="resId">">next</a>
+ </div>
+ </DBOOL>
+</div>
+

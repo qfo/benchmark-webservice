@@ -24,6 +24,9 @@
 <tr>
  <td class="label">Upload Date</td>
  <td><DVAR name="uploadDate"></td>
+</tr><tr>
+ <td class="label">Coverage</td>
+ <td><DVAR name="coverage"></td>
 </tr>
 </table>
 </div>

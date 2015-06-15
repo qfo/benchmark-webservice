@@ -3,12 +3,26 @@ ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
 rawdir := datdir.'/raw';
 
 dataset := 'RefSet5';
-treeVers := '1';
+treeVers := '.v1';
+treeVers := '_conf_20141027';
 
 # read multifurcating species tree from file
 # multifurcating nodes have same tree height, otherwise +1
-treeStr := ReadRawFile(rawdir.'/speciestree_'.dataset.'.v'.treeVers.'.nhx');
+treeStr := ReadRawFile(rawdir.'/speciestree_'.dataset.treeVers.'.nhx');
+if treeStr[-1]<>';' then treeStr := treeStr.';' fi:
 tree := ParseNewickTree(treeStr, 'defaultBranchLength'=1);
+
+BackwardMapping := proc(g_)
+    if g_='ASPFU' then g:='ASPFC';
+    elif g_='BRADU' then g:='BRAJA';
+    elif g_='CHLTR' then g:='CHLTA';
+    elif g_='CRYNJ' then g:='CRYNE';
+    elif g_='HALSA' then g:='HALS3';
+    elif g_='PSEAE' then g:='PSEA7';
+    else g:=g_ fi:
+    return(g);
+end:
+
 
 ConvertLabelsToUniProtCode := proc(l:Leaf)
     knownSpecies := {op(KnownSpecies(dataset))};
@@ -18,19 +32,40 @@ ConvertLabelsToUniProtCode := proc(l:Leaf)
     lab := l['Label'];
     re := MatchRegex('([a-zA-Z][a-zA-Z0-9]*)_{1,2}([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
     assert(length(re)=4);
-        
-    codeKnown := member(uppercase(re[2]),knownSpecies);
+    
+    org := BackwardMapping(re[2]):
+    codeKnown := member(uppercase(org),knownSpecies);
     taxKnown :=  member(re[4],tax);
-    r := Leaf(uppercase(re[2]), l['Height']);
+    r := Leaf(uppercase(org), l['Height']);
     if not codeKnown and not taxKnown then 
-        lprint(re[2],'unknown');
+        lprint(org,re[4],re[3],'unknown');
         r := NULL;
     elif not codeKnown then
-        lprint(re[2],'-->',knownSpecies[SearchArray(re[4],tax)]);
+        lprint(org,'-->',knownSpecies[SearchArray(re[4],tax)]);
         r['Label'] := knownSpecies[SearchArray(re[4],tax)];
     fi:
     return( r );
 end:
+
+ExtractSupportValue := proc(t)
+    if type(t,Tree) then 
+        if length(t)<4 then boot := NULL;
+        else boot := procname(t[4]);
+        fi:
+    elif type(t,string) then boot := procname([t]);
+    elif type(t,list) then
+        for xtra in t do
+            re := MatchRegex(':B=([^:]*)', xtra);
+            if length(re)>1 then
+                boot := round(parse(re[2]));
+                break;
+            fi;
+        od:
+    else error('unexpected type');
+    fi:
+    return(boot);
+end:
+
 
 ConvertRawTree := proc(t:Tree):
     if type(t,Leaf) then
@@ -42,7 +77,8 @@ ConvertRawTree := proc(t:Tree):
         if tL=NULL then return(tR);
         elif tR=NULL then return(tL);
         else
-            return( Tree(tL,t['Height'],tR) );
+            boot := ExtractSupportValue(t);
+            return( Tree(tL,t['Height'],tR, boot) );
         fi:
     fi:
 end:
@@ -53,16 +89,17 @@ filterLineage := proc(z ; lin:string)
 end;
 
 
-TreeToNestedList := proc(t:Tree ; t0:numeric)
+TreeToNestedList := proc(t:Tree ; (confidence=0):nonnegative, t0:numeric) 
     t1 := t['Height'];
     if not assigned(t0) then t0 := t1-1; fi:
     if type(t,Leaf) then return(t['Label']);
     else 
-        tL := procname(t[Left], t1);
-        tR := procname(t[Right], t1);
+        tL := procname(t[Left], confidence, t1);
+        tR := procname(t[Right], confidence, t1);
         res := tL, tR;
     fi:
-    if |t1-t0|>1e-5 then 
+    # furcation if hight is non-zero and - if set - support confidence above threshold
+    if |t1-t0|>1e-5 and (length(t)<4 or t[4]>confidence) then 
         res := [res];
     fi:
     return(res);
@@ -77,14 +114,19 @@ end:
 
 problems := table():
 problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
+problems['Ver'] := 'Vertebrata'; problems['Fun'] := 'Fungi';
 
 t := ConvertRawTree(tree);
 GS := GetGenomeSummaries(dataset):
 for problem in Indices(problems) do 
     trimedTree := PruneTree(t, z->filterLineage(z['Label'], problems[problem]));
-    mftree := TreeToNestedList(trimedTree);
-    outfn := sprintf('%s/speciestree_%s_%s.drw', datdir, problem, dataset);
-    WriteMultifurcatingTree(mftree, outfn);
+    for confidence in [11,31,51,71] do
+        mftree := TreeToNestedList(trimedTree, confidence);
+        # if root node gets multifurcated then we need to create list anyways
+        if length([mftree])>1 then mftree := [mftree] fi: 
+        outfn := sprintf('%s/speciestree_%s_%s_conf%d.drw', 
+            datdir, problem, dataset, confidence);
+        WriteMultifurcatingTree(mftree, outfn);
+    od:
 od:
-
 done

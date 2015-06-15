@@ -20,18 +20,18 @@
   <p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
    orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
    proteins are mapped to each other.</p>
-   <p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">QfO reference proteome dataset</a>. You can choose whether your orthology predictions should be assessed on the base of this reference dataset or on the proteome set of OMA.</p>
+   <p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">QfO reference proteome dataset</a>. You can choose whether your orthology predictions should be assessed on the base of this reference dataset or on the proteome set of OMA. <i>Note: We do no longer support the comparison against the OMA dataset</i></p>
   </div>
   <div>
    <label for="reference">Protein Reference Dataset:</label> <br/>
    <input type="radio" name="reference" value="RefSet5" class="inputRadio" checked="checked" onclick="toggleDisableSeqUploadOnDatasetChange(this)" />QfO Reference Proteomes v5 (2011-04) <br/>
-   <input type="radio" name="reference" value="OMA"  class="inputRadio" onclick="toggleDisableSeqUploadOnDatasetChange(this)"/><a href="http://www.omabrowser.org">OMA Browser May 2010</a>
+   <!--<input type="radio" name="reference" value="OMA"  class="inputRadio" onclick="toggleDisableSeqUploadOnDatasetChange(this)"/><a href="http://www.omabrowser.org">OMA Browser May 2010</a> -->
   </div>
   <div class="addInfo"><h4>Dataset sources</h4>
   The QfO Reference Proteomes (version 5; 2011-04) is available in 
    <ul>
     <li><a href="http://www.seqxml.org/xml/Reference_proteomes.html">seqxml-format</a> and </li>
-    <li><a href="http://www.ebi.ac.uk/reference_proteomes/">fasta-format</a> from EBI.</li>
+    <li><a href="ftp://ftp.ebi.ac.uk/pub/databases/reference_proteomes/previous_releases/qfo_release-2011_04/">fasta-format</a> from EBI.</li>
    </ul>
   </div>
  </fieldset>
