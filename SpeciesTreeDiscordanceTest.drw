@@ -67,7 +67,7 @@ GetSeqOfOrthologs := proc( curProt, remSp )
     res := NULL;
     vps := ParseLongList(SearchTag('VP',Entry(curProt)));
     nextSpeciesRange := GenomeRange(remSp[1], dataset);
-    for vp in vps do if member(vp,iSet) then
+    for vp in Shuffle(vps) do if member(vp,iSet) then
         if vp>=nextSpeciesRange[1] and vp<=nextSpeciesRange[2] then
             if length(remSp)=1 then res := vp;
             else 

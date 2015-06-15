@@ -284,6 +284,7 @@ bsCheckRelMap := proc(PID:string)
     fnBase := pKey['fnBase'];
     dbFn := fnBase.'.db';
     lock := fnBase.'.rel.lock';
+    log := fnBase.'.rel.log';
     
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
@@ -292,7 +293,8 @@ bsCheckRelMap := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-	return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
+        if FileExists(log) then vars['log'] := ReadRawFile(log) fi:
+        return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
         return(bsTestSelection(PID));
     else error('RelMapping not started for '.PID) fi:
@@ -312,14 +314,12 @@ bsMapRels := proc(PID:string)
     # in general, this should not be the case!
     if FileExists(dbFn) then
         # provide test selection page:
-	WriteLog('Strange program flow! Attack?');
         return( bsTestSelection(PID) );
     fi:
 
     # check if mapping process is already running
     if FileExists(lock) and IsLockProcessAlive(lock) then
         vars['content'] := '<p>Still computing...</p>';
-	WriteLog('DOS-ATTACK?'); sleep(5);
     else 
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
