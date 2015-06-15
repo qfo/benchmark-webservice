@@ -6,6 +6,7 @@ use POSIX qw/mkfifo strftime/;
 use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use File::Basename;
+use File::Copy;
 use Time::localtime;
 use IO::Zlib;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
@@ -544,7 +545,10 @@ sub process_datafiles{
         unlink( "$fn.raw" );
         if ($upFile eq "rels") {
             my $lnkFn = "$fnRawLnk/$fnBase.$upFile.raw.gz";
-            $status = symlink( "$fn.raw.gz", "$lnkFn" ) or die "symlinking faild for $fn.raw.gz to $lnkFn: $!\n";
+            $status = eval{ symlink( "$fn.raw.gz", "$lnkFn" ); 0 };
+            if (not $status){
+               copy( "$fn.raw.gz", "$lnkFn") or die "symlinking and copying failed for $fn.raw.gz to $lnkFn: $!\n";
+            }
         }
     }
     push(@p, "'$fnProj/$fnBase'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
