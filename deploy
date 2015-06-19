@@ -16,19 +16,30 @@ die_usage() {
 
 project="benchmark-webservice"
 
-cat | ssh $target "cat | sh" << DONE
+cat | ssh $target "cat | bash" << DONE
+MAINHOST=$(dnsdomainname | grep -P "ethz.ch|ucl.ac.uk" >/dev/null)$?
+
 if [ -d ~/$project ]; then
-   (cd ~/$project; git pull)
+    (cd ~/$project; git pull)
 else
-   git clone git@cbrg-git.ethz.ch:$project
+    if [[ \$MAINHOST == 0 ]]; then
+        git clone git@cbrg-git.ethz.ch:$project
+    else
+        git clone https://github.com/qfo/${project}.git
+    fi
 fi
 
 # copy darwin binary and library
-mkdir -p ~/darwin/DB 
-scp darwin@linneus52.ethz.ch:v2/source/linux64/darwin ~/darwin/darwin
-scp -r darwin@linneus52.ethz.ch:v2/source/lib ~/darwin/
-scp darwin@linneus52.ethz.ch:DB/GOdata.drw.gz ~/darwin/DB/
-scp darwin@linneus52.ethz.ch:DB/speciescode.drw.gz ~/darwin/DB/
+if [[ \$MAINHOST == 0 ]]; then
+    mkdir -p ~/darwin/DB 
+    scp darwin@linneus52.ethz.ch:v2/source/linux64/darwin ~/darwin/darwin
+    scp -r darwin@linneus52.ethz.ch:v2/source/lib ~/darwin/
+    scp darwin@linneus52.ethz.ch:DB/GOdata.drw.gz ~/darwin/DB/
+    scp darwin@linneus52.ethz.ch:DB/speciescode.drw.gz ~/darwin/DB/
+else
+    wget -O \${HOME}/darwin.tgz http://orthology.benchmark-service.org/darwin.tgz
+    (cd \${HOME}; tar xzf darwin.tgz; rm -f darwin.tgz)
+fi
 sed -i -e "s|datadirname\s*:=.*|datadirname := '\${HOME}/darwin/DB':|" ~/darwin/lib/darwinit
 
 # create script to launch darwin in bin dir
@@ -78,11 +89,21 @@ EOA
 
 # make all directories and symlinks
 . ~/.bashrc
-mkdir -p "/tmp/BS_outpipes"
-mkfifo \${DARWIN_RUN_PATH}/BSin.\$(hostname)
+DDIR="\${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/data/"
+mkdir -p \$DDIR
+if [ ! -f \${DDIR}/testProperties.drw ] ; then
+    echo "TESTPROPERTIES := table(0):" > \${DDIR}/testProperties.drw
+fi
+if [ ! -f \${DDIR}/projectKeys.drw ] ; then
+    echo "PROJECTS := table(0):" > \${DDIR}/projectKeys.drw
+fi
+mkdir -p \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/{results,sessions,projects,htdocs}
+mkdir -p \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/htdocs/resultimgs
+mkdir -p \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/htdocs/raw/{RefPhylo,EC,STDTest,GO,TreeTest}
 for f in raw resultimgs examples simdata doc ; do 
     ln -s \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/htdocs/\${f} ~/$project/htdocs/\${f}    
 done
+
 
 cat > ~/etc/supervisor.d/$project.conf << EOC
 [fcgi-program:fcgiwrap]
@@ -105,5 +126,14 @@ stderr_logfile = \$HOME/log/%(program_name)s.log
 redirect_stderr = true
 EOC
 
+# retrieve initial data to run benchmarking service on reference proteomes
+if [ ! -f \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/reference5/ServerIndexed.db ] ; then
+    wget -O \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}/init_data.tgz http://orthology.benchmark-service.org/init_data.tgz
+    if [[ "$?" -ne "0" ]] ; then
+        echo "WARNING: cannot retrieve initial dataset from server."
+    else
+        (cd \${DARWIN_ORTHOLOG_BENCHMARKDATA_PATH}; tar xzf init_data.tgz; rm -f init_data.tgz)
+    fi
+fi
 ./bin/svctl reload
 DONE
