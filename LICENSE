@@ -1,3 +1,41 @@
+License
+-------
+Orthology Benchmark Webservice is licensed under the Mozilla Public License
+Version 2.0.  For more info, please consult the following page:
+http://www.mozilla.org/MPL/2.0/
+
+In a nutshell, Orthology Benchmark Webservice is open source and free for 
+commercial and non-commercial use. 
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+for the specific language governing rights and limitations under the
+License.
+
+Orthology Benchmarking Webservice requires to run the Darwin programming 
+system, which is available only in binary format and hence cannot be 
+licensed under MPL. By using Orthology Benchmark Webservice, you implictly 
+agree to its System Agreement:
+
+BEGIN DARWIN-SYSTEM-AGREEMENT
+ Darwin System Agreement
+ -----------------------
+ The Darwin System is an interactive and programmable system suitable for doing
+ DNA/Peptide sequence matching and analysis. The system is presently being
+ developed and maintained by the "Institut für Wissenschaftliches Rechnen" at
+ the ETH Zurich. Although the authors will make the best effort to fix any
+ reported problems, ETH and the authors decline any responsibility for the
+ inadequacy of the program to perform any computation. The system and its
+ documentation are presently distributed in object form free of charge.
+ ETH and the authors hold copyright to the Darwin System.
+END DARWIN-SYSTEM-AGREEMENT
+
+The system agreement is available on the following page:
+http://www.cbrg.ethz.ch/darwin/darwindownload_new
+
+
+
+
 Mozilla Public License, version 2.0
 
 1. Definitions

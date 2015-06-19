@@ -3,21 +3,3 @@
 - run cdist as: cdist config --conf-dir .cdist oma.cs.ucl.ac.uk
 
 
---------------------------------------------------------------------------------
-
-# shell
-jump_host=jet.cs.ucl.ac.uk
-jump_user=aaltenho
-login_host=oma.cs.ucl.ac.uk
-login_user=aaltenho
-ssh -F /dev/null -o ProxyCommand="ssh -F /dev/null -l $jump_user -W %h:%p $jump_host" -l $login_user $login_host
-
-
-# ~/.ssh/config
-Host oma.cs.ucl.ac.uk
-   ProxyCommand ssh -l aaltenho -W %h:%p jet.cs.ucl.ac.uk
-
-ssh aaltenho@oma.cs.ucl.ac.uk
-ssh root@oma.cs.ucl.ac.uk
-ssh cbrg-oma@oma.cs.ucl.ac.uk
-
