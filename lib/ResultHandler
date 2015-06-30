@@ -422,7 +422,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
         statsList := [RFstat, IdentStat]:
         PIDs := vars['PIDs'];
         covData := [If(NrTrees=0,[seq(z['Number'],z=RFstat)],NrTrees), NrOrthologs]:
-        if NrTrees<>0 then covLabel[1] := '# completed tree samplings (of 50k trials)' fi:
+        if NrTrees<>0 then covLabels[1] := '# completed tree samplings (of 50k trials)' fi:
         tab := MakeIntersectTable( PIDs, statsList, RawDataFn, 
             'covLabel'=covLabels,
             'corLabel'=corLabels, 
