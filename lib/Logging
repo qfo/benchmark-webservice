@@ -6,7 +6,7 @@ Logger := proc(msg ; (level='INFO'):{'INFO','ERROR','CRITICAL','DEBUG'}, (fn='st
     else f := fn 
     fi:
     OpenWriting(f);
-    printf('%s [%s]: %a\n', date(), level, msg);
+    printf('%s [%s]: %A\n', date(), level, msg);
     OpenWriting(previous);
 end:
 

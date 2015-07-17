@@ -566,9 +566,11 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
+    conf_int := ParseParam('pSTD_conf', pnames, params, 'default'=71);
+    conf_str := sprintf('_conf%d', conf_int);
     if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
 
-    resBase := sprintf('STDTest.%a', hash([problem,projs,meth]));
+    resBase := sprintf('STDTest.%a', hash([problem,projs,meth,conf_str]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -578,9 +580,9 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
         HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
-            'projs := %A: lock:=''%s'': meth:=''%s'': problem := ''%s'': '.
+            'projs := %A: lock:=''%s'': meth:=''%s'': problem := ''%s'': confidence := %d: '.
             'ReadProgram(''%s/SpeciesTreeDiscordanceTest.drw''): done:" | nice -n 19 %s &',
-            cdir, resFn, projs, lock, meth, problem, cdir, darwin64);
+            cdir, resFn, projs, lock, meth, problem, conf_int, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
