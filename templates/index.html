@@ -12,7 +12,7 @@
 
 <p>Provide us with your own ortholog inference data. After uploading your predictions, you will be able to 
  compare the quality of your predictions against other orthology inference efforts using several tests.</p>
-<p><a href="gateway.pl?f=ShowProject">Click here</a> for a list of ortholog datasets based on the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">QfO reference proteomes</a>.</p>
+<p><a href="gateway.pl?f=ShowProject">Click here</a> for a list of ortholog datasets based on the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">QfO reference proteomes</a>. Please note that for this service we currently use the <a href="ftp://ftp.ebi.ac.uk/pub/databases/reference_proteomes/previous_releases/qfo_release-2011_04/">QfO dataset from 2011_04</a>. </p>
 <p>Curious? <a href="gateway.pl?f=TestSelection&amp;pPID=4k7hS2c1UmL92vF">Check out</a> the available test on the OMA predictions.</p>
 <form action="gateway.pl" name="formular" method="post" enctype="multipart/form-data" onsubmit="return setFormSubmitted(null)">
  <fieldset><legend>Protein Reference Dataset</legend>
@@ -63,7 +63,7 @@
   <div class="notes"><h4>Ortholog Relation Data</h4>
    <p class="last">Our tests assess orthology on the bases of protein pairs. Therefore, we ask our users to upload their prediction in a format from which we can extract pairwise relations in an unambiguous manner: We support</p> 
    <ul>
-    <li> simple simple text file with two tab-separated columns of orthologous protein represented by their ids</li>
+    <li> simple simple text file with two tab-separated columns of orthologous protein represented by their IDs. All the IDs must be unique primary or xref IDs from the reference dataset.</li>
     <li> <a href="http://orthoxml.org/0.3/orthoxml_doc_v0.3.html" title="Documentation orthoxml format">orthoxml v0.3</a>, which allows for nested <i>orthologGroups</i> and <i>paralogGroups</i>.
    </ul>
    <p>For both formats, we expect you to submit your predictions in a single file. This file might also be compressed by gzip or bzip2. In that case, it needs to have the proper filename extention (<i>.gz</i> or <i>.bz2</i>).</p>
