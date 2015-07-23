@@ -704,7 +704,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
-    exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,RCA,TAS,NAS,IEA,IC,NR};
+    exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,IBA,IBD,IKR,IRD,RCA,TAS,NAS,IEA,IC,NR};
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
