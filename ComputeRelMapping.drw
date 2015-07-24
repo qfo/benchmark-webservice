@@ -4,6 +4,12 @@
 WriteLock(lock,'initializing computation');
 #ReadProgram('/local/BenchmarkService/lib/darwinit');
 
+LogMessage := proc(msg)
+    OpenAppending(log);
+    prints(msg);
+    OpenAppending(previous);
+end:
+
 GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
     global MappingComb;
     MappingComb := 0;
@@ -34,30 +40,47 @@ end:
 MapIDtoENr := proc(id:string)
     i := SearchOrderedArray(id, mapping[1]);
     if i<=0 or i>length(mapping[1]) or mapping[1,i]<>id then
-        warning('missing id '''.id.''''):
         return(NULL);
     else return(mapping[-1,i]) fi: # return the last column value, i.e. the project eNr
 end:
 
+BackMapENrToID := proc(hcl, e1)
+    possible_ids := {seq(mapping[1,z], z=SearchAllArray(e1, mapping[-1]))};
+    used_ids := intersect(possible_ids, indets(hcl, string));
+    return(ConcatStrings([op(used_ids)], '/'));
+end:
+
+
 # callback function pairwise data
 PairRelations := proc(rel:list)
-    global VPs, relDone, t0, relMapped, missing;
+    global VPs, relDone, t0, relMapped;
+    ignored := []:
     for z in rel do
         p1 := MapIDtoENr(z[1]);
         p2 := MapIDtoENr(z[2]);
-        if p1=NULL or p2=NULL then next fi:
+        if p1=NULL or p2=NULL then 
+            ignored := append(ignored, [z, p1, p2]); 
+            next 
+        fi:
 
         VPs[p1] := append(VPs[p1], p2); 
         VPs[p2] := append(VPs[p2], p1);
-	relMapped := relMapped+1;
+	    relMapped := relMapped+1;
     od:
     relDone := relDone + length(rel);
+    if length(ignored)>0 then
+        msg := ConcatStrings([seq(sprintf('relation %a ignored: %s invalid', x[1], 
+                                          If(length(x)<2, 'both ids', x[2])), 
+                                  x=ignored)], '\n');
+        LogMessage(msg);
+    fi:
     if not assigned(t0) or time()-t0>5 then 
         UpdateRemainingTime(); t0 := time(); 
     fi:
 end:
 
 ExtractInducedPairsR := proc(hcl)
+    global logbuffer;
     if not member(op(0,hcl), {OG,PG}) then 
         error('unexpeced argument: '.op(0,hcl)) fi:
 
@@ -66,7 +89,8 @@ ExtractInducedPairsR := proc(hcl)
         if type(z,string) then 
             # this is a single protein. no recursion necessay.
             eNr := MapIDtoENr(z);
-            if eNr<>NULL then membProt := append(membProt, [eNr]) else warning(z.' not mapped') fi:
+            if eNr<>NULL then membProt := append(membProt, [eNr]) 
+            else logbuffer := append(logbuffer, z.' not mapped') fi:
         elif type(z, structure) and member(op(0,z),{OG,PG}) then 
             child := procname(z);
             indOrthologs := append(indOrthologs, op(child[1]));
@@ -76,7 +100,9 @@ ExtractInducedPairsR := proc(hcl)
     od:
     
     NSubGroup := length(membProt):
-    if NSubGroup<2 then warning('dubious group') fi:
+    if NSubGroup<2 then 
+        logbuffer := append(logbuffer, '(Sub)orthologous group with only one member.') 
+    fi:
     if op(0,hcl)=OG then
         orgs := [seq([seq( GenomeNrFromENr(x1,referenceDatSet), 
             x1=subgroups)], subgroups=membProt)];
@@ -85,9 +111,12 @@ ExtractInducedPairsR := proc(hcl)
                 e1 := membProt[i,x1]; e2 := membProt[j,y1];
                 if e1>e2 then t := e1; e1:=e2; e2 := t; fi:
                 if e1=e2 then 
-                    warning('protein cannot be orthologous/paralogous to itself: '.e1);
+                    dupl_id := BackMapENrToID(hcl, e1);
+                    logbuffer := append(logbuffer, 'protein '.dupl_id.' appears twice in different sub-groups. Would imply being orthologous/paralogous to itself.');
                     next;
                 fi:
+                # within an orthologous group, pairs are orthologs unless they belong 
+                # both to the same species
                 if orgs[i,x1]<>orgs[j,y1] then 
                     indOrthologs := append(indOrthologs, [e1, e2] );
                 else indParalogs := append(indParalogs, [e1, e2] );
@@ -105,12 +134,14 @@ end:
 
 # callback function group data
 GroupRelations := proc(og)
-    global VPs, relDone, relMapped;
+    global VPs, relDone, relMapped, logbuffer;
+    logbuffer := ['Mapping orthologous group nr '.relDone+1];
     t := ExtractInducedPairsR(og):
     for z in t[1] do 
         VPs[z[1]] := append(VPs[z[1]], z[2]);
         VPs[z[2]] := append(VPs[z[2]], z[1]);
     od:
+    if length(logbuffer)>1 then LogMessage(ConcatStrings(logbuffer, '\n  ')); fi:
     relDone := relDone + 1;
     relMapped := relMapped + 1;
     if not assigned(t0) or time()-t0>5 then 
@@ -147,6 +178,7 @@ end:
 
 # to break at error
 to 1 do
+    LogMessage('*** Starting mapping of uploaded relations ***');
     pKey := GetPKeyData(PID);
     referenceDatSet := pKey['ref'];
     if referenceDatSet='OMA' then
@@ -162,9 +194,9 @@ to 1 do
     NM := length(iSet):
     VPs := CreateArray(1..NM,[]);
     relDone := relMapped := 0;
-    missing := Counter('# of ignored mappings due to missing seqMapping');
     ReadProgram(relsinfn);
     WriteLock(lock, 'Storing final project data');
+    LogMessage('\n*** Storing data and update project summary information ***');
     WriteDB(resDBfn, VPs, mapping);
     ReadDb(resDBfn):
 
@@ -177,7 +209,7 @@ to 1 do
 #        pKey['isPublic'] := true;
     fi:
     UpdatePKeyDataPermanent(pKey);
-
+    LogMessage('\n*** Successfully finished project upload and integration ***');
     CallSystem('rm -f '.lock);
 od:
 done

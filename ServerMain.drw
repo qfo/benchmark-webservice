@@ -305,6 +305,7 @@ bsMapRels := proc(PID:string)
     dbFn := fnBase.'.db';
     seqMapFn := fnBase.'.seqmap';
     lock := fnBase.'.rel.lock';
+    log := fnBase.'.rel.log';
     reference := GetPKeyData(PID)['ref'];
 
     vars := table(''):
@@ -330,15 +331,14 @@ bsMapRels := proc(PID:string)
     
         # start computation as background process
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': seqmapfn:= ''%s'': '.
-                      'relsinfn := ''%s'': lock:=''%s'': orgMap := %A: PID := ''%s'': '.
+                      'relsinfn := ''%s'': lock:=''%s'': log:=''%s''; orgMap := %A: PID := ''%s'': '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
-                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, orgMap, PID, cdir, darwin64);
+                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, log, orgMap, PID, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'INFO');
     
         CallSystem( cmd );
     fi:
     return('Location: gateway.pl?f=CheckRelMap&p1='.PID.'\n\n');
-    return(html);
 end:
 
 
@@ -356,6 +356,7 @@ bsTestSelection := proc(PID:string)
     vars['ref'] := dataset;
     vars['isRefSet'] := evalb(dataset<>'OMA');
     vars['notRefSet'] := evalb(dataset='OMA');
+    vars['mapping_log'] := ReadRawFile(pKey['fnBase'].'.rels.log'):
     
     t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
         z=GetPublicProjects(dataset))]:
