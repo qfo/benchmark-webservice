@@ -545,7 +545,7 @@ sub process_datafiles{
         unlink( "$fn.raw" );
         if ($upFile eq "rels") {
             my $lnkFn = "$fnRawLnk/$fnBase.$upFile.raw.gz";
-            $status = eval{ symlink( "$fn.raw.gz", "$lnkFn" ); 0 };
+            $status = eval{ symlink( "$fn.raw.gz", "$lnkFn" ); 1 };
             if (not $status){
                copy( "$fn.raw.gz", "$lnkFn") or die "symlinking and copying failed for $fn.raw.gz to $lnkFn: $!\n";
             }

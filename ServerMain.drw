@@ -331,7 +331,7 @@ bsMapRels := proc(PID:string)
     
         # start computation as background process
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': seqmapfn:= ''%s'': '.
-                      'relsinfn := ''%s'': lock:=''%s'': log:=''%s''; orgMap := %A: PID := ''%s'': '.
+                      'relsinfn := ''%s'': lock:=''%s'': logFn:=''%s''; orgMap := %A: PID := ''%s'': '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
                       cdir, dbFn, seqMapFn, fnBase.'.rels', lock, log, orgMap, PID, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'INFO');

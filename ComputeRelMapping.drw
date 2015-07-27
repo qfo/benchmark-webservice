@@ -5,7 +5,7 @@ WriteLock(lock,'initializing computation');
 #ReadProgram('/local/BenchmarkService/lib/darwinit');
 
 LogMessage := proc(msg)
-    OpenAppending(log);
+    OpenAppending(logFn);
     prints(msg);
     OpenAppending(previous);
 end:
@@ -59,7 +59,7 @@ PairRelations := proc(rel:list)
         p1 := MapIDtoENr(z[1]);
         p2 := MapIDtoENr(z[2]);
         if p1=NULL or p2=NULL then 
-            ignored := append(ignored, [z, p1, p2]); 
+            ignored := append(ignored, [z, If(p1=NULL,NULL,z[1]), If(p2=NULL,NULL,z[2])]); 
             next 
         fi:
 
@@ -69,7 +69,7 @@ PairRelations := proc(rel:list)
     od:
     relDone := relDone + length(rel);
     if length(ignored)>0 then
-        msg := ConcatStrings([seq(sprintf('relation %a ignored: %s invalid', x[1], 
+        msg := ConcatStrings([seq(sprintf('relation %a ignored: %a invalid', x[1], 
                                           If(length(x)<2, 'both ids', x[2])), 
                                   x=ignored)], '\n');
         LogMessage(msg);
@@ -150,7 +150,7 @@ GroupRelations := proc(og)
 end:
 
 
-WriteDB := proc(fn:string, VPs, mapping)
+WriteDB := proc(fn:string, VPs)
     verb := Set(printgc=false);
     OpenWriting(fn);
     for i to length(VPs) do
@@ -207,7 +207,7 @@ to 1 do
         g=KnownSpecies(referenceDatSet))}:
     pKey['OrgsCovered'] := orgs:
     UpdatePKeyDataPermanent(pKey);
-    missing_orthologs_for_genomes := {op(KnownSpecies(referenceDatSet))}, orgs);
+    missing_orthologs_for_genomes := minus({op(KnownSpecies(referenceDatSet))}, orgs);
     if length(missing_orthologs_for_genomes) > 0 then
         LogMessage(sprintf('Warning: no orthologs for these %d species have been uploaded:'.
                            '\n  %a\n  Missing genomes are treated as false negatives',
