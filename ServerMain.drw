@@ -283,7 +283,7 @@ bsCheckRelMap := proc(PID:string)
     fnBase := pKey['fnBase'];
     dbFn := fnBase.'.db';
     lock := fnBase.'.rel.lock';
-    log := fnBase.'.rel.log';
+    logFn := fnBase.'.rel.log';
     
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
@@ -292,7 +292,7 @@ bsCheckRelMap := proc(PID:string)
 
     if FileExists(lock) then
         vars['mappingStatus'] := HandleLockFile(lock);
-        if FileExists(log) then vars['log'] := ReadRawFile(log) fi:
+        if FileExists(logFn) then vars['log'] := ReadRawFile(logFn) fi:
         return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
         return(bsTestSelection(PID));
@@ -305,7 +305,7 @@ bsMapRels := proc(PID:string)
     dbFn := fnBase.'.db';
     seqMapFn := fnBase.'.seqmap';
     lock := fnBase.'.rel.lock';
-    log := fnBase.'.rel.log';
+    logFn := fnBase.'.rel.log';
     reference := GetPKeyData(PID)['ref'];
 
     vars := table(''):
@@ -333,7 +333,7 @@ bsMapRels := proc(PID:string)
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': seqmapfn:= ''%s'': '.
                       'relsinfn := ''%s'': lock:=''%s'': logFn:=''%s''; orgMap := %A: PID := ''%s'': '.
                       'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
-                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, log, orgMap, PID, cdir, darwin64);
+                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, logFn, orgMap, PID, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'INFO');
     
         CallSystem( cmd );
