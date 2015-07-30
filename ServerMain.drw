@@ -363,8 +363,13 @@ bsTestSelection := proc(PID:string)
     vars['ref'] := dataset;
     vars['isRefSet'] := evalb(dataset<>'OMA');
     vars['notRefSet'] := evalb(dataset='OMA');
-    vars['mapping_log'] := ReadRawFile(pKey['fnBase'].'.rels.log'):
-    
+    if FileExists(pKey['fnBase'].'.rel.log') then
+        vars['has_mapping_log'] := true:
+        basename := SearchDelim(pKey['fnBase'],'/')[-1];
+        vars['mapping_log_lnk'] := rawurl.basename.'.rel.log';
+    else
+        vars['has_mapping_log'] := false;
+    fi:
     t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
         z=GetPublicProjects(dataset))]:
     if length(t)>0 then
