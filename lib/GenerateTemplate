@@ -23,10 +23,14 @@ GenerateTemplate := proc(file:string,t:table);
 	if not type(t[tmp[1]],boolean) then
 	    error('Missing boolean key '''.tmp[1].''' in input table');
 	fi:
-	endbool := '</DBOOL>';
-	p := SearchString(endbool, f); assert(p>tmp[3]);
-	output := output . f[1..tmp[2]] . If(t[tmp[1]], f[tmp[3]..p], '');
-	f := f[p+length(endbool)+1..-1];
+	elsebool := '<DELSE>';
+        endbool := '</DBOOL>';
+        pElse := SearchString(elsebool, f); 
+        if pElse<0 then pElse := length(f); fi: 
+	pEnd := SearchString(endbool, f); assert(pEnd>tmp[3]);
+	output := output . f[1..tmp[2]] . If(t[tmp[1]], f[tmp[3]..min(pElse,pEnd)], 
+                                             f[pElse+length(elsebool)+1..pEnd]);
+	f := f[pEnd+length(endbool)+1..-1];
     od:
 
  
