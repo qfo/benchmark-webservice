@@ -222,6 +222,12 @@ bsShowProject := proc()
             t['hasData'] := false; t['Predictions'] := 'n/a'; 
         else t['hasData'] := true; t['Predictions'] := dataUrl; 
         fi; 
+        logfn := rawdir.path[k+1..-1].'.rel.log';
+        logUrl := rawurl.path[k+1..-1].'.rel.log';
+        if length(FileStat(logfn))=0 then 
+            t['hasLog'] := false; 
+        else t['hasLog'] := true; t['LogLnk'] := logUrl; 
+        fi; 
         covered := p['OrgsCovered'];
         if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
             t['coverage'] := 'covers all genomes';
@@ -268,7 +274,7 @@ bsMapData := proc(PID:string)
     vars['tit'] := pKey['Title'];
     vars['nrOrth'] := pKey['NOrthSub'];
     vars['nrProt'] := pKey['NSeqSub'];
-    vars['reloadin'] := 10;
+    vars['reloadin'] := 30;
     vars['PID'] := PID;
 
     if pKey['ref']<>'OMA' then
@@ -287,7 +293,7 @@ bsCheckRelMap := proc(PID:string)
     
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
-    vars['reloadin'] := 10;
+    vars['reloadin'] := 30;
     vars['PID'] := PID;
 
     if FileExists(lock) then
@@ -295,6 +301,7 @@ bsCheckRelMap := proc(PID:string)
         if FileExists(logFn) then vars['log'] := ReadRawFile(logFn) fi:
         return( GenerateTemplate(cdir.'/templates/checkRelMapping.html',vars) );
     elif FileExists(dbFn) then
+        CallSystem('ln -s '.logFn.' '.rawdir);
         return(bsTestSelection(PID));
     else error('RelMapping not started for '.PID) fi:
 end:
@@ -887,7 +894,7 @@ bsCheckResults := proc(sessionkey)
 	if t[2]=true then refresh := true fi:
     fi:
     
-    if refresh then vars['reloadin'] := 20 fi;
+    if refresh then vars['reloadin'] := 60 fi;
     vars['refresh'] := refresh;
     return( GenerateTemplate(cdir.'/templates/testResults.html', vars) );
 end:
