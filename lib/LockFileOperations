@@ -6,28 +6,36 @@ end:
 #
 # checks if the process created the lock-file is still alive
 IsLockProcessAlive := proc(lock:string)
-    if not FileExists(lock) then error('lockfile not present') fi:
+    fs := FileStat(lock);
+    if length(fs)=0 then error('lockfile not present') fi:
     
     # wait for result page but also check, whether job is still running
-    lockOldAndEmpty := FileStat(lock)['st_size']=0 and UTCTime()-FileStat(lock)['st_mtime']>60;
-    procDeath := false;
-    if FileStat(lock)['st_size']>0 then 
-        pid := SplitLines(ReadRawFile(lock))[1];
-        t := TimedCallSystem('ps -eo pid | grep -w '.pid,4);
+    lockOldAndEmpty := fs['st_size']=0 and UTCTime()-fs['st_mtime']>60;
+    procDeath := false; msg := '';
+    if fs['st_size']>0 then
+        for i to 3 do
+            cont := traperror(ReadRawFile(lock));
+            if cont<>lasterror then break;
+            else sleep(2^(i-1)) fi:
+        od:
+        if cont=lasterror then error(cont); fi:
+        cont := SplitLines(cont);
+        pid := cont[1];
+        if length(cont)>1 then msg := ConcatStrings(cont[2..-1]) fi:
+        t := TimedCallSystem('ps -eo pid | grep -w '.pid, 4);
         procDeath := evalb(t[1]<>0);
     fi:
-    return( not(lockOldAndEmpty or procDeath) );
+    return( not(lockOldAndEmpty or procDeath), msg );
 end:
 
 # creates a message about the status of the process created the lock file.
 HandleLockFile := proc(lock:string)
-    if IsLockProcessAlive(lock) then
-        t := SplitLines(ReadRawFile(lock));
-        msg := '';
-        if length(t)>1 then 
-            msg := '<p><b>Status:</b> '.t[2,1..-2].'</p>';
+    alive, msg := IsLockProcessAlive(lock);
+    if alive then
+        if msg <> '' then 
+            msg := '<p><b>Status:</b> '.msg.'</p>';
         fi:
-        return( msg.'<p>We are still computing the final result...</p>' );
+        return( msg.'<p>We are still computing the results ...</p>' );
     else
         CallSystem('rm -f '.lock);
         return('<p>Computation crashed. Try to restart by resubmitting request.</p>'); 

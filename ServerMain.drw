@@ -325,8 +325,8 @@ bsMapRels := proc(PID:string)
     fi:
 
     # check if mapping process is already running
-    if FileExists(lock) and IsLockProcessAlive(lock) then
-        vars['content'] := '<p>Still computing...</p>';
+    if FileExists(lock) then
+        vars['content'] := HandleLockFile(lock);
     else 
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
