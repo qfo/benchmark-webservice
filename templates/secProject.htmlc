@@ -17,7 +17,7 @@
  <DELSE>n/a </DBOOL>
  </td>
 </tr>
-<tr
+<tr>
  <td class="label">Mapping Log</td>
  <td><DBOOL name="hasLog">
   <a href="<DVAR name="LogLnk">" target="_new"><img src="/imgs/dload.png" alt="download log"></a>
