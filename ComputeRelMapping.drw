@@ -79,7 +79,7 @@ PairRelations := proc(rel:list)
     fi:
 end:
 
-ExtractInducedPairsR := proc(hcl)
+ExtractInducedPairsR := proc(hcl; (lev=0):integer)
     global logbuffer;
     if not member(op(0,hcl), {OG,PG}) then 
         error('unexpeced argument: '.op(0,hcl)) fi:
@@ -89,19 +89,22 @@ ExtractInducedPairsR := proc(hcl)
         if type(z,string) then 
             # this is a single protein. no recursion necessay.
             eNr := MapIDtoENr(z);
-            if eNr<>NULL then membProt := append(membProt, [eNr]) 
+            if eNr<>NULL then membProt := append(membProt, {eNr}) 
             else logbuffer := append(logbuffer, z.' not mapped') fi:
         elif type(z, structure) and member(op(0,z),{OG,PG}) then 
-            child := procname(z);
+            child := procname(z, lev+1);
             indOrthologs := append(indOrthologs, op(child[1]));
             indParalogs := append(indParalogs, op(child[2]));
-            membProt := append( membProt, [op(indets([child], integer))] );
+            membProt := append( membProt, child[3] );
         else error('unexpected data: '.string(z)) fi:
     od:
     
     NSubGroup := length(membProt):
     if NSubGroup<2 then 
-        logbuffer := append(logbuffer, '(Sub)orthologous group with only one member.') 
+        logbuffer := append(logbuffer, 
+            sprintf('%s%s group with only one member (nesting depth: %d)', 
+                    If(lev>0, 'Sub-',''), If(op(0,hcl)='OG','orthologous','paralogous'),
+                    lev));
     fi:
     if op(0,hcl)=OG then
         orgs := [seq([seq( GenomeNrFromENr(x1,referenceDatSet), 
@@ -112,7 +115,10 @@ ExtractInducedPairsR := proc(hcl)
                 if e1>e2 then t := e1; e1:=e2; e2 := t; fi:
                 if e1=e2 then 
                     dupl_id := BackMapENrToID(hcl, e1);
-                    logbuffer := append(logbuffer, 'protein '.dupl_id.' appears twice in different sub-groups. Would imply being orthologous/paralogous to itself.');
+                    logbuffer := append(logbuffer, 'protein '.dupl_id.
+                            ' appears twice in different sub-groups. '.
+                            'This would imply being orthologous/paralogous '.
+                            'to itself.');
                     next;
                 fi:
                 # within an orthologous group, pairs are orthologs unless they belong 
@@ -129,7 +135,7 @@ ExtractInducedPairsR := proc(hcl)
                 y=membProt[j]), x=membProt[i]) );
         od od:
     fi:
-    return( indOrthologs, indParalogs ):
+    return( indOrthologs, indParalogs, union(op(membProt)) ):
 end:
 
 # callback function group data
