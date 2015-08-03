@@ -365,7 +365,7 @@ bsTestSelection := proc(PID:string)
     vars['notRefSet'] := evalb(dataset='OMA');
     if FileExists(pKey['fnBase'].'.rel.log') then
         vars['has_mapping_log'] := true:
-        basename := SearchDelim(pKey['fnBase'],'/')[-1];
+        basename := SearchDelim('/', pKey['fnBase'])[-1];
         vars['mapping_log_lnk'] := rawurl.basename.'.rel.log';
     else
         vars['has_mapping_log'] := false;
