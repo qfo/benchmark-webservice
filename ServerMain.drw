@@ -533,7 +533,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
 
-    resBase := sprintf('TreeTest.%s.%a', king, hash([projs,meth]));
+    resBase := sprintf('TreeTest.%s.%a', king, hash_sha2([projs,meth]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -583,7 +583,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     conf_str := sprintf('_conf%d', conf_int);
     if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
 
-    resBase := sprintf('STDTest.%a', hash([problem,projs,meth,conf_str]));
+    resBase := sprintf('STDTest.%a', hash_sha2([problem,projs,meth,conf_str]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -643,7 +643,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     prefix := sprintf('p%sPhyloProb', testset);
     problems := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on' );
     
-    resBase := sprintf('%sPhyl.%a', testset, hash([projs,measure,problems,meth]) );
+    resBase := sprintf('%sPhyl.%a', testset, hash_sha2([projs,measure,problems,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
@@ -687,7 +687,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
         
-    resBase := sprintf('EC.%a', hash([projs,measure,meth]) );
+    resBase := sprintf('EC.%a', hash_sha2([projs,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
@@ -734,7 +734,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     if meth='PAIRWISE' and length(projs)<=2 then 
         meth := 'INTERSECT'; fi:
     
-    resBase := sprintf('GO.%a', hash([projs,filter,measure,meth]) );
+    resBase := sprintf('GO.%a', hash_sha2([projs,filter,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
@@ -776,7 +776,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     measure := ParseParam('pHomAggMeas', pnames, params, 'default'='sample variance');
     problems := ParseAllPrefixParams( 'pHomProb', pnames, params, 'onlyIf'='on');
         
-    resBase := sprintf('Homology.%a', hash([projs,problems,measure,meth]) );
+    resBase := sprintf('Homology.%a', hash_sha2([projs,problems,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then 
@@ -802,18 +802,11 @@ end:
 #################################
 # Run Tests                     #
 #################################
-fullHash := proc(a)
-    if type(a,{list,set}) then res := sum( procname(z),z=a);
-    else res := hash(a);
-    fi:
-    return( res );
-end:
-
 bsRunTests := proc(params:list, pnames:list)
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
     
-    h := string(fullHash( [params, pnames] ));
+    h := string(hash_sha2( [params, pnames] ));
     OpenWriting( sessiondir.h );
     printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
     OpenWriting(previous);

@@ -11,7 +11,7 @@ MAX_NR_TREES := 3000;
 
 prj := [seq(GetPKeyData(z),z=projs)]:
 dataset := prj[-1,'ref'];
-hashOfAllProjPIDs := hash(projs):
+hashOfAllProjPIDs := hash_sha2(projs):
 
 if not assigned(confidence) then
     confidence := NULL;
@@ -262,7 +262,7 @@ if meth='INTERSECT' then
     compRes := ComputeCongruenceStat(prjNrs, cases, sum(length(z),z=cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
-         hash([problem, prj[i,'PID'],meth])),  i=1..nP)];
+         hash_sha2([problem, prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
     StoreResult(resFn, RFstat, IdentStat, NrOrthologs, NrTrees, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
@@ -278,9 +278,9 @@ elif meth='PAIRWISE' then
     for i to nP-1 do 
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
-            hash([problem, curPrjPIDs, 'INTERSECT']) );
+            hash_sha2([problem, curPrjPIDs, 'INTERSECT']) );
         rawDataFn[i] := sprintf('STDTest/STD.%a.tsv.gz', 
-            hash([problem, curPrjPIDs, 'INTERSECT']) );
+            hash_sha2([problem, curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         casesAndCnts := FindCases( iSet, prjNrs[i] );
@@ -325,9 +325,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     rawDataFn := CreateArray(1..nP):
     iSet := intersect():
     for i to nP do 
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([problem,prj[i,'PID'],meth, confidence]) );
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash_sha2([problem,prj[i,'PID'],meth, confidence]) );
         rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
-                hash([problem, prj[i,'PID'],meth, confidence]) );
+                hash_sha2([problem, prj[i,'PID'],meth, confidence]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];

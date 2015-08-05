@@ -185,7 +185,7 @@ if meth='INTERSECT' then
     compRes := ComputeCongruenceStat(prjNrs, cases, length(cases)):
     RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
     rawDataFn := [seq(sprintf('TreeTest/%s.%a.tsv.gz', kingdom,
-        hash([prj[i,'PID'],meth])),  i=1..nP)];
+        hash_sha2([prj[i,'PID'],meth])),  i=1..nP)];
     for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
     StoreResult(resFn, RFstat, IdentStat, NrOrthologs, [seq(prj[i,'PID'], i=prjNrs)]);
 elif meth='PAIRWISE' then
@@ -200,9 +200,9 @@ elif meth='PAIRWISE' then
     for i to nP-1 do 
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
         resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
-            hash([curPrjPIDs, 'INTERSECT']) );
+            hash_sha2([curPrjPIDs, 'INTERSECT']) );
         rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', 
-            kingdom, hash([curPrjPIDs, 'INTERSECT']) );
+            kingdom, hash_sha2([curPrjPIDs, 'INTERSECT']) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
         casesAndCnts := FindCases( iSet, prjNrs[i] );
@@ -243,8 +243,8 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     rawDataFn := CreateArray(1..nP):
     for i to nP do 
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash([prj[i,'PID'],meth]) );
-        rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', kingdom, hash([prj[i,'PID'],meth]) );
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash_sha2([prj[i,'PID'],meth]) );
+        rawDataFn[i] := sprintf('TreeTest/%s.%a.tsv.gz', kingdom, hash_sha2([prj[i,'PID'],meth]) );
         if FileExists(resFnParts[i].'.gz') then next fi:
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2,1];

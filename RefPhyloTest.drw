@@ -88,7 +88,7 @@ end:
 StoreRawData := proc(rawData, PIDs, measure, problems, meth, testset)
     RawDataFn := CreateArray(1..length(PIDs)):
     for p to length(PIDs) do
-        fn := sprintf('RefPhylo/%s.%a.tsv.gz', testset, hash([PIDs[p],problems,measure,meth]));
+        fn := sprintf('RefPhylo/%s.%a.tsv.gz', testset, hash_sha2([PIDs[p],problems,measure,meth]));
         OpenWriting(rawdir.fn[1..-4]);
         printf('# Dataset<tab>Protein ID 1<tab>Protein ID 2<tab>Correctness (TP:True '.
             'positive, FP: False positive, TN: True Negative. FN: False Negative)\n');
@@ -134,7 +134,7 @@ elif meth='PAIRWISE' then
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     for curP to maxP do
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,measure,problems,'INTERSECT']) );
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([curPrjPIDs,measure,problems,'INTERSECT']) );
         if FileExists(resFnPart.'.gz') then
             Res[curP] := 0; ReadProgram(resFnPart):  Res[curP] := [FPR, TPR];
         else

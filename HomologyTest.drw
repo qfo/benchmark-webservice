@@ -131,7 +131,7 @@ elif meth='PAIRWISE' then
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     for curP to maxP do 
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs, problems, 
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([curPrjPIDs, problems, 
             measure,'INTERSECT']) );
         if FileExists(resFnPart.'.gz') then 
             Res[curP] := 0; ReadProgram(resFnPart): Res[curP] := [FPR,TPR];
@@ -150,7 +150,7 @@ elif meth='PAIRWISE' then
 #    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
 #    maxP := 1:
 #    for curP to nP do 
-#        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],problems, 
+#        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([prj[curP,'PID'],problems, 
 #            measure,meth]) );
 #        if FileExists(resFnPart.'.gz') then 
 #            Res[curP] := 0; ReadProgram(resFnPart): Res[curP] := [FPR, TPR];

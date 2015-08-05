@@ -155,7 +155,7 @@ StoreRawData := proc(rawData_, prjs_, filter, measure, meth)
 
     RawDataFn := CreateArray(1..length(prjs)):
     for p to length(prjs) do
-        fn := sprintf('EC/EC.%a.tsv.gz', hash([prjs[p,'PID'],filter,measure,meth]));
+        fn := sprintf('EC/EC.%a.tsv.gz', hash_sha2([prjs[p,'PID'],filter,measure,meth]));
         OpenWriting(rawdir.fn[1..-4]);
         printf('# EC Similarities between orthologs from %s\n',prjs[p,'Title']);
         printf('# Protein ID 1<tab>Protein ID 2<tab>EC Similarity\n');
@@ -197,7 +197,7 @@ elif meth='PAIRWISE' then
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     for curP to maxP do 
         curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash([curPrjPIDs,measure,'INTERSECT']) );
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([curPrjPIDs,measure,'INTERSECT']) );
         if FileExists(resFnPart.'.gz') then 
             SimsRes[curP] := 0; ReadProgram(resFnPart): assert(length(Sims)=2); SimsRes[curP] := Sims;
         else
@@ -214,7 +214,7 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
     maxP := nP:
     for curP to nP do 
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash([prj[curP,'PID'],measure,meth]) );
+        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([prj[curP,'PID'],measure,meth]) );
         if FileExists(resFnPart.'.gz') then 
             SimsRes[curP] := 0; 
             ReadProgram(resFnPart): 
