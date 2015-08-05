@@ -530,10 +530,9 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
-    if meth='PAIRWISE' and length(projs)<=2 then 
-        meth := 'INTERSECT'; fi:
+    treebuilder := ParseParam('pSTD_treebuilder', pnames, params, default='LSTree');
 
-    resBase := sprintf('TreeTest.%s.%a', king, hash_sha2([projs,meth]));
+    resBase := sprintf('TreeTest.%s.%a', king, hash_sha2([projs,meth,treebuilder]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -544,8 +543,9 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
             'problem := ''%s/TreeCat_%s_%s.drw'': projs := %A: lock:=''%s'': meth:=''%s'': '.
+            'treebuilder := ''%s''; '.
             'ReadProgram(''%s/TreeTest.drw''): done:" | nice -n 19 %s &',
-            cdir, resFn, datdir, king, vars['ref'], projs, lock, meth, cdir, darwin64);
+            cdir, resFn, datdir, king, vars['ref'], projs, lock, meth, treebuilder, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
@@ -581,9 +581,9 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     meth := ParseStrategy(pnames,params):
     conf_int := ParseParam('pSTD_conf', pnames, params, 'default'=71);
     conf_str := sprintf('_conf%d', conf_int);
-    if meth='PAIRWISE' and length(projs)<=2 then meth := 'INTERSECT'; fi:
+    treebuilder := ParseParam('pSTD_treebuilder', pnames, params, default='LSTree');
 
-    resBase := sprintf('STDTest.%a', hash_sha2([problem,projs,meth,conf_str]));
+    resBase := sprintf('STDTest.%a', hash_sha2([problem,projs,meth,conf_str,treebuilder]));
     resFn := sprintf('%s/%s.drw', resdir, resBase );
     isRunning := true;
     if FileExists(lock) then
@@ -593,9 +593,10 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
         HandleBoxRFFiles(meth, resFn, resBase, vars);
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=''%s'': '.
-            'projs := %A: lock:=''%s'': meth:=''%s'': problem := ''%s'': confidence := %d: '.
+            'projs := %A: lock:=''%s'': meth:=''%s'': problem := ''%s'': '.
+            'confidence := %d: treebuilder := ''%s'': '.
             'ReadProgram(''%s/SpeciesTreeDiscordanceTest.drw''): done:" | nice -n 19 %s &',
-            cdir, resFn, projs, lock, meth, problem, conf_int, cdir, darwin64);
+            cdir, resFn, projs, lock, meth, problem, conf_int, treebuilder, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'DEBUG');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
@@ -637,8 +638,6 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     k := SearchArray( sprintf('p%sPhylAggMeas',testset), pnames );
     measure := If(k>0,params[k],'sample variance');
     meth := ParseStrategy(pnames,params):
-    if meth='PAIRWISE' and length(projs)<=2 then 
-        meth := 'INTERSECT'; fi:
 
     prefix := sprintf('p%sPhyloProb', testset);
     problems := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on' );
@@ -684,8 +683,6 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
 
     measure := params[ SearchArray('pECMeasure',pnames) ];
     meth := ParseStrategy(pnames,params):
-    if meth='PAIRWISE' and length(projs)<=2 then 
-        meth := 'INTERSECT'; fi:
         
     resBase := sprintf('EC.%a', hash_sha2([projs,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
@@ -731,8 +728,6 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     filter := intersect(filter, exEv);
     measure := params[ SearchArray('pGOMeasure',pnames) ];
     meth := ParseStrategy(pnames,params):
-    if meth='PAIRWISE' and length(projs)<=2 then 
-        meth := 'INTERSECT'; fi:
     
     resBase := sprintf('GO.%a', hash_sha2([projs,filter,measure,meth]) );
     resFn := sprintf('%s/%s.drw', resdir, resBase );
@@ -771,8 +766,6 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
     meth := ParseStrategy(pnames,params):
-    if meth='PAIRWISE' and length(projs)<=2 then 
-        meth := 'INTERSECT'; fi:
     measure := ParseParam('pHomAggMeas', pnames, params, 'default'='sample variance');
     problems := ParseAllPrefixParams( 'pHomProb', pnames, params, 'onlyIf'='on');
         

@@ -20,6 +20,11 @@ elif type(confidence, posint) then
 else error('unexpected type for confidence parameter');
 fi:
 
+if not member(treebuilder, {'LSTree','BIONJ'}) then 
+    error('unexpected treebuilder method: '.treebuilder);
+fi;
+
+
 # load species tree as nested list of list, e.g.
 # sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
 # i.e. the tree is non-binary
@@ -150,6 +155,18 @@ CntOrthologs := proc(iSet)
     return( cnt/2 );
 end:
 
+InferDistTree := proc(D, V, labs)
+    if treebuilder='LSTree' then
+        tree := LeastSquaresTree(D,V,labs);
+    elif treebuilder='BIONJ' then
+        treeRes := BioNJ(D, labs);
+        tree := treeRes['Tree'];
+    else 
+        error('invalid tree reconstruction method: '.treebuilder) 
+    fi:
+    return(tree);
+end:
+
 ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
     global DB, Ndone:
     RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
@@ -181,7 +198,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
                  D[i,j] := D[j,i] := dps[2];
                  V[i,j] := V[j,i] := dps[3];
             od od:
-            genetree := traperror( LeastSquaresTree(D,V,labs) ):
+            genetree := traperror( InferDistTree(D,V,labs) ):
             if genetree=lasterror then cErr+1; next fi;
             
             pruned_st := PruneTree(copy(speciestree), spec);
@@ -218,7 +235,8 @@ StoreResult := proc(fn:string, RFstat, IdentStat, NrOrthologs, NrTrees, RawDataF
     printf('IdentStat := %A:\n', IdentStat);
     printf('NrOrthologs := %A:\n', NrOrthologs);
     printf('NrTrees := %A:\n', NrTrees);
-    printf('#problem := %A:\n', problem);
+    printf('#problem := %A: confidence := %A: treebuilder := %A:\n', 
+           problem, confidence, treebuilder);
     OpenWriting(previous):
     CallSystem('gzip -9f '.fn);
 end:
@@ -251,68 +269,7 @@ ddir := eval(symbol(lowercase(dataset).'DBpath'));
 SeqDB := ReadDb( ddir.'/ServerSeqs.db');
 
 
-if meth='INTERSECT' then
-    iSet  := GetProjISets(prj);
-    prjNrs:= [seq(i,i=1..nP)];
-    casesAndCnts := FindCases(iSet, prjNrs);
-    cases := casesAndCnts[1]; NrOrthologs := casesAndCnts[2];
-    NrTrees := [seq(length(z),z=cases)]: 
-    cases := [seq( If(NrTrees[i]>MAX_NR_TREES, Shuffle(cases[i])[1..MAX_NR_TREES], cases[i]), i=1..nP)]:
-    t0 := time();
-    compRes := ComputeCongruenceStat(prjNrs, cases, sum(length(z),z=cases)):
-    RFstat := compRes[1]; rawdata := compRes[2]; IdentStat := compRes[3];
-    rawDataFn := [seq(sprintf('STDTest/STD.%a.%a.tsv.gz', hashOfAllProjPIDs, 
-         hash_sha2([problem, prj[i,'PID'],meth])),  i=1..nP)];
-    for i to nP do StoreRawData(rawdir.rawDataFn[i,1..-4], rawdata[i], prj[i]) od:
-    StoreResult(resFn, RFstat, IdentStat, NrOrthologs, NrTrees, [seq(prj[i,'PID'], i=prjNrs)]);
-elif meth='PAIRWISE' then
-    cases := CreateArray(1..nP-1,[]):
-    RFstats := CreateArray(1..nP-1):
-    IdentStats := CreateArray(1..nP-1):
-    NrOrthologList := CreateArray(1..nP-1):
-    NrTreesList := CreateArray(1..nP-1):
-    prjNrs := [seq([i,nP],i=1..nP-1)];
-    resFnParts := CreateArray(1..nP-1):
-    rawDataFn := CreateArray(1..nP-1):
-    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-    for i to nP-1 do 
-        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[i])]:
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, 
-            hash_sha2([problem, curPrjPIDs, 'INTERSECT']) );
-        rawDataFn[i] := sprintf('STDTest/STD.%a.tsv.gz', 
-            hash_sha2([problem, curPrjPIDs, 'INTERSECT']) );
-        if FileExists(resFnParts[i].'.gz') then next fi:
-        iSet := GetProjISets( [seq(prj[j],j=prjNrs[i])] ):
-        casesAndCnts := FindCases( iSet, prjNrs[i] );
-        cases[i] := casesAndCnts[1]; NrOrthologList[i] := casesAndCnts[2]; 
-        NrTreesList[i] := [seq(length(z),z=cases[i])]: 
-        cases[i] := [seq( If(NrTreesList[j]>MAX_NR_TREES, Shuffle(cases[i,j])[1..MAX_NR_TREES], cases[i,j]), j=1..2)]:
-    od:
-    t0 := time();
-    totNrTrees := sum(length(z),z=cases):
-    for i to nP-1 do
-        if FileExists(resFnParts[i].'.gz') then
-            RFstat := RawDataFn := 0; 
-            ReadProgram(resFnParts[i]): 
-            assert(length(RFstat)=2); 
-            RFstats[i] := RFstat;
-            IdentStats[i] := IdentStat;
-            rawDataFn[i] := RawDataFn;
-            NrOrthologList[i] := NrOrthologs;
-            NrTreesList[i] := NrTrees;
-        else
-            compRes := ComputeCongruenceStat(prjNrs[i], cases[i], 
-                max(1,totNrTrees) ):
-            RFstats[i] := compRes[1]; rawdata := compRes[2]; IdentStats[i] := compRes[3];
-            StoreRawData( rawdir.rawDataFn[i,1..-4], rawdata, 
-                [seq(prj[j],j=prjNrs[i])] );
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], NrTreesList[i], rawDataFn[i], 
-                [seq(prj[j,'PID'],j=prjNrs[i])]);
-        fi:
-    od:
-    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, NrTreesList, rawDataFn, 
-        [seq([prj[i,'PID'],prj[nP,'PID']],i=1..nP-1)] );
-elif length(meth)>=6 and meth[1..6]='REFSET' then
+if length(meth)>=6 and meth[1..6]='REFSET' then
     cases := CreateArray(1..nP,[]):
     RFstats := CreateArray(1..nP):
     IdentStats := CreateArray(1..nP):
@@ -325,10 +282,11 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     rawDataFn := CreateArray(1..nP):
     iSet := intersect():
     for i to nP do 
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash_sha2([problem,prj[i,'PID'],meth, confidence]) );
-        rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, 
-                hash_sha2([problem, prj[i,'PID'],meth, confidence]) );
+        hash_of_cur_proj := hash_sha2([problem, prj[i,'PID'], meth, confidence, treebuilder]);
+        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash_of_cur_proj); 
+        rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, hash_of_cur_proj); 
         if FileExists(resFnParts[i].'.gz') then next fi:
+        
         casesAndCnts := FindCases( intersect(), [i] );
         cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];
         NrTreesList[i] := length(cases[i]);
