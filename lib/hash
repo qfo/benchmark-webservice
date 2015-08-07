@@ -1,0 +1,5 @@
+hash_sha2 := proc(obj)
+    h := sha2(sprintf('%a',obj));
+    return( h[1..24] );
+end:
+
