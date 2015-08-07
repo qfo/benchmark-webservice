@@ -271,13 +271,15 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     'plotType'=((plotType='2d'):{'2d','barchart'}),
     'covLabel'=((covLabel='# ortholog relations'):string),
     'corLabel'=((corLabel='avg similarity'):string),
-    'covData'=((passedCovData=0):{list(numeric),0}))
+    'covData'=((passedCovData=0):{list(numeric),0}),
+    'betterDir'=((betterDir='NE'):{'NE','SE'}))
 
     t := table():
     t['outfile'] := resPlotFn;
     t['xlabel'] := covLabel;
     t['ylabel'] := corLabel;
     t['datafile'] := sprintf('/tmp/%s.dat', resBase);
+    t['betterSE'] := evalb(betterDir='SE');
     nData := length(data):
 
     plotTab := [seq(table(), nData)];
@@ -447,6 +449,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
                     'plotType'='2d',
                     'covLabel'=covLabels[i],
                     'corLabel'=corLabels[j],
+                    'betterDir'='SE',
                     covD);
             fi:
             plotTab := append(plotTab,table()):
@@ -495,7 +498,7 @@ Handle2dSimFiles_INTERSECT := proc(resFn:string, resBase:string, vars:table;
 end:
 
 Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
-        'measure'=((measure='avg Lin'):string) ) 
+        'measure'=((measure='avg Lin'):string))
     global Sims;
     Sims := 0;
     traperror(ReadProgram(resFn)):

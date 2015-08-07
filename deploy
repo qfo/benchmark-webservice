@@ -85,6 +85,7 @@ export DARWIN_ORTHOLOG_BENCHMARKDATA_PATH=${share_path}
 export DARWIN_OMA_REPO_PATH=\${HOME}/OMA
 echo \\\$PATH | grep -q \$HOME/bin || export PATH="\$HOME/bin:\\\$PATH"
 export MAFFT_BINARIES=/usr/lib/mafft/lib/mafft
+export GDFONTPATH="/usr/share/fonts/truetype/freefont/"
 EOA
 
 # make all directories and symlinks

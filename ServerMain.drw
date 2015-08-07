@@ -565,7 +565,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     vars['resheader'] := If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
-    vars['testNote'] := '<p>A species phylogeny assembeled by the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Tree Working Group</a> is used as the reference phylogeny.</p>';
+    vars['testNote'] := '<p>The level 90 species phylogeny assembled by the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Tree Working Group</a> is used as the reference phylogeny.</p>';
     vars['testRef_Lnk'] := '';
     vars['testRef_Desc'] := '';
     vars['resId'] := 'STD'.problem;
