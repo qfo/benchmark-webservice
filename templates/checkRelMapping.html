@@ -1,27 +1,60 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<link type="text/css" rel="stylesheet" href="/benchmarkservice.css"/>
-<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
-<meta http-equiv="refresh" content="<DVAR name="reloadin">">
-<title>Ortholog Benchmarking Webservice</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
+	<meta http-equiv="refresh" content="<DVAR name="reloadin">">
+	<title>Ortholog Benchmarking Webservice</title>
 </head>
-<body style="margin: 0px;">
-<div class="main">
-<center>
-<p>&nbsp;</p>
-<!-- <img src="<DVAR name="logo">" alt="Ortholog Benchmarking Service" width="299" height="134"/><br/> -->
 
-<h1>Orthology Relation Mapping for <DVAR name="tit"></h1>
-<p>We have started to compute the mapping of the orthologous relations.</p>
-<DVAR name="mappingStatus">
-<p><pre><DVAR name="log"></pre></p>
-<span class="small">This page gets reloaded automatically every <DVAR name="reloadin">sec or after pressing the reload button.</span>
-<form action="gateway.pl" name="formular">
-     <input type="hidden" name="f" value="CheckRelMap">
-     <input type="hidden" name="p1" value="<DVAR name="PID">">
-     <input type="submit" value="Refresh"/>
-</form>
-</div>
-</body>
-</html>
+<body >
+
+	<style type="text/css">
+
+
+		.hrmenu {
+			display: block;
+			margin-top: 0.5em;
+			margin-bottom: 0.5em;
+			margin-left: auto;
+			margin-right: auto;
+			border-style: solid;
+			border-width: 1px;
+			border-color: rgb(0,0,0);
+			border-color: rgb(48,124,59);
+		}
+
+
+	</style>
+
+
+
+
+	<div class="container-fluid">
+		
+		<p>&nbsp;</p>
+		<div class="row"> <!-- nav -->
+			<div class="col-md-8 col-md-offset-2 col-sm-6 ">
+				<div class="panel panel-default">
+					<div class="panel-body text-center">
+						<h1>Orthology Relation Mapping for <strong><DVAR name="tit"></strong></h1>
+						<hr class="hrmenu">
+						<p>We have started to compute the mapping of the orthologous relations.</p>
+						  <DVAR name="mappingStatus">
+              <p><pre><DVAR name="log"></pre></p>
+							<span class="small">This page gets reloaded automatically every <DVAR name="reloadin">sec or after pressing the reload button.</span>
+							<form action="gateway.pl" name="formular">
+								<input type="hidden" name="f" value="CheckRelMap">
+								<input type="hidden" name="p1" value="<DVAR name="PID">">
+								<input type="submit" value="Refresh"/>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+		</div>
+	</body>
+	</html>

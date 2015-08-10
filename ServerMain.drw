@@ -153,6 +153,8 @@ elif funcname = 'CheckResults' then
     html := traperror(bsCheckResults(params[1]));
 elif funcname = 'ShowProject' then
     html := traperror(bsShowProject(If(type(params,list),params[1],NULL)));
+elif funcname = 'About' then
+    html := traperror(bsAbout());
 elif funcname = 'Service' then
     html := traperror(bsService());
 # cookies/settings
@@ -259,6 +261,15 @@ bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference,
         'reference'=reference,'description'=methDesc,'url'=methURL,
         'isPublic'=isPublic):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
+end:
+
+
+####################################
+# About page                      #
+####################################
+bsAbout := proc()
+    vars := table(''):
+    return( GenerateTemplate(cdir.'/templates/about.html',vars) );
 end:
 
 #################################
@@ -517,10 +528,12 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     lock  := sprintf('%s.%s.lock',fnBase,king);
     vars := table('');
     vars['case'] := king;
+    vars['idhtml'] := ReplaceString(' ', '', king.' Tree');
     vars['resheader'] := king.' Tree';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['has_Ref'] := true;
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     vars['resId'] := 'TT'.king;
     
@@ -563,10 +576,12 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     vars := table('');
     for k to length(datasets) while SearchString(problem, datasets[k])<0 do od:
     vars['resheader'] := If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree';
+    vars['idhtml'] := ReplaceString(' ', '', If(k<=length(datasets), datasets[k], problem).' Generalized Species Tree');
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testNote'] := '<p>The level 90 species phylogeny assembled by the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Tree Working Group</a> is used as the reference phylogeny.</p>';
     vars['testRef_Lnk'] := '';
+    vars['has_Ref'] := false;
     vars['testRef_Desc'] := '';
     vars['resId'] := 'STD'.problem;
     
@@ -614,13 +629,17 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     lock  := sprintf('%s.%sPhyl.lock',fnBase,testset);
     vars := table('');
     if testset='Ref' then
-        vars['resheader'] := 'Agreement with Reference Gene Phylogenies of <a href="http://wiki.isb-sib.ch/swisstree" target="_new">SwissTrees</a>';
+        vars['resheader'] := 'Agreement with Reference Gene Phylogenies: <a href="http://wiki.isb-sib.ch/swisstree" target="_new">SwissTrees</a>';
+        vars['idhtml'] := ReplaceString(' ', '','Agreement with Reference Gene');
+        vars['has_Ref'] := true;
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/bib/bbr034';
         vars['testRef_Desc'] := 'Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484).';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     elif testset='Auto' then
-        vars['resheader'] := 'Agreement with Semi-automated Reference Gene Phylogenies (contributed by Fabian Schreiber)';
+        vars['idhtml'] := 'Semi-automated';
+        vars['resheader'] := 'Agreement with Reference Gene Phylogenies: TreeFam-A';
         vars['testRef_Lnk'] := 'http://dx.doi.org/10.1093/nar/gkj118';
+        vars['has_Ref'] := true;
         vars['testRef_Desc'] := 'Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484';
         vars['testNote'] := '<p>A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a></p>';
     fi:
@@ -671,8 +690,10 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     vars := table('');
     vars['resheader'] := 'Enzyme Classification (EC) conservation test';
     vars['resFigReady'] := false;
+    vars['idhtml'] := 'EnzymeClassification(EC)';
     vars['ref'] := GetPKeyData(PID)['ref'];
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['has_Ref'] := true;
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
@@ -712,7 +733,9 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     vars['resheader'] := 'Gene Ontology conservation test';
     vars['resFigReady'] := false;
     vars['ref'] := GetPKeyData(PID)['ref'];
+    vars['idhtml'] := 'GeneOntologyconservation';
     vars['testRef_Lnk'] := 'http://dx.doi.org/10.1371/journal.pcbi.1000262';
+    vars['has_Ref'] := true;
     vars['testRef_Desc'] := 'Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262';
     exEv := {EXP,IDA,IPI,IMP,IGI,IEP,ISS,ISO,ISA,ISM,IGC,IBA,IBD,IKR,IRD,RCA,TAS,NAS,IEA,IC,NR};
     
@@ -753,8 +776,10 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     fnBase := GetPKeyData(PID)['fnBase'];
     lock  := sprintf('%s.Homology.lock',fnBase);
     vars := table('');
+    vars['idhtml'] := 'Multi-Domain';
     vars['resheader'] := 'Correct Homology Detection of Multi-Domain Proteins';
     vars['contributor'] := '';
+    vars['has_Ref'] := false;
     vars['pubref'] := '';
     vars['testNote'] := '<p>A description of the implementation is provided <a href="/doc/homologyBenchmark.pdf">here</a></p>';
     vars['resFigReady'] := false;

@@ -1,11 +1,46 @@
-<h3><DVAR name="resheader"></h3>
-<div class="reference"><p class="last">
-<a href="<DVAR name="testRef_Lnk">"><DVAR name="testRef_Desc"></a>
-</p><DVAR name="testNote"></div>
-<div class="RawResults"> 
-<DVAR name="content">
+
+<DBOOL name="has_Ref">
+	<div class="well well-sm"><p ><a href="<DVAR name="testRef_Lnk">"><DVAR name="testRef_Desc"></a>
+	</p>
 </div>
-<div class="Graphics"><DBOOL name="resFigReady">
- <img class="result" src="<DVAR name="fig">" alt="comparison graph"/><br/>
- <span class="hint"><a href="<DVAR name="gp_src">">Download Gnuplot sources</a></span></DBOOL>
-</div>
+
+</DBOOL>
+
+
+
+
+
+
+
+<br/>
+
+
+<div  >
+
+	<DVAR name="content">
+
+	</div>
+
+	<br/>
+	<br/>
+
+	<div id="<DVAR name="idhtml">" class="carousel slide" data-ride="carousel">
+
+		<ol class="carousel-indicators">
+			<li data-target="#<DVAR name="idhtml">" data-slide-to="0" class="active"></li>
+		</ol>
+
+		<!-- Wrapper for slides -->
+		<div class="carousel-inner" role="listbox">
+			<DBOOL name="resFigReady">
+				<div class="item active">
+					<img src="<DVAR name="fig">" alt="comparison graph"/><br/>
+					<p><a href="<DVAR name="gp_src">">Download Gnuplot sources</a></p>
+
+				</DBOOL>
+			</div>
+
+		</div>
+
+
+
