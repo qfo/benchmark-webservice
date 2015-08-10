@@ -452,6 +452,9 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
             plotTab := append(plotTab,table()):
             plotTab[-1, 'fig'] := resimgurl.plotFn;
             plotTab[-1, 'gp_src'] := rawurl.plotFn[1..-4].'tgz';
+            plotTab[-1, 'cnt'] := idx;
+            plotTab[-1, 'activeclass'] := If(idx=1, 'class="active"','');
+            plotTab[-1, 'activeclassitem'] := If(idx=1, 'class="item active"','class="item"');
         od od:
         vars['content'] := HTMLC(tab);
         vars['figdivs'] := plotTab;

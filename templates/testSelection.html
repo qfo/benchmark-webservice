@@ -1,18 +1,95 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
-<link type="text/css" rel="stylesheet" href="/benchmarkservice.css"/>
-<script src="/scripts.js" type="text/javascript"></script>
-<title>Benchmark Selection <DVAR name="tit"></title>
+  <meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="/newstyle.css"/>
+  <script src="/scripts.js" type="text/javascript"></script>
+  <title>Benchmark Selection <DVAR name="tit"></title>
 </head>
-<body>
-<div id="main">
-<div id="mainLogo"></div>
-<h2>Benchmark Selection for <DVAR name="tit"></h2>
-Select from the available benchmarks and against which standard 
-orthology inference project you would like to compare your predictions
-<form action="gateway.pl" method="post">
+<body> 
+
+  <style type="text/css">
+    hr {
+      display: block;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+      margin-left: auto;
+      margin-right: auto;
+      border-style: solid;
+      border-width: 1px;
+
+    }
+
+    .hrmenu {
+      display: block;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+      margin-left: auto;
+      margin-right: auto;
+      border-style: solid;
+      border-width: 1px;
+      border-color: rgb(0,0,0);
+      border-color: rgb(48,124,59);
+    }
+
+    .temp {
+      position: fixed;
+      top: 400px;
+      left:5px;
+    }
+
+  </style>
+
+  <div class="container-fluid" id="main">
+
+
+
+   <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1"> 
+
+    <div class="row">  <!-- header -->
+      <div class="col-md-4  col-sm-4 "> <!-- logo -->
+        <img alt="Brand" class="img-responsive" src="/imgs/logo.png" id="logo">
+      </div>
+
+      <div class="col-md-8  col-sm-8 "> <!-- page title -->
+        <h1>Benchmark Selection for <DVAR name="tit"></h1>
+      </div>
+    </div>
+
+    <hr >
+      <div class="row"> <!-- nav -->
+        <div class="col-md-2 col-sm-2 text-center">
+          <a href="gateway.pl">Home</a>
+        </div>
+        <div class="col-md-2 col-sm-2  text-center">
+          <a href="gateway.pl?f=About">About</a>
+        </div>
+        <div class="col-md-2  col-sm-2 text-center">
+          <a href="gateway.pl?f=ShowProject">Public Projects</a>
+        </div>
+        <div class="col-md-3 col-sm-3  text-center">
+          <a href="gateway.pl?f=CheckResults&amp;p1=1141875214480141056">Public Results</a>
+        </div>
+        <div class="col-md-3 col-sm-3  text-center">
+        <a href="gateway.pl" >Submit predictions</a>
+        </div>
+      </div> <!-- end nav -->
+        
+    <hr >
+
+    <br>
+
+    <p>Select from the available benchmarks and against which standard orthology inference project you would like to compare your predictions.</p>
+
+
+    <form action="gateway.pl" method="post">
+
+<div>
+
  <DBOOL name="notRefSet">
  <fieldset><legend>Test Strategy</legend>
   <div class="notes"><h4>Select your strategy of testing</h4>
@@ -29,240 +106,432 @@ orthology inference project you would like to compare your predictions
   <input type="hidden" name="pTestStrategy" value="<DVAR name="ref">" />
  </DBOOL>
 
- <fieldset><legend>Phylogeny-Based Definition Benchmarks</legend>
-  <div class="notes"><h4>Phylogeny-Based Definition</h4>
-   <p class="last">According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</p>
-  </div>
-   <div class="reference">
-   <p class="last"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a></p>
-  </div> 
-
-  <div class="test_kind">
-   <div class="test">
-    <h4><input type="checkbox" id="pTTEuk1" name="pTTEuk1" <DVAR name="styleEuk">/><label for="pTTEuk1">Eukaryotic Species Tree Discordance Benchmark</label></h4>
-    <DBOOL name="hasEuk">
-    <div class="testParam">
-     <label class="test" for="pTTEukPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="TTEukProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-   
-   <div class="test">
-    <h4><input type="checkbox" id="pTTFun1" name="pTTFun1" <DVAR name="styleFun">/><label for="pTTFun1">Fungi Species Tree Discordance Benchmark</label></h4>
-    <DBOOL name="hasFun">
-    <div class="testParam">
-     <label class="test" for="pTTFunPrj1">Projects to compare with:</label>
-     <div class="testParamList"><DVAR name="TTFunProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-   
-   <div class="test">
-    <h4><input type="checkbox" id="pTTBac1" name="pTTBac1" <DVAR name="styleBac">/><label for="pTTBac1">Bacteria Species Tree Discordance Benchmark</label></h4>
-    <DBOOL name="hasBac">
-    <div class="testParam">
-     <label class="test" for="pTTBacPrj1">Projects to compare with:</label>
-     <div class="testParamList"><DVAR name="TTBacProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-  </div>
-
-  <div class="test_kind">
-   <div class="test">
-    <h4><input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca">/><label for="pSTDLuca1">Generalized Species Tree Discordance Benchmark based on all genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
-    <DBOOL name="hasSTDLuca">
-    <div class="testParam">
-     <label class="test" for="pSTDLucaPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="STDLucaProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-
-   <div class="test">
-    <h4><input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk">/><label for="pSTDEuk1">Generalized Species Tree Discordance Benchmark on the eukaryotic genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
-    <DBOOL name="hasSTDEuk">
-    <div class="testParam">
-     <label class="test" for="pSTDEukPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="STDEukProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-   
-   <div class="test">
-    <h4><input type="checkbox" id="pSTDVer1" name="pSTDVer1" <DVAR name="styleSTDVer">/><label for="pSTDVer1">Generalized Species Tree Discordance Benchmark on the vertebrate genomes in the <a href="http://swisstree.vital-it.ch/species_tree" htarget="_new">QfO Species Phylogeny</a></label></h4>
-    <DBOOL name="hasSTDVer">
-    <div class="testParam">
-     <label class="test" for="pSTDVerPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="STDVerProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-
-   <div class="test">
-    <h4><input type="checkbox" id="pSTDFun1" name="pSTDFun1" <DVAR name="styleSTDFun">/><label for="pSTDFun1">Generalized Species Tree Discordance Benchmark on the fungal genomes in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny</a></label></h4>
-    <DBOOL name="hasSTDFun">
-    <div class="testParam">
-     <label class="test" for="pSTDFunPrj1">Projects to compare with:</label><br/>
-     <div class="testParamList"><DVAR name="STDFunProjects"></div>
-    </div>
-    </DBOOL>
-   </div>
-
-
-  </div>
-
-
-  <div class="test_kind">
-   <div class="test">
-  <div class="reference">
-   <p class="last"><a href="http://dx.doi.org/10.1093/bib/bbr034">Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484)</a></p>
-   <p class="last">A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a>.</p>
-  </div> 
-    <h4><input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" <DVAR name="styleRefPhylo"> /><label for="pRefPhylo1">Agreement with Reference Gene Phylogenies (contributed by Brigitte Boeckmann)</label></h4>
-    <DBOOL name="hasRefPhylo">
-    <div class="testParam">
-     <label class="test" for="pRefPhyloPrj1">Projects to compare with:</label>
-     <div class="testParamList"><DVAR name="RefPhyloProjects"></div>
-     <label class="test" for="<DVAR name="RefPhyloProb1_id">">Reference Gene Phylogenies:</label>
-     <div class="testParamList"><DVAR name="RefPhyloProblems"></div>
-    </div>
-    </DBOOL>
-   </div>
-  </div>
-  
-  <div class="test_kind_last">
-   <div class="test">
-  <div class="reference">
-   <p class="last"><a href="http://dx.doi.org/10.1093/nar/gkj118">Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484</a></p>
-  </div> 
-    <h4><input type="checkbox" id="pAutoPhylo1" name="pAutoPhylo1" <DVAR name="styleAutoPhylo"> /><label for="pAutoPhylo1">Agreement with Semi-automated Reference Phylogenies (contributed by Fabian Schreiber)</label></h4>
-    <DBOOL name="hasAutoPhylo">
-    <div class="testParam">
-     <label class="test" for="pAutoPhyloPrj1">Projects to compare with:</label>
-     <div class="testParamList"><DVAR name="AutoPhyloProjects"></div>
-     <label class="test" for="<DVAR name="AutoPhyloProb1_id">">Reference Gene Phylogenies:</label>
-     <div class="testParamList"><DVAR name="AutoPhyloProblems"></div>
-    </div>
-    </DBOOL>
-   </div>
-  </div>
-
- </fieldset>
-
-<!-- Test commented out based on QfO discussion from beginning May 2013. 
- <fieldset><legend>Homology of Multi-Domain Proteins Test</legend>
-  <div class="test_kind_last">
-   <div class="test">
-   <div class="reference">
-    <p class="last">A description of our implementation of this test is provided <a href="/doc/homologyBenchmark.pdf">here</a>.</p>
-  </div> 
-
-    <h4><input type="checkbox" id="pHom1" name="pHom1" <DVAR name="styleHom"> /><label for="pHom1">Detection Accuracy of Multi-Domain Protein (contributed by Jacob Joseph and Dannie Durand)</label></h4>
-    <DBOOL name="hasHom">
-    <div class="testParam">
-     <label class="test" for="pHomPrj1">Projects to compare with:</label>
-     <div class="testParamList"><DVAR name="HomProjects"></div>
-     <label class="test" for="pHomProbHumMus">Datasets:</label>
-     <div class="testParamList"><DVAR name="HomProblems"></div>
-    </div>
-    </DBOOL>
-   </div>
-  </div>
- </fieldset>
--->
- <fieldset><legend>Function-Based Definition Benchmarks</legend>
-  <div class="notes"><h4>Function-Based Definition</h4>
-   <p class="last">One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</p>
-  </div>
-
-
-
-  <div class="test_kind">
-   <div class="test">
-  <div class="reference">
-   <p class="last"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a></p>
-  </div> 
-    <h4><input type="checkbox" id="pGO1" name="pGO1" <DVAR name="styleGO"> /><label for="pGO1">Gene Ontology Benchmark</label></h4>
-    <DBOOL name="hasGO">
-    <div class="testParam">
-     <label class="test" for="pGOPrj1">Projects to compare with</label>
-     <div class="testParamList"><DVAR name="GOprojects"></div>
-   
-     <fieldset><legend>Restricted to Evidence codes</legend>
-      <p>
-      <input type="checkbox"  id="pGOFilEXP" name="pGOFilEXP" checked="checked"/><label for="pGOFilEXP"><span title="Inferred from Experiment">EXP</span></label>
-      <input type="checkbox"  id="pGOFilIDA" name="pGOFilIDA" checked="checked"/><label for="pGOFilIDA"><span title="Inferred from Direct Assay">IDA</span></label>
-      <input type="checkbox"  id="pGOFilIPI" name="pGOFilIPI" checked="checked"/><label for="pGOFilIPI"><span title="Inferred from Physical Interaction">IPI</span></label>
-      <input type="checkbox"  id="pGOFilIMP" name="pGOFilIMP" checked="checked"/><label for="pGOFilIMP"><span title="Inferred from Mutant Phenotype">IMP</span></label>
-      <input type="checkbox"  id="pGOFilIGI" name="pGOFilIGI" checked="checked"/><label for="pGOFilIGI"><span title="Inferred from Genetic Interaction">IGI</span></label>
-      <input type="checkbox"  id="pGOFilIEP" name="pGOFilIEP" checked="checked"/><label for="pGOFilIEP"><span title="Inferred from Expression Pattern">IEP</span></label>
-      </p>
-      <p>
-      <input type="checkbox"  id="pGOFilISS" name="pGOFilISS" /><label for="pGOFilISS"><span title="Inferred from Sequence or Structural Similarity">ISS</span></label>
-      <input type="checkbox"  id="pGOFilISO" name="pGOFilISO" /><label for="pGOFilISO"><span title="Inferred from Sequence Orthology">ISO</span></label>
-      <input type="checkbox"  id="pGOFilISA" name="pGOFilISA" /><label for="pGOFilISA"><span title="Inferred from Sequence Alignment">ISA</span></label>
-      <input type="checkbox"  id="pGOFilISM" name="pGOFilISM" /><label for="pGOFilISM"><span title="Inferred from Sequence Model">ISM</span></label>
-      <input type="checkbox"  id="pGOFilIGC" name="pGOFilIGC" /><label for="pGOFilIGC"><span title="Inferred from Genomic Context">IGC</span></label>
-      <input type="chcekbox"  id="pGOFilIBA" name="pGOFilIBA" /><label for="pGOFilIBA"><span title="Inferred from Biological aspect of Ancestor">IBA</span></label>
-      <input type="chcekbox"  id="pGOFilIBD" name="pGOFilIBD" /><label for="pGOFilIBD"><span title="Inferred from Biological aspect of Descendant">IBD</span></label>
-      <input type="chcekbox"  id="pGOFilIKR" name="pGOFilIKR" /><label for="pGOFilIKR"><span title="Inferred from Key Residue">IKR</span></label>
-      <input type="chcekbox"  id="pGOFilIRD" name="pGOFilIRD" /><label for="pGOFilIRD"><span title="Inferred from Rapid Divergence">IRD</span></label>
-      <input type="checkbox"  id="pGOFilIC"  name="pGOFilIC"  /><label for="pGOFilIC" ><span title="Inferred by Curator">IC </span></label>
-      <input type="checkbox"  id="pGOFilRCA" name="pGOFilRCA" /><label for="pGOFilRCA"><span title="Inferred from Reviewed Computational Analysis">RCA</span></label>
-      <input type="checkbox"  id="pGOFilTAS" name="pGOFilTAS" /><label for="pGOFilTAS"><span title="Traceable Author Statement">TAS</span></label>
-      <input type="checkbox"  id="pGOFilNAS" name="pGOFilNAS" /><label for="pGOFilNAS"><span title="Non-traceable Author Statement">NAS</span></label>
-      </p>
-      <p>
-      <input type="checkbox"  id="pGOFilIEA" name="pGOFilIEA" /><label for="pGOFilIEA"><span title="Inferred from electronic annotation">IEA</span></label>
-      <input type="checkbox"  id="pGOFilNR"  name="pGOFilNR"  /><label for="pGOFilNR"><span title="No biological Data available">NR</span></label>
-      </p>
-     </fieldset>
-     
-     <fieldset><legend>Similarity Measure</legend>
-      <input type="radio" id="pGOMLinA" name="pGOMeasure" value="avg Sim"/><label for="pGOMLinA">average Lin Similarity</label><br/>
-      <input type="radio" id="pGOMLinM" name="pGOMeasure" value="max Sim"/><label for="pGOMLinM">maximum Lin Similarity</label><br/>
-      <input type="radio" id="pGOMInfA" name="pGOMeasure" value="avg Info"/><label for="pGOMInfA">average information content</label><br/>
-      <input type="radio" id="pGOMInfM" name="pGOMeasure" value="max Info"/><label for="pGOMInfM">maximum information content</label><br/>
-      <input type="radio" id="pGOMSchA" name="pGOMeasure" value="avg Schlicker" checked="checked"/><label for="pGOMSchA">average Schlicker Similarity</label>
-     </fieldset>
-    </div>
-    </DBOOL>
-   </div>
-  </div>
-  
-  <div class="test">
-  <div class="reference">
-   <p class="last"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a></p>
-  </div> 
-   <h4><input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" <DVAR name="styleEC"> /><label for="pEC1">Enzyme Classification (EC) Benchmark</label></h4>
-   <DBOOL name="hasEC">
-   <div class="testParam">
-    <label for="pECPrj1">Projects to compare with</label>
-    <div class="testParamList"><DVAR name="ECprojects"></div>
-    
-    <fieldset><legend>Similarity Measure</legend>
-     <input type="radio" id="pECMLinA" name="pECMeasure" value="avg Sim"/><label for="pECMLinA">average Lin Similarity</label><br/>
-     <input type="radio" id="pECMLinM" name="pECMeasure" value="max Sim"/><label for="pECMLinM">maximum Lin Similarity</label><br/>
-     <input type="radio" id="pECMInfA" name="pECMeasure" value="avg Info"/><label for="pECMInfA">average information content</label><br/>
-     <input type="radio" id="pECMInfM" name="pECMeasure" value="max Info"/><label for="pECMInfM">maximum information content</label><br/>
-     <input type="radio" id="pECMSchA" name="pECMeasure" value="avg Schlicker" checked="checked"/><label for="pECMSchA">average Schlicker Similarity</label>
-    </fieldset>
-   </div>
-   </DBOOL>
-  </div>
- </fieldset>
-
- <fieldset class="submit">
-  <div>
-   <input type="hidden" name="f" value="RunTests" />
-   <input type="hidden" name="pPID" value="<DVAR name="PID">" />
-   <input type="submit" value="Compute &raquo;" />
-  </div>
- </fieldset>
-</form>
-<DVAR name="content">
 </div>
+
+      <fieldset> <!-- div section -->
+        <br>  
+        <div class="row"> <!-- section header -->
+          <h3>Phylogeny-Based Definition Benchmarks  <!-- section title -->
+            <button type="button" class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target=".Phylogeny"> <!-- section help -->
+              Details <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+            </button> 
+          </h3> 
+          <hr class="hrmenu">
+        </div> <!-- end section header -->
+        <br>  
+
+        <div class="modal fade bs-example-modal-sm Phylogeny" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"> <!-- help modal -->
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Phylogeny-Based Definition</h4>
+              </div>
+              <div class="modal-body">
+                <h5>According to the phylogenetic definition, two homologous genes are orthologs if they diverged through a speciation event. Therefore, the phylogenetic tree of a set of orthologs (a set of genes in which any pair is orthologous) has by definition the same topology as the corresponding species tree.</h5>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div> <!-- end help modal -->
+
+        <div class="well well-sm">Altenhoff and Dessimoz, 2009, Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods PLoS Computational Biology,5(1): e1000262</div>
+
+
+
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pTTEuk1" name="pTTEuk1" <DVAR name="styleEuk"> <label for="pTTEuk1"> Eukaryotic Species Tree Discordance Benchmark</label>
+          <DBOOL name="hasEuk">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label for="pTTEukPrj1">Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="TTEukProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pTTFun1" name="pTTFun1" <DVAR name="styleFun"> <label for="pTTFun1"> Fungi Species Tree Discordance Benchmark</label>
+
+          <DBOOL name="hasFun">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for="pTTFunPrj1"> Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="TTFunProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+
+        </div> <!-- end div top level -->
+
+        <br>
+
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pTTBac1" name="pTTBac1" <DVAR name="styleBac"> <label for="pTTBac1"> Bacteria Species Tree Discordance Benchmark</label>
+          <DBOOL name="hasBac">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for="pTTBacPrj1"> Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="TTBacProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pSTDLuca1" name="pSTDLuca1" <DVAR name="styleSTDLuca"> <label for="pSTDLuca1"> Generalized Species Tree Discordance Benchmark based on <strong>all genomes</strong> in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new"> QfO Species Phylogeny (L90)</a></label>
+          <DBOOL name="hasSTDLuca">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for="pSTDLucaPrj1"> Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="STDLucaProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pSTDEuk1" name="pSTDEuk1" <DVAR name="styleSTDEuk"> <label for="pSTDEuk1"> Generalized Species Tree Discordance Benchmark on the <strong>eukaryotic genomes</strong> in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny (L90)</a></label>
+
+
+          <DBOOL name="hasSTDEuk">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for="pSTDLucaPrj1">Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="STDEukProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pSTDVer1" name="pSTDVer1" <DVAR name="styleSTDVer"> <label for="pSTDVer1"> Generalized Species Tree Discordance Benchmark on the <strong>vertebrate genomes</strong> in the <a href="http://swisstree.vital-it.ch/species_tree" htarget="_new">QfO Species Phylogeny (L90) </a></label>
+          <DBOOL name="hasSTDVer">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label for="pSTDVerPrj1">Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="STDVerProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div> <!-- div top level -->
+          <input type="checkbox" id="pSTDFun1" name="pSTDFun1" <DVAR name="styleSTDFun">  <label for="pSTDFun1"> Generalized Species Tree Discordance Benchmark on the <strong>fungal genomes</strong> in the <a href="http://swisstree.vital-it.ch/species_tree" target="_new">QfO Species Phylogeny (L90) </a></label>
+
+
+
+          <DBOOL name="hasSTDFun">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label for="pSTDFunPrj1">Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="STDFunProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+          </DBOOL>
+        </div> <!-- end div top level -->
+
+        <br>
+
+        <div class="well well-sm"><p ><a href="http://dx.doi.org/10.1093/bib/bbr034">Brigitte Boeckmann, Marc Robinson-Rechavi, Ioannis Xenarios, Christophe Dessimoz, 2011 <b>Conceptual Framework and Pilot Study to Benchmark Phylogenomic Databases Based on Reference Gene Trees</b> <i>Briefings in Bioinformatics</i>, 12:5 (pp. 474-484)</a>. A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a>.</p>
+        </div>
+        
+
+        <div> <!-- div top level -->
+
+          <input type="checkbox" id="pRefPhylo1" name="pRefPhylo1" <DVAR name="styleRefPhylo"> <label for="pRefPhylo1"> Agreement with Reference Gene Phylogenies: SwissTree</label>
+
+          <DBOOL name="hasRefPhylo">
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for="pRefPhyloPrj1">Projects to compare with:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                  <div ><DVAR name="RefPhyloProjects">
+                  </div>
+                </div> <!-- end III level -->
+              </div> <!-- end II level -->
+            </div> <!-- end row -->
+
+            <div class="row"> 
+              <div class="col-md-offset-1"> <!-- II level -->
+                <label  for='<DVAR name="RefPhyloProb1_id">'> Reference Gene Phylogenies:</label>
+                <br/>
+                <div class="col-md-offset-1"> <!-- III level -->
+                 <div ><DVAR name="RefPhyloProblems">
+                 </div>
+               </div> <!-- end III level -->
+             </div> <!-- end II level -->
+           </div> <!-- end row -->
+
+         </DBOOL>
+
+
+       </div> <!-- end div top level -->
+       <br>
+
+       <div class="well well-sm"><p ><a href="http://dx.doi.org/10.1093/nar/gkj118">Heng Li <i>et. al</i>, 2006 <b>TreeFam: a curated database of phylogenetic trees of animal gene families</b> <i>Nucl. Acids Res.</i>, 34(suppl 1): D572-D580 484</a>. A detailed description of our implementation is provided <a href="/doc/refGeneTrees.pdf">here</a>.</p>
+       </div>
+
+
+       <div> <!-- div top level -->
+
+        <input type="checkbox" id="pAutoPhylo1" name="pAutoPhylo1" <DVAR name="styleAutoPhylo">  <label for="pAutoPhylo1"> Agreement with Reference Gene Phylogenies: TreeFam-A</label>
+
+
+        <DBOOL name="hasAutoPhylo">
+          <div class="row"> 
+            <div class="col-md-offset-1"> <!-- II level -->
+              <label  for="pAutoPhyloPrj1">Projects to compare with:</label>
+              <br/>
+              <div class="col-md-offset-1"> <!-- III level -->
+                <div ><DVAR name="AutoPhyloProjects">
+                </div>
+              </div> <!-- end III level -->
+            </div> <!-- end II level -->
+          </div> <!-- end row -->
+
+          <div class="row"> 
+            <div class="col-md-offset-1"> <!-- II level -->
+
+              <label for='<DVAR name="AutoPhyloProb1_id">'>Reference Gene Phylogenies:</label>
+              <br/>
+              <div class="col-md-offset-1"> <!-- III level -->
+               <div ><DVAR name="AutoPhyloProblems">
+               </div>
+             </div> <!-- end III level -->
+           </div> <!-- end II level -->
+         </div> <!-- end row -->
+
+       </DBOOL>
+
+     </div> <!-- end div top level -->
+     <br>
+   </fieldset>
+   <br>
+
+
+   <fieldset> <!-- div section -->
+
+    <br>  
+
+    <div class="row"> <!-- section header -->
+      <h3>Function-Based Definition Benchmarks  <!-- section title -->
+        <button type="button" class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target=".Function"> <!-- section help -->
+          Details <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+        </button> 
+      </h3> 
+      <hr class="hrmenu">
+    </div> <!-- end section header -->
+    <br>  
+
+    <div class="modal fade bs-example-modal-sm Function" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"> <!-- help modal -->
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"> Function-Based Definition</h4>
+          </div>
+          <div class="modal-body">
+            <h5>One of the main application of orthology is the propagation of functional annotation, because orthologs tend to have a similar function.</h5>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div> <!-- end help modal -->  
+
+    <div class="well well-sm"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b>Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a>
+    </div>
+
+    <div> <!-- div top level -->
+
+     <input type="checkbox" id="pGO1" name="pGO1" <DVAR name="styleGO"> <label for="pGO1"> Gene Ontology Benchmark</label>
+
+     <DBOOL name="hasGO">
+      <div class="row"> 
+        <div class="col-md-offset-1"> <!-- II level -->
+          <label  for="pGOPrj1"> Projects to compare with</label>
+          <br/>
+          <div class="col-md-offset-1"> <!-- III level -->
+            <div ><DVAR name="GOprojects"></div>
+
+          </div> <!-- end III level -->
+        </div> <!-- end II level -->
+      </div> <!-- end row -->
+
+      <div class="row"> 
+        <div class="col-md-offset-1"> <!-- II level -->
+          <label >Restricted to Evidence codes</label>
+          <br/>
+          <div class="col-md-offset-1"> <!-- III level -->
+           <p>
+            <input type="checkbox"  id="pGOFilEXP" name="pGOFilEXP" checked="checked"/><label for="pGOFilEXP"><span title="Inferred from Experiment">EXP</span></label>
+            <input type="checkbox"  id="pGOFilIDA" name="pGOFilIDA" checked="checked"/><label for="pGOFilIDA"><span title="Inferred from Direct Assay">IDA</span></label>
+            <input type="checkbox"  id="pGOFilIPI" name="pGOFilIPI" checked="checked"/><label for="pGOFilIPI"><span title="Inferred from Physical Interaction">IPI</span></label>
+            <input type="checkbox"  id="pGOFilIMP" name="pGOFilIMP" checked="checked"/><label for="pGOFilIMP"><span title="Inferred from Mutant Phenotype">IMP</span></label>
+            <input type="checkbox"  id="pGOFilIGI" name="pGOFilIGI" checked="checked"/><label for="pGOFilIGI"><span title="Inferred from Genetic Interaction">IGI</span></label>
+            <input type="checkbox"  id="pGOFilIEP" name="pGOFilIEP" checked="checked"/><label for="pGOFilIEP"><span title="Inferred from Expression Pattern">IEP</span></label>
+          </p>
+          <p>
+            <input type="checkbox"  id="pGOFilISS" name="pGOFilISS" /><label for="pGOFilISS"><span title="Inferred from Sequence or Structural Similarity">ISS</span></label>
+            <input type="checkbox"  id="pGOFilISO" name="pGOFilISO" /><label for="pGOFilISO"><span title="Inferred from Sequence Orthology">ISO</span></label>
+            <input type="checkbox"  id="pGOFilISA" name="pGOFilISA" /><label for="pGOFilISA"><span title="Inferred from Sequence Alignment">ISA</span></label>
+            <input type="checkbox"  id="pGOFilISM" name="pGOFilISM" /><label for="pGOFilISM"><span title="Inferred from Sequence Model">ISM</span></label>
+            <input type="checkbox"  id="pGOFilIGC" name="pGOFilIGC" /><label for="pGOFilIGC"><span title="Inferred from Genomic Context">IGC</span></label>
+            <input type="checkbox"  id="pGOFilIBA" name="pGOFilIBA" /><label for="pGOFilIBA"><span title="Inferred from Biological aspect of Ancestor">IBA</span></label>
+            <input type="checkbox"  id="pGOFilIBD" name="pGOFilIBD" /><label for="pGOFilIBD"><span title="Inferred from Biological aspect of Descendant">IBD</span></label>
+            <input type="checkbox"  id="pGOFilIKR" name="pGOFilIKR" /><label for="pGOFilIKR"><span title="Inferred from Key Residue">IKR</span></label>
+            <input type="checkbox"  id="pGOFilIRD" name="pGOFilIRD" /><label for="pGOFilIRD"><span title="Inferred from Rapid Divergence">IRD</span></label>
+            <input type="checkbox"  id="pGOFilIC"  name="pGOFilIC"  /><label for="pGOFilIC" ><span title="Inferred by Curator">IC </span></label>
+            <input type="checkbox"  id="pGOFilRCA" name="pGOFilRCA" /><label for="pGOFilRCA"><span title="Inferred from Reviewed Computational Analysis">RCA</span></label>
+            <input type="checkbox"  id="pGOFilTAS" name="pGOFilTAS" /><label for="pGOFilTAS"><span title="Traceable Author Statement">TAS</span></label>
+            <input type="checkbox"  id="pGOFilNAS" name="pGOFilNAS" /><label for="pGOFilNAS"><span title="Non-traceable Author Statement">NAS</span></label>
+          </p>
+          <p>
+            <input type="checkbox"  id="pGOFilIEA" name="pGOFilIEA" /><label for="pGOFilIEA"><span title="Inferred from electronic annotation">IEA</span></label>
+            <input type="checkbox"  id="pGOFilNR"  name="pGOFilNR"  /><label for="pGOFilNR"><span title="No biological Data available">NR</span></label>
+          </p>
+        </div> <!-- end III level -->
+      </div> <!-- end II level -->
+    </div>
+
+    <div class="row"> 
+      <div class="col-md-offset-1"> <!-- II level -->
+        <label >Similarity Measure</label>
+        <br/>
+        <div class="col-md-offset-1"> <!-- III level -->
+         <input type="radio" id="pGOMLinA" name="pGOMeasure" value="avg Sim"/>
+         <label for="pGOMLinA">average Lin Similarity</label><br/>
+         <input type="radio" id="pGOMLinM" name="pGOMeasure" value="max Sim"/>
+         <label for="pGOMLinM">maximum Lin Similarity</label><br/>
+         <input type="radio" id="pGOMInfA" name="pGOMeasure" value="avg Info"/>
+         <label for="pGOMInfA">average information content</label><br/>
+         <input type="radio" id="pGOMInfM" name="pGOMeasure" value="max Info"/>
+         <label for="pGOMInfM">maximum information content</label><br/>
+         <input type="radio" id="pGOMSchA" name="pGOMeasure" value="avg Schlicker" checked="checked"/><label for="pGOMSchA">average Schlicker Similarity</label>
+       </div> <!-- end III level -->
+     </div> <!-- end II level -->
+   </div> <!-- end row -->
+
+ </DBOOL>
+</div>
+
+<br/>
+
+<div class="well well-sm"><a href="http://dx.doi.org/10.1371/journal.pcbi.1000262">Altenhoff and Dessimoz, 2009, <b> Phylogenetic and Functional Assessment of Orthologs Inference Projects and Methods</b> <i>PLoS Computational Biology</i>,5(1): e1000262</a>
+</div>
+
+
+<div> <!-- div top level -->
+
+  <input type="checkbox" id="pEC1" name="pEC1" class="inputCheckbox" <DVAR name="styleEC"> <label for="pEC1">Enzyme Classification (EC) Benchmark</label>
+
+  <DBOOL name="hasEC">
+    <div class="row"> 
+      <div class="col-md-offset-1"> <!-- II level -->
+        <label  for="pECPrj1"> Projects to compare with</label>
+        <br/>
+        <div class="col-md-offset-1"> <!-- III level -->
+          <div ><DVAR name="ECprojects"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row"> 
+      <div class="col-md-offset-1"> <!-- II level -->
+        <label  for="pECPrj1"> Similarity Measure</label>
+
+        <div class="col-md-offset-1"> <!-- III level -->
+         <input type="radio" id="pECMLinA" name="pECMeasure" value="avg Sim"/>
+         <label for="pECMLinA">average Lin Similarity</label>
+         <br/>
+         <input type="radio" id="pECMLinM" name="pECMeasure" value="max Sim"/>
+         <label for="pECMLinM">maximum Lin Similarity</label><br/>
+         <input type="radio" id="pECMInfA" name="pECMeasure" value="avg Info"/>
+         <label for="pECMInfA">average information content</label><br/>
+         <input type="radio" id="pECMInfM" name="pECMeasure" value="max Info"/>
+         <label for="pECMInfM">maximum information content</label><br/>
+         <input type="radio" id="pECMSchA" name="pECMeasure" value="avg Schlicker" checked="checked"/>
+         <label for="pECMSchA">average Schlicker Similarity</label>
+       </div>
+
+     </div>
+   </div>
+
+ </DBOOL>
+</div> <!-- end div top level -->
+</fieldset>
+<br/>
+<div class="row"> 
+  <div class="col-md-offset-6"> <!-- II level -->
+
+
+    <fieldset class="submit">
+      <div>
+       <input type="hidden" name="f" value="RunTests" />
+       <input type="hidden" name="pPID" value='<DVAR name="PID">' />
+       <input type="submit" value="Compute &raquo;" />
+     </div>
+   </fieldset>
+
+ </div>
+</div>
+<br/>
+
+
+</form>
+<nav class="navbar navbar-default navbar-fixed-bottom">
+  <div class="container">
+    <p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+  </div>
+</nav>
+</div>
+</div>
+
 </body>
 </html>

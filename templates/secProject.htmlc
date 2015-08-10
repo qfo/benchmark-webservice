@@ -1,32 +1,58 @@
-<div class="projectinfo">
-<table width="100%">
-<tr><td class="entryhead" colspan="2"><DVAR name="Title"></td></tr>
-<tr class="oddrow">
- <td class="label">Description</td>
- <td><DVAR name="Description"></td>
-</tr>
-<tr>
- <td class="label">Weblink</td>
- <td><a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a></td>
-</tr>
-<tr class="oddrow">
- <td class="label">Predictions</td>
- <td>
- <DBOOL name="hasData">
- <a href="
- </DBOOL>
- <DVAR name="Predictions">
- <DBOOL name="hasData">
- " target="_new">Uploaded Data</a>
- </DBOOL>
- </td>
-</tr>
-<tr>
- <td class="label">Upload Date</td>
- <td><DVAR name="uploadDate"></td>
-</tr><tr>
- <td class="label">Coverage</td>
- <td><DVAR name="coverage"></td>
-</tr>
-</table>
+<div class=jumbotron projectinfo">
+
+<h2><DVAR name="Title"></h2>
+<hr class="hrmenu">
+<br>
+<div class="row">
+	<div class="col-md-3 ">
+		<strong>Description</strong>
+	</div>
+	<div class="col-md-9 ">
+		<DVAR name="Description">
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-3 ">
+			<strong>Weblink</strong>
+		</div>
+		<div class="col-md-9 ">
+			<a href="<DVAR name="Website">" target="_new"><DVAR name="Website"></a>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-3 ">
+			<strong>Predictions</strong>
+		</div>
+		<div class="col-md-9 ">
+			<DBOOL name="hasData">
+				<a href="
+			</DBOOL>
+			<DVAR name="Predictions">
+				<DBOOL name="hasData">
+					" target="_new">Uploaded Data
+				</a>
+			</DBOOL>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-3 ">
+			<strong>Upload Date</strong>
+		</div>
+		<div class="col-md-9 ">
+			<DVAR name="uploadDate">
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-3 ">
+				<strong>Coverage</strong>
+			</div>
+			<div class="col-md-9 ">
+				<DVAR name="coverage">
+				</div>
+			</div>
+
 </div>
