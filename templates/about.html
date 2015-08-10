@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<link type="text/css" rel="stylesheet" href="/newstyle.css"/>
+	<script src="/scripts.js" type="text/javascript"></script>
+	<title>About</title>
+</head>
+
+<body >
+
+
+
+
+
+	<div class="container-fluid" id="main">
+
+		<div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1"> 
+			
+			<div class="row">  <!-- header -->
+				<div class="col-md-6  col-sm-6 "> <!-- logo -->
+					<img alt="Brand" class="img-responsive" src="/imgs/logo.png" id="logo">
+				</div>
+
+				<div class="col-md-6  col-sm-6 "> <!-- page title -->
+					<h1>About</h1>
+				</div>
+			</div>
+			<hr >
+			<div class="row"> <!-- nav -->
+				<div class="col-md-2 col-sm-2 text-center">
+					<a href="gateway.pl">Home</a>
+				</div>
+				<div class="col-md-2 col-sm-2  text-center">
+					<a href="gateway.pl?f=About">About</a>
+				</div>
+				<div class="col-md-2  col-sm-2 text-center">
+					<a href="gateway.pl?f=ShowProject">Public Projects</a>
+				</div>
+				<div class="col-md-3 col-sm-3  text-center">
+					<a href="gateway.pl?f=CheckResults&amp;p1=1141875214480141056">Public Results</a>
+				</div>
+				<div class="col-md-3 col-sm-3  text-center">
+					<a href="gateway.pl" >Submit predictions</a>
+				</div>
+			</div> <!-- end nav -->
+			<hr >
+			<br>
+
+
+
+			<div class="row" id="summary" > <!-- section header -->
+				<h3>Summary of service  <!-- section title -->
+				</h3>
+				<hr class="hrmenu">
+			</div> <!-- end section header -->
+			<br>
+
+			<div class="row"> <!-- section content -->
+				<p>The identification of orthologs is an important cornerstone for many
+					comparative, evolutionary and functional genomics analyses. Yet, the
+					true evolutionary history of genes is generally unknown. Because of the
+					wide range of possible applications and taxonomic interests,
+					benchmarking of orthology predictions remains a difficult challenge for
+					methods developers and users.
+				</p>
+				<p>This community developed web-service aims at simplifying and
+					standardizing orthology benchmarking. And for the users, the benchmarks
+					provide a way to identify the most effective methods for the problem at
+					hand.
+				</p>
+			</div>
+			<br>
+
+			<div class="row"  id="how"> <!-- section header -->
+				<h3>How does it work?  <!-- section title -->
+				</h3>
+				<hr class="hrmenu">
+			</div> <!-- end section header -->
+			<br>
+
+			<div class="row"> <!-- section content -->
+				<p>An orthology method developer should first infer the orthologs using the
+					<a href="#reference">reference proteome dataset</a>. The service will assess the
+					induced pairwise orthologous relations. Therefore the method developer
+					must provide the predictions in a <a href="#format">format </a> from which the pairwise
+					orthologous predictions can be extracted in an unambiguous way. 
+				</p>
+				<p>
+					Once the predictions have been uploaded, the service ensures that only
+					predictions among valid reference proteomes are provided. Benchmarks are
+					then selected and run in parallel. Finally, statistical analyses of
+					method accuracy are performed on each benchmark dataset. The raw data
+					and summary results in form of precision-recall curves are stored and
+					provided to the submitter.
+
+				</p>
+			</div>
+			<br>
+
+			<div class="row">
+				<div class=" col-md-10 col-md-offset-1 ">
+					<div class="thumbnail">
+						<img src="/imgs/pipeline.png">
+
+					</div>
+				</div>
+			</div>
+
+			
+
+			<div class="row" id="reference" > <!-- section header -->
+				<h3>Protein Reference Dataset  <!-- section title -->
+				</h3>
+				<hr class="hrmenu">
+			</div> <!-- end section header -->
+			<br>
+
+			<div class="row"> <!-- section content -->
+				<div class="col-md-6 col-sm-6 " id="protprot"> <!-- section content x | ... -->
+					<div>
+						<br/>
+						<p>Orthology inference is most often based on molecular protein sequences. For a comparison of different
+							orthology prediction methods, a common set of sequences must be established. Therefore, only identical 
+							proteins are mapped to each other.
+						</p>
+						<p>To make comparisons of method easier, the orthology research community has <a href="http://genomebiology.com/2009/10/9/403">agreed in 2009</a> to established a common <a href="http://www.seqxml.org/xml/Reference_proteomes.html">QfO reference proteome dataset</a>. Currently we are using the reference proteomes from 2011.
+						</p>
+
+					</div>
+				</div> <!-- end section content x | ... -->
+				<div class="col-md-6 col-sm-6  text-center"> <!-- section content ... | x -->
+					<div class="panel panel-default">
+						<div class="panel-body text-justify" >
+							<span class="glyphicon glyphicon-triangle-left" aria-hidden="true"></span>Dataset sources <hr class="hrmenu">
+							The QfO Reference Proteomes (version 5; 2011-04) is available in 
+							<ul>
+								<li><a href="http://www.seqxml.org/xml/Reference_proteomes.html">seqxml-format</a></li>
+								<li><a href="ftp://ftp.ebi.ac.uk/pub/databases/reference_proteomes/previous_releases/qfo_release-2011_04/">fasta-format</a> from EBI.</li>
+							</ul>
+						</div>
+					</div>
+				</div> <!-- end section content ... | x -->
+			</div> <!-- end section content -->          
+
+
+			<div class="row" id="format" > <!-- section header -->
+				<h3>Formats  <!-- section title -->
+				</h3>
+				<hr class="hrmenu">
+			</div> <!-- end section header -->
+			<br>
+
+			<div class="row"> <!-- section content -->
+				<p>Our tests assess orthology on the bases of protein pairs. Therefore, we ask our users to upload their prediction in a format from which we can extract pairwise relations in an unambiguous manner: We support
+					<ul type="square">
+						<li>simple simple text file with two tab-separated columns of orthologous protein represented by their ids </li>
+						<li><a href="">orthoxml v0.3</a> , which allows for nested orthologGroups and paralogGroups.</li>
+					</ul>
+					For both formats, we expect you to submit your predictions in a single file. This file might also be compressed by gzip or bzip2. In that case, it needs to have the proper filename<em>extention (.gz or .bz2).</em></p>
+				</div>
+				<br>
+
+			</div>
+		</div>
+	</div>
+
+	<br>
+	
+
+	<nav class="navbar navbar-default navbar-fixed-bottom" >
+		<div class="container">
+			<p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+		</div>
+	</nav>
+</body>
+</html>
