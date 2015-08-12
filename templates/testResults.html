@@ -1,4 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="content-type" content="text/html;charset=iso-8859-1"/>
@@ -12,10 +13,12 @@
     <link type="text/css" rel="stylesheet" href="/newstyle.css"/>
     <script src="/scripts.js" type="text/javascript"></script>
 
-    <title>Benchmark Results <DVAR name="tit"></title>
+    <title>Benchmark Results
+        <DVAR name="tit">
+    </title>
 
     <style type="text/css">
-        hr { 
+        hr {
             display: block;
             margin-top: 0.5em;
             margin-bottom: 0.5em;
@@ -26,9 +29,9 @@
 
         }
 
-        .green{
-            color: rgb(48,124,59) !important;
-            font-size:3em;
+        .green {
+            color: rgb(48, 124, 59) !important;
+            font-size: 3em;
 
         }
 
@@ -36,7 +39,7 @@
             margin: 0 auto;
         }
 
-        .hrmenu { 
+        .hrmenu {
             display: block;
             margin-top: 0.5em;
             margin-bottom: 0.5em;
@@ -44,15 +47,15 @@
             margin-right: auto;
             border-style: solid;
             border-width: 1px;
-            border-color: rgb(48,124,59);
+            border-color: rgb(48, 124, 59);
         }
 
-        .list-group.inner li{
-            border:none;
+        .list-group.inner li {
+            border: none;
         }
 
-        .list-group  .list-group.inner > .active > li {
-            background-color:black;
+        .list-group .list-group.inner > .active > li {
+            background-color: black;
         }
 
         .list-group > .active > a, .list-group > .active > a:hover {
@@ -63,38 +66,41 @@
 
 </head>
 <body>
-    <div class="container-fluid">  
-        <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
+<div class="container-fluid">
+    <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
 
-            <div class="row">  <!-- header -->
-                <div class="col-md-6  col-sm-6 "> <!-- logo -->
-                   <a href="gateway.pl"><img alt="Brand" class="img-responsive" src="/imgs/logo.png" id="logo"></a>
-                </div>
-
-                <div class="col-md-6  col-sm-6 "> <!-- page title -->
-                    <h1>Benchmark Results: <DVAR name="tit"> </h1>
-                </div>
+        <div class="row">  <!-- header -->
+            <div class="col-md-6  col-sm-6 "> <!-- logo -->
+                <a href="gateway.pl"><img alt="Brand" class="img-responsive" src="/imgs/logo.png" id="logo"></a>
             </div>
 
-            <hr >
-            <div class="row"> <!-- nav -->
-                <div class="col-md-2 col-sm-2 text-center">
-                  <a href="gateway.pl">Home</a>
-              </div>
-              <div class="col-md-2 col-sm-2  text-center">
-                  <a href="gateway.pl?f=About">About</a>
-              </div>
-              <div class="col-md-2  col-sm-2 text-center">
-                  <a href="gateway.pl?f=ShowProject">Public Projects</a>
-              </div>
-              <div class="col-md-3 col-sm-3  text-center">
-                  <a href="gateway.pl?f=CheckResults&amp;p1=1df5d88e443c84ca75a42a0b">Public Results</a>
-              </div>
-              <div class="col-md-3 col-sm-3  text-center">
-                <a href="gateway.pl" >Submit predictions</a>
+            <div class="col-md-6  col-sm-6 "> <!-- page title -->
+                <h1>Benchmark Results:
+                    <DVAR name="tit">
+                </h1>
             </div>
-        </div> <!-- end nav -->
-        <hr >
+        </div>
+
+        <hr>
+        <div class="row"> <!-- nav -->
+            <div class="col-md-2 col-sm-2 text-center">
+                <a href="gateway.pl">Home</a>
+            </div>
+            <div class="col-md-2 col-sm-2  text-center">
+                <a href="gateway.pl?f=About">About</a>
+            </div>
+            <div class="col-md-2  col-sm-2 text-center">
+                <a href="gateway.pl?f=ShowProject">Public Projects</a>
+            </div>
+            <div class="col-md-3 col-sm-3  text-center">
+                <a href="gateway.pl?f=CheckResults&amp;p1=1df5d88e443c84ca75a42a0b">Public Results</a>
+            </div>
+            <div class="col-md-3 col-sm-3  text-center">
+                <a href="gateway.pl">Submit predictions</a>
+            </div>
+        </div>
+        <!-- end nav -->
+        <hr>
         <br>
 
         <div class="row"> <!-- menu  -->
@@ -102,148 +108,177 @@
                 <ul class="list-group"> <!--  top level -->
                     <li class="list-group-item"><h3>Select Results Here</h3></li>
                     <ul class="list-group inner"> <!-- II level -->
-                     <li class="list-group-item"><h5><strong>Phylogeny-Based Definition Benchmarks</strong></li>
-                     <li class="list-group-item" role="presentation" href="#Species" aria-controls="Species" role="tab" data-toggle="tab"><a href="#">Species Tree Discordance Benchmark</a></li>
-                     <li class="list-group-item" role="presentation" href="#Generalized" aria-controls="Generalized" role="tab" data-toggle="tab"><a href="#">Generalized Species Tree Discordance Benchmark</a></li>
-                     <li class="list-group-item" role="presentation" href="#Reference" aria-controls="Reference" role="tab" data-toggle="tab"><a href="#">Agreement with Reference Gene Phylogenies: SwissTree</a></li>
-                     <li class="list-group-item" role="presentation" href="#Agreement" aria-controls="Agreement" role="tab" data-toggle="tab"><a href="#">Agreement with Reference Gene Phylogenies: TreeFam-A</a></li>
-                     <li class="list-group-item "><h5> <strong>Function-Based Definition Benchmarks</strong></h5></li>
-                     <li class="list-group-item" role="presentation" href="#Ontology" aria-controls="Ontology" role="tab" data-toggle="tab"><a href="#">Gene Ontology conservation test</a></li>
-                     <li class="list-group-item" role="presentation" href="#Enzyme" aria-controls="Enzyme" role="tab" data-toggle="tab"><a href="#">Enzyme Classification (EC) conservation test</a></li>
-                 </ul> <!-- end II level -->
-             </li>
-         </ul>  <!-- end top level -->
-     </div>
- </div> <!-- end menu  -->
-</div> 
-
-
-
-<div class="row">
- <div class="col-md-10 col-md-offset-1 ">  <!-- div content  -->
-    <div class="tab-content"> <!-- tabs list  -->
-
-        <div role="tabpanel" class="tab-pane" id="Species"> <!-- tab div  -->
-            <div> <!-- tab element -->
-
-                <ul class="nav nav-tabs nav-justified" role="tablist"> <!-- menu sub-element -->
-                    <li role="presentation" class="active"><a href="#TTEuk1" aria-controls="TTEuk1" role="tab" data-toggle="tab">Eukaryota</a></li>
-                    <li role="presentation" ><a href="#TTFun1" aria-controls="TTFun1" role="tab" data-toggle="tab">Fungi</a></li>
-                    <li role="presentation" ><a href="#TTBac1" aria-controls="TTBac1" role="tab" data-toggle="tab">Bacteria</a></li>
-                </ul> <!-- end menu sub-element -->
-
-                <br>
-
-                <div class="tab-content"> <!-- sub-element tab panel-->
-                    <div role="tabpanel" class="tab-pane active" id="TTEuk1">  <!-- sub-element tab -->
-                        <div><DVAR name="TTEuk1"></div>
-                    </div> <!-- end sub-element tab -->
-                    <div role="tabpanel" class="tab-pane " id="TTFun1">  <!-- sub-element tab -->
-                        <div><DVAR name="TTFun1"></div>                            
-                    </div> <!-- end sub-element tab -->
-                    <div role="tabpanel" class="tab-pane " id="TTBac1">  <!-- sub-element tab -->
-                        <div><DVAR name="TTBac1"></div>
-                    </div> <!-- end sub-element tab -->
-                </div> <!-- end sub-element tab panel-->
-            </div> <!-- end tab element -->
-        </div> <!-- end tab div -->
-
-        <div role="tabpanel" class="tab-pane" id="Generalized"> <!-- tab div  -->
-            <div> <!-- tab element -->
-                <ul class="nav nav-tabs nav-justified" role="tablist"> <!-- menu sub-element -->
-                    <li role="presentation" class="active"><a href="#STDLuca1" aria-controls="STDLuca1" role="tab" data-toggle="tab"> LUCA</a></li>
-                    <li role="presentation" ><a href="#STDEuk1" aria-controls="STDEuk1" role="tab" data-toggle="tab">Eukaryota</a></li>
-                    <li role="presentation" ><a href="#STDVer1" aria-controls="STDVer1" role="tab" data-toggle="tab">Vertebrata</a></li>
-                    <li role="presentation" ><a href="#STDFun1" aria-controls="STDFun1" role="tab" data-toggle="tab">Fungi</a></li>
-                </ul> <!-- end menu sub-element -->
-
-                <br>
-
-                <div class="tab-content"> <!-- sub-element tab panel-->
-                    <div role="tabpanel" class="tab-pane active " id="STDLuca1">  
-                        <div><DVAR name="STDLuca1">
-                        </div>
-                    </div> <!-- end sub-element tab -->
-                    <div role="tabpanel" class="tab-pane " id="STDEuk1"> 
-                       <div><DVAR name="STDEuk1">
-                       </div>
-                   </div> <!-- end sub-element tab -->
-                   <div role="tabpanel" class="tab-pane " id="STDVer1">  
-                    <div><DVAR name="STDVer1">
-                    </div>
-                </div> <!-- end sub-element tab -->
-                <div role="tabpanel" class="tab-pane " id="STDFun1">  <!-- sub-element tab -->
-                    <div><DVAR name="STDFun1">
-                    </div>
-                </div> <!-- end sub-element tab -->
-            </div> <!-- end sub-element tab panel-->
-        </div> <!-- end tab element -->
-    </div> <!-- end tab div -->
-
-    <div role="tabpanel" class="tab-pane" id="Reference"> <!-- tab div  -->
-        <div>
-            <DVAR name="RefPhylo">
-            </div>        
-        </div> <!-- end tab div -->
-
-        <div role="tabpanel" class="tab-pane" id="Agreement"> <!-- tab div  -->
-            <div>
-                <DVAR name="AutoPhylo">
-                </div>        
-            </div> <!-- end tab div -->
-
-
-
-            <div role="tabpanel" class="tab-pane" id="Enzyme"> <!-- tab div  -->
-                <div>
-                    <DVAR name="EC">
-                    </div>  
-                </div>   
-            </div> <!-- end tab div -->
-
-            <div role="tabpanel" class="tab-pane" id="Ontology"> <!-- tab div  -->
-                <div>
-                 <DVAR name="GO"> 
-                 </div>  
-             </div> 
-         </div>   
-
-
-
-     </div> <!-- end tab div -->
-
- </div> <!-- end tabs list-->
-
-</div> <!-- div content -->  
-
-
-
-</div>
-</div>
-<!--
-                <DBOOL name="refresh">
-                    <span class="small">This page gets reloaded automatically every <DVAR name="reloadin">sec or after pressing the reload button.</span>
-                    <form action="gateway.pl" name="formular">
-                       <input type="hidden" name="f" value="CheckResults">
-                       <input type="hidden" name="p1" value="<DVAR name="sessionkey">">
-                       <input type="submit" value="Refresh"/>
-                   </form>
-               </DBOOL>
-           -->  
-           <script type="text/javascript">
-
-            var items = document.getElementsByTagName("table");
-            for (var i = items.length; i--;) {
-                items[i].className = "table table-bordered table-hover";
-            }
-
-
-
-        </script>
-        <nav class="navbar navbar-default navbar-fixed-bottom">
-          <div class="container">
-            <p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+                        <li class="list-group-item"><h5><strong>Phylogeny-Based Definition Benchmarks</strong></li>
+                        <li class="list-group-item" role="presentation" href="#Species" aria-controls="Species"
+                            role="tab" data-toggle="tab"><a href="#">Species Tree Discordance Benchmark</a></li>
+                        <li class="list-group-item" role="presentation" href="#Generalized" aria-controls="Generalized"
+                            role="tab" data-toggle="tab"><a href="#">Generalized Species Tree Discordance Benchmark</a>
+                        </li>
+                        <li class="list-group-item" role="presentation" href="#Reference" aria-controls="Reference"
+                            role="tab" data-toggle="tab"><a href="#">Agreement with Reference Gene Phylogenies:
+                            SwissTree</a></li>
+                        <li class="list-group-item" role="presentation" href="#Agreement" aria-controls="Agreement"
+                            role="tab" data-toggle="tab"><a href="#">Agreement with Reference Gene Phylogenies:
+                            TreeFam-A</a></li>
+                        <li class="list-group-item "><h5><strong>Function-Based Definition Benchmarks</strong></h5></li>
+                        <li class="list-group-item" role="presentation" href="#Ontology" aria-controls="Ontology"
+                            role="tab" data-toggle="tab"><a href="#">Gene Ontology conservation test</a></li>
+                        <li class="list-group-item" role="presentation" href="#Enzyme" aria-controls="Enzyme" role="tab"
+                            data-toggle="tab"><a href="#">Enzyme Classification (EC) conservation test</a></li>
+                    </ul>
+                </ul>
+                <!-- end top level -->
+            </div>
         </div>
-    </nav>
+        <!-- end menu  -->
+    </div>
+
+
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1 ">  <!-- div content  -->
+            <div class="tab-content"> <!-- tabs list  -->
+
+                <div role="tabpanel" class="tab-pane" id="Species"> <!-- tab div  -->
+                    <div> <!-- tab element -->
+
+                        <ul class="nav nav-tabs nav-justified" role="tablist"> <!-- menu sub-element -->
+                            <li role="presentation" class="active"><a href="#TTEuk1" aria-controls="TTEuk1" role="tab"
+                                                                      data-toggle="tab">Eukaryota</a></li>
+                            <li role="presentation"><a href="#TTFun1" aria-controls="TTFun1" role="tab"
+                                                       data-toggle="tab">Fungi</a></li>
+                            <li role="presentation"><a href="#TTBac1" aria-controls="TTBac1" role="tab"
+                                                       data-toggle="tab">Bacteria</a></li>
+                        </ul>
+                        <!-- end menu sub-element -->
+
+                        <br>
+
+                        <div class="tab-content"> <!-- sub-element tab panel-->
+                            <div role="tabpanel" class="tab-pane active" id="TTEuk1">  <!-- sub-element tab -->
+                                <div>
+                                    <DVAR name="TTEuk1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                            <div role="tabpanel" class="tab-pane " id="TTFun1">  <!-- sub-element tab -->
+                                <div>
+                                    <DVAR name="TTFun1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                            <div role="tabpanel" class="tab-pane " id="TTBac1">  <!-- sub-element tab -->
+                                <div>
+                                    <DVAR name="TTBac1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                        </div>
+                        <!-- end sub-element tab panel-->
+                    </div>
+                    <!-- end tab element -->
+                </div>
+                <!-- end tab div -->
+
+                <div role="tabpanel" class="tab-pane" id="Generalized"> <!-- tab div  -->
+                    <div> <!-- tab element -->
+                        <ul class="nav nav-tabs nav-justified" role="tablist"> <!-- menu sub-element -->
+                            <li role="presentation" class="active"><a href="#STDLuca1" aria-controls="STDLuca1"
+                                                                      role="tab" data-toggle="tab"> LUCA</a></li>
+                            <li role="presentation"><a href="#STDEuk1" aria-controls="STDEuk1" role="tab"
+                                                       data-toggle="tab">Eukaryota</a></li>
+                            <li role="presentation"><a href="#STDVer1" aria-controls="STDVer1" role="tab"
+                                                       data-toggle="tab">Vertebrata</a></li>
+                            <li role="presentation"><a href="#STDFun1" aria-controls="STDFun1" role="tab"
+                                                       data-toggle="tab">Fungi</a></li>
+                        </ul>
+                        <!-- end menu sub-element -->
+
+                        <br>
+
+                        <div class="tab-content"> <!-- sub-element tab panel-->
+                            <div role="tabpanel" class="tab-pane active " id="STDLuca1">
+                                <div>
+                                    <DVAR name="STDLuca1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                            <div role="tabpanel" class="tab-pane " id="STDEuk1">
+                                <div>
+                                    <DVAR name="STDEuk1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                            <div role="tabpanel" class="tab-pane " id="STDVer1">
+                                <div>
+                                    <DVAR name="STDVer1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                            <div role="tabpanel" class="tab-pane " id="STDFun1">  <!-- sub-element tab -->
+                                <div>
+                                    <DVAR name="STDFun1">
+                                </div>
+                            </div>
+                            <!-- end sub-element tab -->
+                        </div>
+                        <!-- end sub-element tab panel-->
+                    </div>
+                    <!-- end tab element -->
+                </div>
+                <!-- end tab div -->
+
+                <div role="tabpanel" class="tab-pane" id="Reference"> <!-- tab div  -->
+                    <div>
+                        <DVAR name="RefPhylo">
+                    </div>
+                </div>
+                <!-- end tab div -->
+
+                <div role="tabpanel" class="tab-pane" id="Agreement"> <!-- tab div  -->
+                    <div>
+                        <DVAR name="AutoPhylo">
+                    </div>
+                </div>
+                <!-- end tab div -->
+
+
+                <div role="tabpanel" class="tab-pane" id="Enzyme"> <!-- tab div  -->
+                    <div>
+                        <DVAR name="EC">
+                    </div>
+                </div>
+                <!-- end tab div -->
+
+                <div role="tabpanel" class="tab-pane" id="Ontology"> <!-- tab div  -->
+                    <div>
+                        <DVAR name="GO">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+        <!-- end tab div -->
+
+    </div>
+    <!-- end tabs list-->
+
+</div>
+
+<script type="text/javascript">
+
+    var items = document.getElementsByTagName("table");
+    for (var i = items.length; i--;) {
+        items[i].className = "table table-bordered table-hover";
+    }
+
+
+</script>
+<nav class="navbar navbar-default navbar-fixed-bottom">
+    <div class="container">
+        <p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a
+                href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+    </div>
+</nav>
 </body>
 </html>
