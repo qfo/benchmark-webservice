@@ -34,7 +34,7 @@ my $debug = 0;
 my $error_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_error.log';
 my $dbg_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_gateway_debug.log';
 my $upload_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_upload.log';
-my $MAXLOAD = 12;
+my $MAXLOAD = 24;
 
 # maximum Post size in bytes 
 $CGI::POST_MAX = 1<<32;
