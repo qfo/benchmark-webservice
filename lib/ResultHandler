@@ -274,7 +274,8 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
     return( tab );
 end:
 
-GetParetoPoints := proc(x_dat, y_dat; (opt='NE'):{'NE','SE'})
+GetParetoPoints := proc(x_dat_, y_dat; (opt='NE'):{'NE','SE'})
+    x_dat := copy(x_dat_);
     n := length(x_dat);
     assert(length(y_dat)=n);
     ord := sort([seq(i, i=1..n)], x->-x_dat[x]);

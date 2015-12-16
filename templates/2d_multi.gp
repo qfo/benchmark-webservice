@@ -18,7 +18,7 @@ set label "better" at graph 0.92,0.92 right
 
 
 plot \
-  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1 2 notit w l ls 300, </DBOOL>\
+  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1:2 notit w l ls 300, </DBOOL>\
 <DLOOP name="plot"> \
   '<DVAR name="datafile">' i <DLVAR name="index"> u 1:2:3 tit '<DLVAR name="title">' w yerror ls <DLVAR name="style">,\
 </DLOOP> \
