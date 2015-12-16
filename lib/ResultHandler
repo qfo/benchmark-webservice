@@ -75,8 +75,10 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             t['ylabel'] := fprLabel;
             t['xlabel'] := tprLabel;
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            t['add_pareto'] := true;
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
+            dats := []:
             for i to length(prjNames) do 
                 nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
                 if nrSamp>0 then
@@ -87,13 +89,18 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
                     printf('# %s%s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
                          If(partial[i],'*',''), nrSamp,
                          avgTPR, avgFPR, stdTPR, stdFPR);
+                    dats := append(dats, [avgTPR, avgFPR]);
                 else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],'*','')); fi:
 
                 plotTab[i,'index'] := i-1; 
                 plotTab[i,'title'] := prjNames[i];
                 plotTab[i,'style'] := i;
             od:
+            pareto := GetParetoPoints(op(transpose(dats)), 'NE');
+            printf('# pareto points\n');
+            for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
             OpenWriting(previous);
+            t['pareto_index'] := length(prjNames);
             t['plot'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
@@ -267,12 +274,28 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
     return( tab );
 end:
 
+GetParetoPoints := proc(x_dat, y_dat; (opt='NE'):{'NE','SE'})
+    n := length(x_dat);
+    assert(length(y_dat)=n);
+    ord := sort([seq(i, i=1..n)], x->-x_dat[x]);
+    y_comp := proc(a,b) If(opt='NE', a>b, a<b) end:
+
+    pnts := [ [x_dat[ord[1]], y_dat[ord[1]]] ];
+    for i from 2 to n do 
+        if y_comp(y_dat[ord[i]], pnts[-1,2]) then
+            pnts := append(pnts, [x_dat[ord[i]], y_dat[ord[i]]]);
+        fi:
+    od:
+    return(pnts);
+end:
+
 GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     'plotType'=((plotType='2d'):{'2d','barchart'}),
     'covLabel'=((covLabel='# ortholog relations'):string),
     'corLabel'=((corLabel='avg similarity'):string),
     'covData'=((passedCovData=0):{list(numeric),0}),
-    'betterDir'=((betterDir='NE'):{'NE','SE'}))
+    'betterDir'=((betterDir='NE'):{'NE','SE'}),
+    'add_pareto'=((add_pareto=true):boolean))
 
     t := table():
     t['outfile'] := resPlotFn;
@@ -280,6 +303,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     t['ylabel'] := corLabel;
     t['datafile'] := sprintf('/tmp/%s.dat', resBase);
     t['betterSE'] := evalb(betterDir='SE');
+    t['add_pareto'] := add_pareto;
     nData := length(data):
 
     plotTab := [seq(table(), nData)];
@@ -301,18 +325,26 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
         fi:
     fi:
 
+    dats := []:
     OpenWriting(t['datafile']);
     for i to length(data) do
         if data[i,'Number']>1 then 
-        printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
-            covData[i], data[i,'Mean'], data[i,'StdErr']);
-        else printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'], covData[i] );
+            printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
+                covData[i], data[i,'Mean'], data[i,'StdErr']);
+            dats := append(dats, [covData[i], data[i,'Mean']])
+        else 
+            printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'], covData[i] );
         fi:
         plotTab[i,'index'] := i-1;
         plotTab[i,'title'] := data[i,'Description'];
         plotTab[i,'style'] := i;
     od:
+    pareto := GetParetoPoints(op(transpose(dats)), betterDir);
+    printf('# pareto points\n');
+    for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
     OpenWriting(previous);
+
+    t['pareto_index'] := length(data);
     t['plot'] := plotTab;
     cmdFile := sprintf('/tmp/%s.gp', resBase);
     OpenWriting(cmdFile);
