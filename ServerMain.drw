@@ -594,7 +594,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
-    conf_int := ParseParam('pSTD_conf', pnames, params, 'default'=71);
+    conf_int := parse(string(ParseParam('pSTD_conf', pnames, params, 'default'=71)));
     conf_str := sprintf('_conf%d', conf_int);
     treebuilder := ParseParam('pSTD_treebuilder', pnames, params, default='LSTree');
 
