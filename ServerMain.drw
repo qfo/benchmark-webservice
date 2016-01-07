@@ -825,10 +825,11 @@ bsRunTests := proc(params_:list, pnames_:list)
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
     email_pos := SearchArray('pEmail', pnames);
-    if email_pos > -1 then
+    if email_pos > 0 then
         email := params[email_pos];
         pnames := [op(pnames[1..email_pos-1]), op(pnames[email_pos+1..-1])];
         params := [op(params[1..email_pos-1]), op(params[email_pos+1..-1])];
+    else email := '';
     fi:
     
     h := string(hash_sha2( [params, pnames] ));
