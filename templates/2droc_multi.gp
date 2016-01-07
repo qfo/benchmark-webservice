@@ -12,7 +12,7 @@ set style line 300 lt 0 lc rgb "#6a6a6a" lw 2 ps 0 pi 2
 
 
 plot \
-  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1 2 notit w l ls 300, </DBOOL>\
+  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1:2 notit w l ls 300, </DBOOL>\
 <DLOOP name="plot"> \
   '<DVAR name="datafile">' i <DLVAR name="index"> u 2:3:4:5 tit '<DLVAR name="title">' w xyerror ls <DLVAR name="style">,\
 </DLOOP> \

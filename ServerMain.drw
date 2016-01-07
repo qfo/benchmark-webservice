@@ -925,7 +925,7 @@ bsCheckResults := proc(sessionkey)
 	if t[2]=true then refresh := true fi:
     fi:
     
-    if refresh then vars['reloadin'] := 60 fi;
+    if refresh then vars['reloadin'] := 120 fi;
     vars['refresh'] := refresh;
     return( GenerateTemplate(cdir.'/templates/testResults.html', vars) );
 end:
