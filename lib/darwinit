@@ -1,4 +1,4 @@
-# darwinit file for the special functions of the OMA browser
+# darwinit file for the special functions of the Benchmark Service
 cdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
 ddir := getenv('DARWIN_ORTHOLOG_BENCHMARKDATA_PATH');
 imgdir := ddir . '/htdocs/imgs/':
@@ -14,7 +14,9 @@ datdir := ddir . '/data/';
 sessiondir := ddir . '/sessions/';
 resdir := ddir . '/results/';
 
-#ReadProgram( getenv('DARWIN_OMA_REPO_PATH').'/lib/darwinit');
+host := getenv('DARWIN_ORTHOLOG_BENCHMARK_HOST');
+if host='' then host := 'orthology.benchmarkservice.org' fi:
+
 
 GenerateTemplate := noeval(ReadLibrary( cdir.'/lib/GenerateTemplate', GenerateTemplate)):
 CreateIndex := noeval(ReadLibrary( cdir.'/lib/Index',CreateIndex));
@@ -25,6 +27,7 @@ UniProtAC := noeval(ReadLibrary( cdir.'/lib/XRefs',UniProtAC));
 EnsemblID := noeval(ReadLibrary( cdir.'/lib/XRefs',EnsemblID));
 
 Logger := noeval(ReadLibrary(cdir.'/lib/Logging', Logger));
+SendEMail := noeval(ReadLibrary(cdir.'/lib/Logging', SendEMail));
 
 NrOfGenomes := noeval(ReadLibrary( cdir.'/lib/EntryNav', NrOfGenomes));
 NrOfProteins := noeval(ReadLibrary( cdir.'/lib/EntryNav', NrOfProteins));

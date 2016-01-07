@@ -510,13 +510,17 @@
 </fieldset>
 <br/>
 <div class="row"> 
-  <div class="col-md-offset-6"> <!-- II level -->
+  <div class="col-md-offset-2"> <!-- II level -->
 
 
     <fieldset class="submit">
       <div>
        <input type="hidden" name="f" value="RunTests" />
        <input type="hidden" name="pPID" value='<DVAR name="PID">' />
+       <div class="form-group">
+         <label for="pEmail">Email address (to receive result link)</label>
+         <input type="email" class="form-control" name="pEmail" id="pEmail" placeholder="Email">
+       </div>
        <input type="submit" value="Compute &raquo;" />
      </div>
    </fieldset>

@@ -820,14 +820,29 @@ end:
 #################################
 # Run Tests                     #
 #################################
-bsRunTests := proc(params:list, pnames:list)
+bsRunTests := proc(params_:list, pnames_:list)
+    pnames := pnames_; params := params_;
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
+    email_pos := SearchArray('pEmail', pnames);
+    if email_pos > -1 then
+        email := params[email_pos];
+        pnames := [op(pnames[1..email_pos-1]), op(pnames[email_pos+1..-1])];
+        params := [op(params[1..email_pos-1]), op(params[email_pos+1..-1])];
+    fi:
     
     h := string(hash_sha2( [params, pnames] ));
     OpenWriting( sessiondir.h );
     printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
     OpenWriting(previous);
+
+    if email<>'' then 
+        test_result_url := 'http://'.host.'/cgi-bin/gateway.pl?f=CheckResults&p1='.h;
+        msg := 'The orthology benchmarking results for the parameters you selected '.
+               'will be available on the following page for you: '.test_result_url.
+               '\n\nWe thank you for using the benchmarking webservice.'; 
+        traperror(SendEMail(msg, email, 'Link to benchmark results'));
+    fi:
     return('Location: gateway.pl?f=CheckResults&p1='.h.'\n\n'); 
 end:
 
