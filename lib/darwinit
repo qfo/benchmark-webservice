@@ -81,4 +81,6 @@ ParseParam := noeval(ReadLibrary(cdir.'/lib/Parsing',ParseParam));
 
 ProjectWLink := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectWLink));
 RawDataWLink := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', RawDataWLink));
+ProjectButtons := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectButtons));
+ProjectCheckbox := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectCheckbox));
 hash_sha2 := noeval(ReadLibrary(cdir.'/lib/hash', hash_sha2));

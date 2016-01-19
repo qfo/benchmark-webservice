@@ -63,7 +63,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
             for i to length(prjNames) do 
                 tab := append(tab, Row( If(i=1,cases[c],''), 
-                  ProjectWLink(prj[i], If(partial[i],'*',NULL)),
+                  ProjectWLink(prj[i]) . ProjectButtons(prj[i]), 
                   MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]), RawDataWLink(RawDataFn[i]) ));
             od: 
         od:
@@ -87,10 +87,10 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
                     avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
                     stdTPR := 1.96*sqrt( sum([seq(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases))]) )/nrSamp;
                     printf('# %s%s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
-                         If(partial[i],'*',''), nrSamp,
+                         If(partial[i],' (incomplete)',''), nrSamp,
                          avgTPR, avgFPR, stdTPR, stdFPR);
                     dats := append(dats, [avgTPR, avgFPR]);
-                else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],'*','')); fi:
+                else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],' (incomplete)','')); fi:
 
                 plotTab[i,'index'] := i-1; 
                 plotTab[i,'title'] := prjNames[i];

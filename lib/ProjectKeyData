@@ -7,14 +7,19 @@ fn := datdir.'projectKeys.drw';
 PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
                  ref:{'OMA','RefSet5'},
                  isPublic:boolean, directMap:boolean, 
-		 NSeqSub:{0,posint}, NOrthSub:posint, NSeqMap:{-1,0,posint}, NOrthMap:{-1,0,posint},
-		 OrgsCovered:{set,intersect()},
-		 props:table,
+                 NSeqSub:{0,posint}, 
+                 NOrthSub:posint, 
+                 NSeqMap:{-1,0,posint}, 
+                 NOrthMap:{-1,0,posint},
+                 OrgsCovered:{set,intersect()},
+                 props:table,
                  Website:string,
-                 Description:string)
+                 Description:string,
+                 isObsolete:boolean)
    if nargs<13 then error('wrong number of arguments');
-   elif nargs=13 then procname(args,'','');
-   elif nargs=14 then procname(args,'');
+   elif nargs=13 then procname(args,'','',false);
+   elif nargs=14 then procname(args,'',false);
+   elif nargs=15 then procname(args,false);
    else noeval(procname(args)):fi
 end:
 CompleteClass(PKeyData):
@@ -36,7 +41,7 @@ UpdatePKeyDataPermanent := proc(pKey:PKeyData)
     off1 := SearchString(query, t);
     k := SearchString(':\n',t[off1..-1]);
     t2 := ReplaceString(t[off1+1..off1+k], sprintf('%s%A:',query, pKey),t);
-	
+        
     # store new PKeyData in file
     verb := Set(quiet=true);
     OpenWriting(fn);
@@ -54,13 +59,14 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'isPublic'=((isPublic=false):boolean),
    'reference'=((reference='OMA'):{'OMA','RefSet5'}),
    'url'=((url=''):string),
-   'description'=((desc=''):string))
+   'description'=((desc=''):string),
+   'isObsolete'=((isObsolete=false):boolean))
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
     pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, 
                     reference<>'OMA', NSeqSub, NOrthSub, NSeqMap, 
-                    NOrthMap, {}, table(), url, desc );
+                    NOrthMap, {}, table(), url, desc, isObsolete );
 
     verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');
@@ -132,9 +138,9 @@ ProjMetProperty := proc( PID:string, Prop:TestProperty )
     nam := Prop['Name'];
     if p[nam]=unassigned or Prop['YoungerThan']>p[nam,2] then
         # recompute whether property is met
-	res := Prop['Evaluator'](pKey, Prop);
-	p[nam] := [res, UTCTime()];
-	pKey['props'] := p:
+        res := Prop['Evaluator'](pKey, Prop);
+        p[nam] := [res, UTCTime()];
+        pKey['props'] := p:
         UpdatePKeyDataPermanent(pKey);
     fi:
     return(p[nam,1]);
