@@ -100,10 +100,10 @@ else {
                 print ERRLOG "session data invalid: $session\n";
                 close(ERRLOG);
                 delete_all();
-		print header(-status=>500);
-		print h1("Invalid session number");
-		print p('Sorry, you will need to start over: <a href="'
-		    . self_url() . '">home</a>');
+                print header(-status=>500);
+                print h1("Invalid session number");
+                print p('Sorry, you will need to start over: <a href="'
+                    . self_url() . '">home</a>');
                 #print redirect(self_url());
                 exit 0;
             }
@@ -130,9 +130,9 @@ else {
         } 
         else {
             if ($req->param("reference") eq "OMA"){
-		        print header(-status=>404);
-		        print h1("Reference Dataset \"OMA\" is no longer supported");
-		        print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
+                print header(-status=>404);
+                print h1("Reference Dataset \"OMA\" is no longer supported");
+                print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
                 exit 0;
             }
             print DBLOG "upload data" if $debug;
@@ -171,7 +171,7 @@ else {
    
     if( $debug > 0 ){
         my @pa = $req->param();
-	print DBGLOG "Parameters: @pa\n";
+        print DBGLOG "Parameters: @pa\n";
     }
     foreach my $m (sort($req->param)) {
         if ($m =~/^p([A-Za-z]*\d*)$/) {
@@ -281,7 +281,7 @@ while (<IN>) {
     else {
         if (not $sent_header and ($l =~/^Location: /)) {
             $sent_header = 1;
-	}
+        }
         elsif (not $sent_header and ($l =~/<.*html/i)) {
             print "Content-type: text/html; charset=iso-8859-1\n\n";
             $sent_header = 1;
@@ -311,16 +311,16 @@ sub SeqFasta2Drw{
     while( <$fh> ){
         chomp;
         if (/^>(\w[\w\.-_]*)(.*)/) {
-	     my $spc = undef;
-	     my $id = $1; my $headRest = $2;
-	     
-	     if ($p2s != 0 and defined $p2s->{$id}){ $spc=$p2s->{$id}; }
-	     elsif ($headRest =~ /taxid:(\d+)/i) { $spc=$1;}
+             my $spc = undef;
+             my $id = $1; my $headRest = $2;
+             
+             if ($p2s != 0 and defined $p2s->{$id}){ $spc=$p2s->{$id}; }
+             elsif ($headRest =~ /taxid:(\d+)/i) { $spc=$1;}
              elsif ($headRest =~ /\[(.+)\]/) { $spc=$1; }
-	     elsif ($id =~ /_([A-Z][A-Z0-9]{2,4})/) {$spc=$1; }
+             elsif ($id =~ /_([A-Z][A-Z0-9]{2,4})/) {$spc=$1; }
              elsif ($id =~ /^([A-Z][A-Z0-9]{4})\d+/){$spc=$1; }
              elsif ($id =~ /^(ENS\w*)[G|P|T]\d+/) {$spc=$1;}
-	     elsif ($headRest =~ /(ENS\w*)[G|P|T]\d+/) {$spc=$1;}
+             elsif ($headRest =~ /(ENS\w*)[G|P|T]\d+/) {$spc=$1;}
              else { $err++; };
 
              $sps{$spc}=1;
@@ -328,10 +328,10 @@ sub SeqFasta2Drw{
              print F "Protein := ['$id','$spc','";
              $cnt++;
         }
-	elsif (/^;/) {} # ignore comments 
+        elsif (/^;/) {} # ignore comments 
         else { 
             uc;           # uppercase letters
-	    s/\*$//;      # remove stop-codon symbol
+            s/\*$//;      # remove stop-codon symbol
             s/[^$AA]/X/g; # replace any non-amino by X
             print F;
         }
@@ -411,37 +411,37 @@ sub RelCOG2Drw {
     open(F, ">$fn");
     while( <$fh> ){
         chomp;
-	next if ($_ eq '');
+        next if ($_ eq '');
 
-	# cog title
-	if (/^\[(\w{1,6})\] (\w+) / and $state == 2){
-	    $state = 1;
-	    $rowl = 0;
-	    print F "GroupRelations([\n";
+        # cog title
+        if (/^\[(\w{1,6})\] (\w+) / and $state == 2){
+            $state = 1;
+            $rowl = 0;
+            print F "GroupRelations([\n";
         }
-	# species entry
-	elsif (/^ +(\w{3,5}): +(.+)/ and $state == 1){
-	    $spec = $1;
-	    foreach my $l ( split(/\s+/, $2) ){
+        # species entry
+        elsif (/^ +(\w{3,5}): +(.+)/ and $state == 1){
+            $spec = $1;
+            foreach my $l ( split(/\s+/, $2) ){
                 $p2s{$l} = $spec;
-	        print F "'$l',";
-	        print F "\n" if ( (++$rowl % 10)==0); 
-	    }
-	}
-        # delimiter
-	elsif (/\_{5}/ and $state==1){
-	    print F "NULL]);\n";
-	    $state = 2;
-	    $cnts += ($rowl*($rowl-1)/2);
-	}
-	# multiline species
-	elsif( /^\s{7,}(.+)/ ){
-	    foreach my $l (split(/\s+/, $1)){
-	        $p2s{$l} = $spec;
-	        print F "'$l',";
-	        print F "\n" if ( (++$rowl % 10)==0); 
+                print F "'$l',";
+                print F "\n" if ( (++$rowl % 10)==0); 
             }
-	}
+        }
+        # delimiter
+        elsif (/\_{5}/ and $state==1){
+            print F "NULL]);\n";
+            $state = 2;
+            $cnts += ($rowl*($rowl-1)/2);
+        }
+        # multiline species
+        elsif( /^\s{7,}(.+)/ ){
+            foreach my $l (split(/\s+/, $1)){
+                $p2s{$l} = $spec;
+                print F "'$l',";
+                print F "\n" if ( (++$rowl % 10)==0); 
+            }
+        }
     }
     close(F);
     return( ($cnts, \%p2s) );
@@ -488,6 +488,11 @@ sub process_datafiles{
         $methURL = "http://$methURL";
     }
 
+    my $methEmail = $req->param("methEmail");
+    my $email = "";
+    if ( $methEmail =~ /([\w.-]+@[\w.-]+\.\w{2,})/ ){
+        $email = $1
+    } 
 
     print DBGLOG "storing uploaded file with fnBase $fnBase in $fnProj\n" if $debug;
     my $nrProt=0; my $nrOrth=0;
@@ -554,8 +559,8 @@ sub process_datafiles{
             }
         }
     }
-    push(@p, "'$fnProj/$fnBase'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'");
-    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'");
+    push(@p, "'$fnProj/$fnBase'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'", "'".$email."'");
+    push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'","'email'");
     $cache->set($session,[1,[\@p,\@a]]);
 } 
 

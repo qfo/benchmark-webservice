@@ -15,11 +15,13 @@ PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
                  props:table,
                  Website:string,
                  Description:string,
-                 isObsolete:boolean)
+                 isObsolete:boolean,
+                 email:string)
    if nargs<13 then error('wrong number of arguments');
-   elif nargs=13 then procname(args,'','',false);
-   elif nargs=14 then procname(args,'',false);
-   elif nargs=15 then procname(args,false);
+   elif nargs=13 then procname(args,'','',false,'');
+   elif nargs=14 then procname(args,'',false,'');
+   elif nargs=15 then procname(args,false,'');
+   elif nargs=16 then procname(args,'');
    else noeval(procname(args)):fi
 end:
 CompleteClass(PKeyData):
@@ -60,13 +62,15 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'reference'=((reference='OMA'):{'OMA','RefSet5'}),
    'url'=((url=''):string),
    'description'=((desc=''):string),
-   'isObsolete'=((isObsolete=false):boolean))
+   'isObsolete'=((isObsolete=false):boolean),
+   'email'=((email=''):string))
 
     alphnum := {seq(i,i=48..57), seq(i,i=65..90),seq(i,i=97..122)}:
     id := ConcatStrings( [seq(IntToAscii(Rand(alphnum)), 15)] );
     pr := PKeyData( id, tit, fnbase, date(), reference, isPublic, 
                     reference<>'OMA', NSeqSub, NOrthSub, NSeqMap, 
-                    NOrthMap, {}, table(), url, desc, isObsolete );
+                    NOrthMap, {}, table(), url, desc, isObsolete,
+                    email);
 
     verb := Set(quiet=true);
     OpenAppending(datdir.'projectKeys.drw');

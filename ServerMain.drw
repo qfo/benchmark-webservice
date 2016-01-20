@@ -255,11 +255,11 @@ end:
 # Upload Data                      #
 ####################################
 bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference,
-    isPublic, methDesc, methURL)
+    isPublic, methDesc, methURL, email)
     Logger(sprintf('Upload: %A', args), 'DEBUG');
     id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
         'reference'=reference,'description'=methDesc,'url'=methURL,
-        'isPublic'=isPublic):
+        'isPublic'=isPublic, 'email'=email):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 
@@ -289,6 +289,13 @@ bsMapData := proc(PID:string)
     vars['PID'] := PID;
 
     if pKey['ref']<>'OMA' then
+        if pKey['email']<>'' then
+            map_data_url := 'http://'.host.'/cgi-bin/gateway.pl?f=MapRels&p1='.PID;
+            msg := 'The orthology benchmarking status of your submitted project '.
+                   'is be available on the following page for you: '.map_data_url.
+                   '\n\nWe thank you for using the benchmarking webservice.'; 
+            traperror(SendEMail(msg, email, 'Link to benchmark project'));
+        fi:
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     else 
         error('OMA as reference dataset is no longer suported');
@@ -828,6 +835,10 @@ bsRunTests := proc(params_:list, pnames_:list)
     printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
     OpenWriting(previous);
 
+    if email='' then
+        pKey := GetPKeyData(ParseParam('pPID', pnames, params));
+        email := pKey['email'];
+    fi:
     if email<>'' then 
         test_result_url := 'http://'.host.'/cgi-bin/gateway.pl?f=CheckResults&p1='.h;
         msg := 'The orthology benchmarking results for the parameters you selected '.
