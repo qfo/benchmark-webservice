@@ -1,6 +1,6 @@
 <div class=jumbotron projectinfo">
 
-<h2><DVAR name="Title"></h2>
+<h2><DVAR name="Title"> <DVAR name="tags"></h2>
 <hr class="hrmenu">
 <br>
 <div class="row">
