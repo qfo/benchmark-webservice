@@ -388,12 +388,12 @@ bsTestSelection := proc(PID:string)
     else
         vars['has_mapping_log'] := false;
     fi:
-    t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
+    t := [seq(If(z['PID']<>PID,[z['Title'],z['PID'], z],NULL), 
         z=GetPublicProjects(dataset))]:
     if length(t)>0 then
         t := transpose(sort(t)):
-        pubPID := t[2]; publicProjects := t[1]; 
-    else pubPID := publicProjects := []; 
+        pubPID := t[2]; publicProjects := t[1]; pKeys := t[3]:
+    else pubPID := publicProjects := pKeys := [];
     fi:
     Npub := length(pubPID):
     pairwiseOverlap := [seq( ProjSpeciesOverlap([PID,z]), z=pubPID)];
@@ -401,7 +401,7 @@ bsTestSelection := proc(PID:string)
     for z in ['Euk','Bac','Fun'] do
         if ProjMetProperty(PID, GetTestProperty('TreeTest_'.z)) then
             vars['TT'.z.'Projects'] := ConcatStrings(
-              [seq(ProjectCheckbox(pubPID[pNr], sprintf('pTT%sPrj%d', z, pNr), 
+              [seq(ProjectCheckbox(pKeys[pNr], sprintf('pTT%sPrj%d', z, pNr), 
                                    ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z))),
                    pNr=1..Npub)],'\n');
             vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
@@ -415,7 +415,7 @@ bsTestSelection := proc(PID:string)
             vars['hasSTD'.problem] := false;
         else
             vars['STD'.problem.'Projects'] := ConcatStrings(
-                [seq(ProjectCheckbox(pubPID[pNr], sprintf('pSTD%sPrj%d', problem, pNr)),
+                [seq(ProjectCheckbox(pKeys[pNr], sprintf('pSTD%sPrj%d', problem, pNr)),
                      pNr=1..Npub)], '\n');
             vars['hasSTD'.problem] := SearchString('<input',vars['STD'.problem.'Projects'])>=0;
             vars['styleSTD'.problem] := If(vars['hasSTD'.problem], 'checked="checked"','');
@@ -428,7 +428,7 @@ bsTestSelection := proc(PID:string)
 
     vars['RefPhyloProjects'] := ConcatStrings(
          [seq(If( length(pairwiseOverlap[pNr])>1,
-                  ProjectCheckbox(pubPID[pNr], sprintf('%s%d', stub, pNr)),
+                  ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
                   ''),
               pNr=1..Npub)], '\n');
     stub := 'pRefPhyloProb';
@@ -453,7 +453,7 @@ bsTestSelection := proc(PID:string)
 
         vars['AutoPhyloProjects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-                      ProjectCheckbox(pubPID[pNr], sprintf('%s%d', stub, pNr)),
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
                       ''),
                   pNr=1..Npub)],'\n');
         stub := 'pAutoPhyloProb';
@@ -481,7 +481,7 @@ bsTestSelection := proc(PID:string)
         stub := 'pHomPrj';
         vars['HomProjects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-                      ProjectCheckbox(pubPID[pNr], sprintf('%s%d', stub, pNr)),
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
                       ''),
                   pNr=1..Npub)],'\n');
         stub := 'pHomProb'; name := 'HumMus';
@@ -501,7 +501,7 @@ bsTestSelection := proc(PID:string)
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-                      ProjectCheckbox(pubPID[pNr], sprintf('%s%d', stub, pNr)),
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
                       ''),
                   pNr=1..Npub)],'\n');
     vars['hasGO'] := SearchString('<input',vars['GOprojects'])>=0;
@@ -511,7 +511,7 @@ bsTestSelection := proc(PID:string)
     stub := 'pECPrj';
     vars['ECprojects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-                      ProjectCheckbox(pubPID[pNr], sprintf('%s%d', stub, pNr)),
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
                       ''),
                   pNr=1..Npub)],'\n');
     vars['hasEC'] := SearchString('<input',vars['ECprojects'])>=0;
