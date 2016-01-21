@@ -20,7 +20,7 @@ ProjectButtons := proc(p:PKeyData)
         parts := append(parts, '<button class="btn btn-warning btn-xs">incomplete</button>');
     fi:
     if p['isObsolete']=true then
-        parts := append(parts, '<button class="btn btn-info btn-xs">superseeded</button>');
+        parts := append(parts, '<button class="btn btn-info btn-xs">superseded</button>');
     fi:
     return(ConcatStrings(parts,' '));
 end:

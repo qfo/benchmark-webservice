@@ -230,7 +230,7 @@ bsShowProject := proc()
             t['hasLog'] := false; 
         else t['hasLog'] := true; t['LogLnk'] := logUrl; 
         fi; 
-        p['tags'] := ProjectButtons(p);
+        t['tags'] := ProjectButtons(p);
         covered := p['OrgsCovered'];
         if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
             t['coverage'] := 'covers all genomes';
