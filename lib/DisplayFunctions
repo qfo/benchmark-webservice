@@ -35,7 +35,7 @@ ProjectCheckbox := proc(p:PKeyData, chbx_id; (checkable=true):boolean)
         chbx_state := 'disabled="disabled"';
     fi:
     t := sprintf('<input type="checkbox" id="%s" name="%s" %s/>'.
-                 '<label for="%s">%s %s</label>', 
+                 '<label for="%s">%s %s</label><br/>', 
                   chbx_id, chbx_id, chbx_state, chbx_id, p['Title'], ProjectButtons(p));
     return(t);
 end:
