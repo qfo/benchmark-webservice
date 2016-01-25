@@ -63,7 +63,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
             for i to length(prjNames) do 
                 tab := append(tab, Row( If(i=1,cases[c],''), 
-                  ProjectWLink(prj[i]) . ProjectButtons(prj[i]), 
+                  ProjectWLink(prj[i], ProjectButtons(prj[i])), 
                   MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]), RawDataWLink(RawDataFn[i]) ));
             od: 
         od:
@@ -266,7 +266,7 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
     for i to n do 
         pKey := GetPKeyData(PIDs[i]);
         tab := append(tab, Row(
-            ProjectWLink(pKey) . ProjectButtons(pKey), 
+            ProjectWLink(pKey, ProjectButtons(pKey)), 
             seq(covData[j,i],j=1..k),
             seq(MeanVarPrint(data[j,i]),j=1..m), RawDataWLink(rawDataFn[i])) );
     od:
