@@ -280,12 +280,13 @@ GetParetoPoints := proc(x_dat_, y_dat; (opt='NE'):{'NE','SE'})
     ord := sort([seq(i, i=1..n)], x->-x_dat[x]);
     y_comp := proc(a,b) If(opt='NE', a>b, a<b) end:
 
-    pnts := [ [x_dat[ord[1]], y_dat[ord[1]]] ];
+    pnts := [[x_dat[ord[1]], If(opt='NE',0, 1e6)], [x_dat[ord[1]], y_dat[ord[1]]] ];
     for i from 2 to n do 
         if y_comp(y_dat[ord[i]], pnts[-1,2]) then
             pnts := append(pnts, [x_dat[ord[i]], y_dat[ord[i]]]);
         fi:
     od:
+    pnts := append(pnts, [0, pnts[-1,2]]);
     return(pnts);
 end:
 

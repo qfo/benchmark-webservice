@@ -19,8 +19,8 @@ plot \
 </DLOOP> \
 1/0 notit
 
-set xrange [] restore
-set yrange [] restore
+set xrange restore
+set yrange restore
 set output '<DVAR name="outfile">'
 replot \
-  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1:2 notit w l ls 300, </DBOOL>\
+  <DBOOL name="add_pareto">'<DVAR name="datafile">' i <DVAR name="pareto_index"> u 1:2 notit w l ls 300 </DBOOL>
