@@ -230,6 +230,7 @@ bsShowProject := proc()
             t['hasLog'] := false; 
         else t['hasLog'] := true; t['LogLnk'] := logUrl; 
         fi; 
+        t['tags'] := ProjectButtons(p);
         covered := p['OrgsCovered'];
         if covered=intersect() or length(covered)>=length(KnownSpecies(p['ref'])) then
             t['coverage'] := 'covers all genomes';
@@ -255,11 +256,11 @@ end:
 # Upload Data                      #
 ####################################
 bsUploadData := proc(fnBase:string, tit:string, nrProts, nrOrth, reference,
-    isPublic, methDesc, methURL)
+    isPublic, methDesc, methURL, email)
     Logger(sprintf('Upload: %A', args), 'DEBUG');
     id := AddPKeyData(tit,fnBase, 'NSeqSub'=nrProts, 'NOrthSub'=nrOrth,
         'reference'=reference,'description'=methDesc,'url'=methURL,
-        'isPublic'=isPublic):
+        'isPublic'=isPublic, 'email'=email):
     return('Location: gateway.pl?f=MapData&p1='.id.'\n\n');
 end:
 
@@ -289,6 +290,13 @@ bsMapData := proc(PID:string)
     vars['PID'] := PID;
 
     if pKey['ref']<>'OMA' then
+        if pKey['email']<>'' then
+            map_data_url := 'http://'.host.'/cgi-bin/gateway.pl?f=MapRels&p1='.PID;
+            msg := 'The orthology benchmarking status of your submitted project '.
+                   'is be available on the following page for you: '.map_data_url.
+                   '\n\nWe thank you for using the benchmarking webservice.'; 
+            traperror(SendEMail(msg, email, 'Link to benchmark project'));
+        fi:
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     else 
         error('OMA as reference dataset is no longer suported');
@@ -381,12 +389,12 @@ bsTestSelection := proc(PID:string)
     else
         vars['has_mapping_log'] := false;
     fi:
-    t := [seq(If(z['PID']<>PID,[z['Title'],z['PID']],NULL), 
+    t := [seq(If(z['PID']<>PID,[z['Title'],z['PID'], z],NULL), 
         z=GetPublicProjects(dataset))]:
     if length(t)>0 then
         t := transpose(sort(t)):
-        pubPID := t[2]; publicProjects := t[1]; 
-    else pubPID := publicProjects := []; 
+        pubPID := t[2]; publicProjects := t[1]; pKeys := t[3]:
+    else pubPID := publicProjects := pKeys := [];
     fi:
     Npub := length(pubPID):
     pairwiseOverlap := [seq( ProjSpeciesOverlap([PID,z]), z=pubPID)];
@@ -394,12 +402,11 @@ bsTestSelection := proc(PID:string)
     for z in ['Euk','Bac','Fun'] do
         if ProjMetProperty(PID, GetTestProperty('TreeTest_'.z)) then
             vars['TT'.z.'Projects'] := ConcatStrings(
-              [seq(sprintf('<input type="checkbox" id="pTT%sPrj%d" name="pTT%sPrj%d" %s/>'.
-	                   '<label for="pTT%sPrj%d">%s</label><br/>', z,pNr,z,pNr,
-			   If(ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z)), 'checked="checked"','disabled="disabled"'),
-		           z,pNr,publicProjects[pNr]), pNr=1..Npub)],'\n');
-	vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
-	else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
+              [seq(ProjectCheckbox(pKeys[pNr], sprintf('pTT%sPrj%d', z, pNr), 
+                                   ProjMetProperty(pubPID[pNr],GetTestProperty('TreeTest_'.z))),
+                   pNr=1..Npub)],'\n');
+            vars['style'.z] := 'checked="checked"'; vars['has'.z] := true;
+        else vars['style'.z] := 'disabled="disabled"'; vars['has'.z] := false;
         fi:
     od:
   
@@ -409,9 +416,8 @@ bsTestSelection := proc(PID:string)
             vars['hasSTD'.problem] := false;
         else
             vars['STD'.problem.'Projects'] := ConcatStrings(
-                [seq(sprintf('<input type="checkbox" id="pSTD%sPrj%d" name="pSTD%sPrj%d" '.
-                    'checked="checked"/><label for="pSTD%sPrj%d">%s</label><br/>', 
-                    problem, pNr, problem, pNr, problem, pNr, publicProjects[pNr]), pNr=1..Npub)], '\n');
+                [seq(ProjectCheckbox(pKeys[pNr], sprintf('pSTD%sPrj%d', problem, pNr)),
+                     pNr=1..Npub)], '\n');
             vars['hasSTD'.problem] := SearchString('<input',vars['STD'.problem.'Projects'])>=0;
             vars['styleSTD'.problem] := If(vars['hasSTD'.problem], 'checked="checked"','');
         fi:
@@ -423,18 +429,17 @@ bsTestSelection := proc(PID:string)
 
     vars['RefPhyloProjects'] := ConcatStrings(
          [seq(If( length(pairwiseOverlap[pNr])>1,
-	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-	                  '<label for="%s%d">%s</label><br/>',
-                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
-	          ''), pNr=1..Npub)],'\n');
+                  ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
+                  ''),
+              pNr=1..Npub)], '\n');
     stub := 'pRefPhyloProb';
     vars['RefPhyloProblems'] := ConcatStrings(
          [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
-	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
-	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+              sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+                  '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
                       stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
-		  ''), 
-		  z=refPhyloProbs)],'\n');
+          ''), 
+          z=refPhyloProbs)],'\n');
     vars['RefPhyloProb1_id'] := 'RefPhyloProb'.refPhyloProbs[1,'Name'];
     vars['hasRefPhylo'] := SearchString('<input',vars['RefPhyloProjects'])>=0 and 
                            SearchString('<input',vars['RefPhyloProblems'])>=0;
@@ -449,18 +454,17 @@ bsTestSelection := proc(PID:string)
 
         vars['AutoPhyloProjects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-    	          sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-    	                  '<label for="%s%d">%s</label><br/>',
-                              stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
-    	          ''), pNr=1..Npub)],'\n');
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
+                      ''),
+                  pNr=1..Npub)],'\n');
         stub := 'pAutoPhyloProb';
         vars['AutoPhyloProblems'] := ConcatStrings(
              [seq(If( ProjMetProperty(PID, GetTestProperty(z['Name'])), 
-    	          sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
-    	              '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
+                  sprintf('<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
+                      '<label for="%s%s"><span title="%s">%s</span></label> <br/>',
                           stub,z['Name'],stub,z['Name'],stub,z['Name'],z['Reference'],z['DisplayName']),
-    		  ''), 
-    		  z=autoPhyloProbs)],'\n');
+              ''), 
+              z=autoPhyloProbs)],'\n');
         vars['AutoPhyloProb1_id'] := 'AutoPhyloProb'.autoPhyloProbs[1,'Name'];
         vars['hasAutoPhylo'] := SearchString('<input',vars['AutoPhyloProjects'])>=0 and 
                                SearchString('<input',vars['AutoPhyloProblems'])>=0;
@@ -478,10 +482,9 @@ bsTestSelection := proc(PID:string)
         stub := 'pHomPrj';
         vars['HomProjects'] := ConcatStrings(
              [seq(If( length(pairwiseOverlap[pNr])>1,
-                 sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked"/>'.
-                         '<label for="%s%d">%s</label><br/>',
-                             stub, pNr, stub, pNr, stub, pNr, publicProjects[pNr]),
-                 ''), pNr=1..Npub)],'\n');
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
+                      ''),
+                  pNr=1..Npub)],'\n');
         stub := 'pHomProb'; name := 'HumMus';
         vars['HomProblems'] := sprintf(
             '<input type="checkbox" id="%s%s" name="%s%s" checked="checked" />'.
@@ -498,24 +501,20 @@ bsTestSelection := proc(PID:string)
     # Function based
     stub := 'pGOPrj';
     vars['GOprojects'] := ConcatStrings(
-         [seq(If( length(pairwiseOverlap[pNr])>1,
-                  sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
-                          '<label for="%s%d">%s</label><br/>',
-                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
-	          ''), 
-		  pNr=1..Npub)],'\n');
+             [seq(If( length(pairwiseOverlap[pNr])>1,
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
+                      ''),
+                  pNr=1..Npub)],'\n');
     vars['hasGO'] := SearchString('<input',vars['GOprojects'])>=0;
     vars['styleGO'] := If(vars['hasGO'] or dataset<>'OMA', 
         'checked="checked"', 'disabled="disabled"');
 
     stub := 'pECPrj';
     vars['ECprojects'] := ConcatStrings(
-         [seq(If( length(pairwiseOverlap[pNr])>1,
-                  sprintf('<input type="checkbox" id="%s%d" name="%s%d" checked="checked" />'.
-	                  '<label for="%s%d">%s</label><br/>',
-                          stub,pNr,stub,pNr,stub,pNr,publicProjects[pNr]), 
-	          ''),
-		  pNr=1..Npub)],'\n');
+             [seq(If( length(pairwiseOverlap[pNr])>1,
+                      ProjectCheckbox(pKeys[pNr], sprintf('%s%d', stub, pNr)),
+                      ''),
+                  pNr=1..Npub)],'\n');
     vars['hasEC'] := SearchString('<input',vars['ECprojects'])>=0;
     vars['styleEC'] := If(vars['hasEC'] or dataset<>'OMA', 'checked="checked"', 'disabled="disabled"');
 
@@ -594,7 +593,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
-    conf_int := ParseParam('pSTD_conf', pnames, params, 'default'=71);
+    conf_int := parse(string(ParseParam('pSTDconf', pnames, params, 'default'=71)));
     conf_str := sprintf('_conf%d', conf_int);
     treebuilder := ParseParam('pSTD_treebuilder', pnames, params, default='LSTree');
 
@@ -763,7 +762,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     else 
         cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resFn :=%A: filter := %A:'.
                'projs := %A: lock:=%A: measure:=%A: meth := %A: '.
-	       'ReadProgram(''%s/GoTest.drw''): done:" | nice -n 19 %s &',
+           'ReadProgram(''%s/GoTest.drw''): done:" | nice -n 19 %s &',
                cdir, resFn, filter, projs, lock, measure, meth, cdir, darwin64);
         Logger(sprintf('%a',cmd),'INFO'):
         CallSystem( cmd );
@@ -820,14 +819,34 @@ end:
 #################################
 # Run Tests                     #
 #################################
-bsRunTests := proc(params:list, pnames:list)
+bsRunTests := proc(params_:list, pnames_:list)
+    pnames := pnames_; params := params_;
     if length(params) <> length(pnames) then
        error('unexpected parameters'); fi;
+    email_pos := SearchArray('pEmail', pnames);
+    if email_pos > 0 then
+        email := params[email_pos];
+        pnames := [op(pnames[1..email_pos-1]), op(pnames[email_pos+1..-1])];
+        params := [op(params[1..email_pos-1]), op(params[email_pos+1..-1])];
+    else email := '';
+    fi:
     
     h := string(hash_sha2( [params, pnames] ));
     OpenWriting( sessiondir.h );
     printf('# %s\n__SessionParams:=%A:\n__SessionPnames:=%A:\n', date(), params, pnames);
     OpenWriting(previous);
+
+    if email='' then
+        pKey := GetPKeyData(ParseParam('pPID', pnames, params));
+        email := pKey['email'];
+    fi:
+    if email<>'' then 
+        test_result_url := 'http://'.host.'/cgi-bin/gateway.pl?f=CheckResults&p1='.h;
+        msg := 'The orthology benchmarking results for the parameters you selected '.
+               'will be available on the following page for you: '.test_result_url.
+               '\n\nWe thank you for using the benchmarking webservice.'; 
+        traperror(SendEMail(msg, email, 'Link to benchmark results'));
+    fi:
     return('Location: gateway.pl?f=CheckResults&p1='.h.'\n\n'); 
 end:
 
@@ -857,7 +876,7 @@ bsCheckResults := proc(sessionkey)
         k := SearchArray('pTT'.short.'1', pnames);
         if k>0 and params[k]='on' then
             # do traditional species tree discordance test
-	    t := StartTreeTest(PID,problem,params, pnames);
+        t := StartTreeTest(PID,problem,params, pnames);
             vars['TT'.short.'1'] := t[1]; 
             if t[2]=true then refresh := true fi:
         fi;
@@ -877,16 +896,16 @@ bsCheckResults := proc(sessionkey)
     if k>0 and params[k]='on' then
         # do reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames);
-	vars['RefPhylo'] := t[1]; 
-	if t[2]=true then refresh := true fi:
+    vars['RefPhylo'] := t[1]; 
+    if t[2]=true then refresh := true fi:
     fi;
     
     k := SearchArray('pAutoPhylo1', pnames);
     if k>0 and params[k]='on' then
         # do semi-auto reference gene phylogenies based test
         t := StartRefPhyloTest(PID, params, pnames,'testset'='Auto');
-	vars['AutoPhylo'] := t[1]; 
-	if t[2]=true then refresh := true fi:
+    vars['AutoPhylo'] := t[1]; 
+    if t[2]=true then refresh := true fi:
     fi;
 
     k := SearchArray('pHom1', pnames);
@@ -899,18 +918,18 @@ bsCheckResults := proc(sessionkey)
     k := SearchArray('pGO1',pnames);
     if k>0 and params[k]='on' then
         t := StartGoTest(PID, params, pnames);
-	vars['GO'] := t[1]; 
-	if t[2]=true then refresh := true fi:
+    vars['GO'] := t[1]; 
+    if t[2]=true then refresh := true fi:
     fi:
 
     k := SearchArray('pEC1', pnames);
     if k>0 and params[k]='on' then
         t := StartEcTest(PID,params, pnames);
-	vars['EC'] := t[1];
-	if t[2]=true then refresh := true fi:
+    vars['EC'] := t[1];
+    if t[2]=true then refresh := true fi:
     fi:
     
-    if refresh then vars['reloadin'] := 60 fi;
+    if refresh then vars['reloadin'] := 120 fi;
     vars['refresh'] := refresh;
     return( GenerateTemplate(cdir.'/templates/testResults.html', vars) );
 end:

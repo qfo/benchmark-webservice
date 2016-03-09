@@ -63,7 +63,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
         for c to length(cases) do if c>1 then tab := append(tab,Rule) fi; 
             for i to length(prjNames) do 
                 tab := append(tab, Row( If(i=1,cases[c],''), 
-                  ProjectWLink(prj[i], If(partial[i],'*',NULL)),
+                  ProjectWLink(prj[i], ProjectButtons(prj[i])), 
                   MeanVarPrint(FPR[c,i]), MeanVarPrint(TPR[c,i]), RawDataWLink(RawDataFn[i]) ));
             od: 
         od:
@@ -75,8 +75,10 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             t['ylabel'] := fprLabel;
             t['xlabel'] := tprLabel;
             t['datafile'] := sprintf('/tmp/%s.dat',resBase);
+            t['add_pareto'] := true;
             plotTab := [seq(table(), length(prjNames))]:
             OpenWriting(t['datafile']);
+            dats := []:
             for i to length(prjNames) do 
                 nrSamp := sum(If(FPR[c,i]<>0,1,0),c=1..length(cases));
                 if nrSamp>0 then
@@ -85,15 +87,20 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
                     avgTPR := avg(seq(If(TPR[c,i]<>0,TPR[c,i,1],NULL),c=1..length(cases)));
                     stdTPR := 1.96*sqrt( sum([seq(If(TPR[c,i]<>0,TPR[c,i,2],NULL),c=1..length(cases))]) )/nrSamp;
                     printf('# %s%s\n%d\t%f\t%f\t%f\t%f\n\n\n', prjNames[i], 
-                         If(partial[i],'*',''), nrSamp,
+                         If(partial[i],' (incomplete)',''), nrSamp,
                          avgTPR, avgFPR, stdTPR, stdFPR);
-                else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],'*','')); fi:
+                    dats := append(dats, [avgTPR, avgFPR]);
+                else printf('# %s%s\n0\t?0\t?0\t?0\t?0\n\n\n', prjNames[i],If(partial[i],' (incomplete)','')); fi:
 
                 plotTab[i,'index'] := i-1; 
                 plotTab[i,'title'] := prjNames[i];
                 plotTab[i,'style'] := i;
             od:
+            pareto := GetParetoPoints(op(transpose(dats)), 'NE');
+            printf('# pareto points\n');
+            for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
             OpenWriting(previous);
+            t['pareto_index'] := length(prjNames);
             t['plot'] := plotTab;
             cmdFile := sprintf('/tmp/%s.gp', resBase);
             OpenWriting(cmdFile);
@@ -101,7 +108,7 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/[^'']*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -185,7 +192,7 @@ Handle2dROCFiles_PAIRWISE := proc(resFn:string, resBase:string,
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/[^'']*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -259,12 +266,28 @@ MakeIntersectTable := proc(PIDs:list, data:{matrix(Stat),list(Stat)}, rawDataFn:
     for i to n do 
         pKey := GetPKeyData(PIDs[i]);
         tab := append(tab, Row(
-            ProjectWLink( pKey, If( length(pKey['OrgsCovered'])<length(KnownSpecies(pKey['ref'])),
-                '*','')),
+            ProjectWLink(pKey, ProjectButtons(pKey)), 
             seq(covData[j,i],j=1..k),
             seq(MeanVarPrint(data[j,i]),j=1..m), RawDataWLink(rawDataFn[i])) );
     od:
     return( tab );
+end:
+
+GetParetoPoints := proc(x_dat_, y_dat; (opt='NE'):{'NE','SE'})
+    x_dat := copy(x_dat_);
+    n := length(x_dat);
+    assert(length(y_dat)=n);
+    ord := sort([seq(i, i=1..n)], x->-x_dat[x]);
+    y_comp := proc(a,b) If(opt='NE', a>b, a<b) end:
+
+    pnts := [[x_dat[ord[1]], If(opt='NE',0, 1e6)], [x_dat[ord[1]], y_dat[ord[1]]] ];
+    for i from 2 to n do 
+        if y_comp(y_dat[ord[i]], pnts[-1,2]) then
+            pnts := append(pnts, [x_dat[ord[i]], y_dat[ord[i]]]);
+        fi:
+    od:
+    pnts := append(pnts, [0, pnts[-1,2]]);
+    return(pnts);
 end:
 
 GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
@@ -272,7 +295,8 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     'covLabel'=((covLabel='# ortholog relations'):string),
     'corLabel'=((corLabel='avg similarity'):string),
     'covData'=((passedCovData=0):{list(numeric),0}),
-    'betterDir'=((betterDir='NE'):{'NE','SE'}))
+    'betterDir'=((betterDir='NE'):{'NE','SE'}),
+    'add_pareto'=((add_pareto=true):boolean))
 
     t := table():
     t['outfile'] := resPlotFn;
@@ -280,6 +304,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     t['ylabel'] := corLabel;
     t['datafile'] := sprintf('/tmp/%s.dat', resBase);
     t['betterSE'] := evalb(betterDir='SE');
+    t['add_pareto'] := add_pareto;
     nData := length(data):
 
     plotTab := [seq(table(), nData)];
@@ -301,18 +326,26 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
         fi:
     fi:
 
+    dats := []:
     OpenWriting(t['datafile']);
     for i to length(data) do
         if data[i,'Number']>1 then 
-        printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
-            covData[i], data[i,'Mean'], data[i,'StdErr']);
-        else printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'], covData[i] );
+            printf('# %s\n%f\t%f\t%f\n\n\n', data[i,'Description'],
+                covData[i], data[i,'Mean'], data[i,'StdErr']);
+            dats := append(dats, [covData[i], data[i,'Mean']])
+        else 
+            printf('# %s\n%d\t?0\t?0\n\n\n', data[i,'Description'], covData[i] );
         fi:
         plotTab[i,'index'] := i-1;
         plotTab[i,'title'] := data[i,'Description'];
         plotTab[i,'style'] := i;
     od:
+    pareto := GetParetoPoints(op(transpose(dats)), betterDir);
+    printf('# pareto points\n');
+    for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
     OpenWriting(previous);
+
+    t['pareto_index'] := length(data);
     t['plot'] := plotTab;
     cmdFile := sprintf('/tmp/%s.gp', resBase);
     OpenWriting(cmdFile);
@@ -320,7 +353,7 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
     OpenWriting(previous);
 
     CallSystem('gnuplot '.cmdFile);
-    CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
+    CallSystem('sed -i -e "s/''\\/[^'']*\\//''/g" '.cmdFile);
     CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
     CallSystem('mv '.resBase.'.tgz '.rawdir);
 end:
@@ -399,7 +432,7 @@ HandleBoxRFFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table)
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/[^'']*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:
@@ -551,7 +584,7 @@ Handle2dSimFiles_PAIRWISE := proc(resFn:string, resBase:string, vars:table;
             OpenWriting(previous);
                     
             CallSystem('gnuplot '.cmdFile);
-            CallSystem('sed -i -e "s/''\\/.*\\//''/g" '.cmdFile);
+            CallSystem('sed -i -e "s/''\\/[^'']*\\//''/g" '.cmdFile);
             CallSystem('tar -C /tmp --remove-files -czf '.resBase.'.tgz '.resBase.'.gp '.resBase.'.dat');
             CallSystem('mv '.resBase.'.tgz '.rawdir);
         fi:

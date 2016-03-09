@@ -1,6 +1,6 @@
 
 ProjectWLink := proc(p:PKeyData; (modif=''):string)
-    t := sprintf('<a href="gateway.pl?f=ShowProject&p1=%s" class="external">%s%s</a>', 
+    t := sprintf('<a href="gateway.pl?f=ShowProject&p1=%s" class="external">%s %s</a>', 
         p['PID'],p['Title'], modif);
     return(t);
 end:
@@ -12,5 +12,31 @@ RawDataWLink := proc()
         t := sprintf('<a href="%s/%s"><span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span></a>\n', rawurl, args[1],imgurl);
     else error('unexpected arguments in RawDataWLink'); fi:
     return( t );
+end:
+
+ProjectButtons := proc(p:PKeyData)
+    parts := [];
+    if length(p['OrgsCovered']) < length(KnownSpecies(p['ref'])) then
+        parts := append(parts, '<button class="btn btn-warning btn-xs">incomplete</button>');
+    fi:
+    if p['isObsolete']=true then
+        parts := append(parts, '<button class="btn btn-default btn-xs">superseded</button>');
+    fi:
+    return(ConcatStrings(parts,' '));
+end:
+
+ProjectCheckbox := proc(p:PKeyData, chbx_id; (checkable=true):boolean)
+    chbx_state := '';
+    if checkable then
+        if not p['isObsolete'] then
+            chbx_state := 'checked="checked"';
+        fi:
+    else
+        chbx_state := 'disabled="disabled"';
+    fi:
+    t := sprintf('<input type="checkbox" id="%s" name="%s" %s/>'.
+                 '<label for="%s">%s %s</label><br/>', 
+                  chbx_id, chbx_id, chbx_state, chbx_id, p['Title'], ProjectButtons(p));
+    return(t);
 end:
 
