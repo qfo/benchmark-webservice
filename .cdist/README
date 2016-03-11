@@ -1,5 +1,5 @@
 - install cdist
 - configure ssh access as root
-- run cdist as: cdist config --conf-dir .cdist oma.cs.ucl.ac.uk
+- run cdist as: cdist config --conf-dir .cdist <host>
 
 
