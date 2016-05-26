@@ -140,7 +140,7 @@ end:
 
 # callback function group data
 GroupRelations := proc(og)
-    global VPs, relDone, relMapped, logbuffer;
+    global VPs, relDone, relMapped, logbuffer, t0;
     logbuffer := ['Mapping orthologous group nr '.relDone+1];
     t := ExtractInducedPairsR(og):
     for z in t[1] do 

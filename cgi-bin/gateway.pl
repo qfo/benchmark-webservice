@@ -37,7 +37,7 @@ my $upload_log = $ENV{"DARWIN_LOG_PATH"}.'/BS_upload.log';
 my $MAXLOAD = 24;
 
 # maximum Post size in bytes 
-$CGI::POST_MAX = 1<<32;
+$CGI::POST_MAX = 1<<33;
 $|++; # disable buffering of stdout
 
 #use Time::HiRes qw(time);

@@ -701,7 +701,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
 
-    measure := params[ SearchArray('pECMeasure',pnames) ];
+    measure := ParseParam('pECMeasure', pnames, params, default='avg Schlicker');
     meth := ParseStrategy(pnames,params):
         
     resBase := sprintf('EC.%a', hash_sha2([projs,measure,meth]) );
@@ -748,7 +748,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     filter := {seq( If(length(z)>6 and z[1..6]='pGOFil', 
                        parse(z[7..-1]),NULL), z=pnames)};
     filter := intersect(filter, exEv);
-    measure := params[ SearchArray('pGOMeasure',pnames) ];
+    measure := ParseParam('pGOMeasure', pnames, params, default='avg Schlicker');
     meth := ParseStrategy(pnames,params):
     
     resBase := sprintf('GO.%a', hash_sha2([projs,filter,measure,meth]) );
