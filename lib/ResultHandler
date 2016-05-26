@@ -48,8 +48,10 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
     FPR := TPR := RawDataFn := _LABEL_FPR := _LABEL_TPR := 0;
     traperror(ReadProgram(resFn));
     if FPR=0 or TPR=0 or length(FPR)<>length(cases) 
-             or length(FPR[1])<>length(PIDs) then 
+             or (length(FPR)>0 and length(FPR[1])<>length(PIDs)) then 
         vars['content'] := UNEXPECTED_ERROR_MSG(procname, 'FPR, TPR');
+    elif length(FPR)=0 then
+        vars['content'] := '<p>no data</p>'
     else
         prj := [seq(GetPKeyData(z), z=PIDs)];
         nrOrgs := length(KnownSpecies(prj[-1,'ref']));
