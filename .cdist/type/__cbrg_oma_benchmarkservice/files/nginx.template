@@ -27,6 +27,9 @@ server {
    error_log $nginx_log_dir/error.log;
    index index.html;
 
+   # a few pretty urls
+   rewrite ^/projects$ /cgi-bin/gateway.pl?f=ShowProject permanent;
+
    # set max file upload size
    client_max_body_size 1000M;
 
