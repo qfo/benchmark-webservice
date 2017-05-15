@@ -51,18 +51,18 @@ remIDs  := {seq( If(remove[z], mapping[z,1],NULL), z=1..lenMapping)}:
 mapping := [seq( If(remove[z], NULL, mapping[z]),  z=1..lenMapping)]:
 
 Set(printgc=false):
-fn := getenv('DARWIN_OMADATA_PATH').'/DB/IDmapping.drw';
+fn := getenv('DARWIN_OMADATA_PATH').'/IDmapping.drw';
 OpenWriting( fn );
 printf('IDmapping := %A:\nremIDs := %A:\n',mapping, remIDs);
 OpenWriting(previous);
 
 ReadProgram( getenv('DARWIN_BROWSER_REPO_PATH').'/lib/Index');
-fn := getenv('DARWIN_OMADATA_PATH').'/DB/IDIndex.db';
+fn := getenv('DARWIN_OMADATA_PATH').'/IDIndex.db';
 CreateIndex( mapping, fn);
 if length(FileStat(fn))=0 then warning('IDIndex.db not created') fi:
 
 eNr2ids := sort(mapping,x->x[2]):
-fn := getenv('DARWIN_OMADATA_PATH').'/DB/ReferenceSeqs.db';
+fn := getenv('DARWIN_OMADATA_PATH').'/ServerSeqs.db';
 k0 := 1;
 OpenWriting( fn );
 for i to Goff[NS+1] do 
