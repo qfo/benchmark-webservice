@@ -1,5 +1,5 @@
 
-wdir := '/pub/scratch/adriaal/refgenomes';
+if not assigned(wdir) then error('wdir not defined'); fi:
 raw_seqxml_root := wdir.'/raw';
 
 
@@ -22,7 +22,7 @@ GenerateSpeciesInfo := proc(tax_ids)
 end:
 
 GetDataset := proc(root)
-    t := TimedCallSystem('find ' . root . ' -name "*.seqxml.gz"');
+    t := TimedCallSystem('find -H ' . root . ' -name "*.seqxml.gz"');
     if t[1]<>0 then error('cannot load Dataset') fi:
     files := [seq(trim(z), z=SplitLines(t[2]))]:
     re := '.*(UP[0-9]+)_([0-9]+).seqxml.*';

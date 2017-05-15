@@ -4,7 +4,7 @@ import datetime
 import os
 import getopt, sys
 import re
-
+import gzip
 
 class Protein:
   def __init__(self):
@@ -47,6 +47,8 @@ class SeqXMLHandler(xml.sax.handler.ContentHandler):
     if name == "seqXML":
       for proc in self.processors :
         proc.setDatasetVersion( attributes["sourceVersion"] )
+        if 'ncbiTaxID' in attributes:
+          proc.setDefaultSpecies( attributes["ncbiTaxID"], attributes["speciesName"]);
     elif name == "entry" :
       ac = attributes["id"];
       src = attributes["source"];
@@ -100,12 +102,19 @@ class ProteinProcessor :
     self.version = "n.a."
     self.entryCnt = 0
     self.fiveName = ""
+    self.defaultSpecies = 0
 
   def setDatasetVersion(self, version):
     self.version = version
 
+  def setDefaultSpecies(self, taxid, sciname):
+    self.defaultSpecies = {'taxid': taxid, 'sciname': sciname};
+
   def processProtein(self, p):
-    if not self.headerDone :
+    if not self.headerDone:
+      if p.taxid == 0 and self.defaultSpecies != 0:
+        p.taxid = self.defaultSpecies['taxid']
+        p.sname = self.defaultSpecies['sciname']
       t = self.oginfo[ p.taxid ]
       self.fiveName = t[ "fiveName" ]
       lin  = t[ "lin" ]
@@ -161,9 +170,12 @@ def main() :
   handler = SeqXMLHandler()
   handler.addProteinProcessor( ProteinProcessor(ddir, speciesInfo) )
   parser.setContentHandler( handler )
-  
-  for f in args :
-    parser.parse( f )
+  print args
+
+  for f in args:
+    open_ = gzip.open if f.endswith('.gz') else open;
+    with open_(f) as fh:
+      parser.parse(fh)
 
   sys.exit(0)
 
