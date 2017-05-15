@@ -1,0 +1,77 @@
+#
+#  This script is used to generate an IDmapping of the reference 
+#  genomes ids (mainly UniProt/Ensembl) to successive integers corresponding
+#  to the genome ordering of GenomeSummaries.
+#  The scirpt also generates a darwin database with all the sequences.
+#
+#                                              Adrian Altenhoff, May 26, 2011
+#
+
+omadir := getenv('DARWIN_OMA_REPO_PATH');
+ReadProgram(omadir.'/lib/darwinit');
+GS := GenomeSummaries:
+NS := length(genomes):
+
+Goff := CreateArray(1..NS+1):
+for i to NS do Goff[i+1] := Goff[i]+GS[genomes[i],TotEntries] od:
+
+seqs := CreateArray(1..Goff[NS+1]):
+mapping := []:
+tags := ['AC','ID','IPI','EntrezGene','ENSEMBL'];
+for i to NS do 
+    g := genomes[i];
+    DB := ReadDb( GenomeFileName[g] );
+    for eNr to DB[TotEntries] do
+        e := Entry(eNr); lst := [];
+        seqs[eNr+Goff[i]] := SearchTag('SEQ',e):
+        for tag in tags do 
+            t := SearchTag(tag,e);
+            if t<>'' then 
+                lst := append(lst, op(SearchDelim('; ',t)));
+            fi:
+        od:
+        mapping := append(mapping, seq([z,eNr+Goff[i]],z={op(lst)}));
+    od:
+od:
+
+# find duplicates and remove them. Search for ids which map do different
+# proteins. These need to be removed from the mapping and kept in special list
+mapping := [op({op(mapping)})]:
+lenMapping := length(mapping);
+remove := CreateArray(1..lenMapping,false):
+for i to lenMapping do 
+    for j from i+1 to lenMapping while mapping[i,1]=mapping[j,1] do od:
+    if j-i>1 then 
+        for k from i to j-1 do remove[k]:=true; od;
+        i := j-1;
+    fi:
+od:
+
+remIDs  := {seq( If(remove[z], mapping[z,1],NULL), z=1..lenMapping)}:
+mapping := [seq( If(remove[z], NULL, mapping[z]),  z=1..lenMapping)]:
+
+Set(printgc=false):
+fn := getenv('DARWIN_OMADATA_PATH').'/DB/IDmapping.drw';
+OpenWriting( fn );
+printf('IDmapping := %A:\nremIDs := %A:\n',mapping, remIDs);
+OpenWriting(previous);
+
+ReadProgram( getenv('DARWIN_BROWSER_REPO_PATH').'/lib/Index');
+fn := getenv('DARWIN_OMADATA_PATH').'/DB/IDIndex.db';
+CreateIndex( mapping, fn);
+if length(FileStat(fn))=0 then warning('IDIndex.db not created') fi:
+
+eNr2ids := sort(mapping,x->x[2]):
+fn := getenv('DARWIN_OMADATA_PATH').'/DB/ReferenceSeqs.db';
+k0 := 1;
+OpenWriting( fn );
+for i to Goff[NS+1] do 
+    printf('<E><OS>%s</OS><MAPIDS>',genomes[ SearchOrderedArray(i-1,Goff) ]);
+    
+    for k from k0 to length(eNr2ids) while eNr2ids[k,2]=i do od:
+    printf('%s', ConcatStrings( [seq(eNr2ids[z,1], z=k0..k-1)], '; '));
+    k0 := k;
+    printf('</MAPIDS><SEQ>%s</SEQ></E>\n',seqs[i]);
+od:
+OpenWriting(previous);
+

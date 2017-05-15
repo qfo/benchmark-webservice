@@ -1,0 +1,42 @@
+
+wdir := '/pub/scratch/adriaal/refgenomes';
+raw_seqxml_root := wdir.'/raw';
+
+
+GenerateSpeciesInfo := proc(tax_ids)
+    data := table():
+    for tax in tax_ids do
+        te := traperror(TaxonomyEntry(tax)):
+        if te=lasterror then 
+            warning('cannot identify ' . tax+': ' . te);
+            next;
+        fi:
+        cur := table():
+        cur['king'] := te['Kingdom']; 
+        cur['fiveName'] := te['mnemonic'];
+        cur['lin'] := te['LineageString'];
+        cur['sci'] := te['SCINAME'];
+        data[tax] := cur;
+    od:
+    return( data );
+end:
+
+GetDataset := proc(root)
+    t := TimedCallSystem('find ' . root . ' -name "*.seqxml.gz"');
+    if t[1]<>0 then error('cannot load Dataset') fi:
+    files := [seq(trim(z), z=SplitLines(t[2]))]:
+    re := '.*(UP[0-9]+)_([0-9]+).seqxml.*';
+    dataset := table():
+    for file in files do 
+        m := MatchRegex(re, file);
+        dataset[parse(m[3])] := file;
+    od:
+    return(dataset);
+end:
+
+dataset := GetDataset(raw_seqxml_root);
+sp_info := GenerateSpeciesInfo(Indices(dataset)):
+
+OpenWriting(wdir.'/SpeciesInfo.txt');
+prints(json(sp_info)):
+OpenWriting(previous);
