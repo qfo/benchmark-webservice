@@ -1,9 +1,8 @@
 #!/bin/bash
-darwin64="/local/bin/darwin64 -q"
+dataset="${$1:-RefSet5}"
 enzRaw="/tmp/enzymes.dat"
 enzDrw="/tmp/enzymes.drw"
-dataset="RefSet5"
-enzDat="data/enzymes_$dataset.drw"
+enzDat="$DARWIN_ORTHOLOG_BENCHMARKDATA_PATH/data/enzymes_$dataset.drw"
 
 wget "ftp://ftp.expasy.org/databases/enzyme/enzyme.dat" -O $enzRaw
 if [ $? -ne 0 ] ; then echo "could not download enzyme.dat"; exit 1; fi
@@ -12,12 +11,10 @@ data/convert_ec.pl $enzRaw $enzDrw
 if [ $? -ne 0 ] ; then echo "could not convert enzymes into darwin format"; exit 1; fi
 
 
-$darwin64  << EOA
-pwd := TimedCallSystem('pwd')[2];
-if SearchDelim('/',pwd[1..-2])[-1]<>'BenchmarkService' then
-printf('wrong working directory. Should be at BenchmarkService'); quit; fi:
-
-ReadProgram('lib/darwinit');
+darwin  << EOA
+wdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
+if wdir='' then error('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH not set') fi:
+ReadProgram('wdir.'/lib/darwinit');
 ddir := eval(symbol(lowercase('$dataset').'DBpath'));
 IDDB := LoadIndex(ddir.'IDIndex.db');
 

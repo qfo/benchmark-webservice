@@ -21,6 +21,7 @@ darwin64 := 'darwin -q';
 logfile := getenv('DARWIN_LOG_PATH').'/BS_server.log';
 
 NrGenomes('RefSet5');
+NrGenomes('RefSet17');
 google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 
 

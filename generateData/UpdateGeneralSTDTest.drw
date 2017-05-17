@@ -2,7 +2,10 @@
 ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/darwinit');
 rawdir := datdir.'/raw';
 
-dataset := 'RefSet5';
+if not assigned(dataset) then 
+    warning('dataset is not defined. will use ''RefSet5'' as default');
+    dataset := 'RefSet5';
+fi:
 
 LoadSpeciesTree := proc(treeVers)
     # read multifurcating species tree from file

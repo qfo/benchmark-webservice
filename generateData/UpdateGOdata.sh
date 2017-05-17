@@ -1,8 +1,8 @@
 #!/bin/bash
 
-dataset="RefSet5"
+dataset="${1:-RefSet5}"
 GODBname="ServerIndexed.db"
-DBpath=$( echo "ReadProgram('lib/darwinit'): eval( symbol(lowercase('$dataset').'DBpath') );" | darwin -q -B)
+DBpath=$( echo "ReadProgram('$DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH/lib/darwinit'): eval( symbol(lowercase('$dataset').'DBpath') );" | darwin -q -B)
 
 BINDIR="$DARWIN_BROWSER_REPO_PATH/data/UpdateGO/bin"
 LIBDIR="$DARWIN_BROWSER_REPO_PATH/data/UpdateGO/lib"

@@ -9,7 +9,7 @@ GSIDContainer := proc(dataset:string, NS:posint, GSID:matrix, GSPOR:matrix, IndD
 end:
 CompleteClass(GSIDContainer):
 
-LoadGenomeStartIDs := proc(ref:{'RefSet5'})
+LoadGenomeStartIDs := proc(ref:{'RefSet5', 'RefSet17'})
     global genomes, GenomeSummaries, DB:
 
     dbdir := eval( symbol( lowercase(ref).'DBpath') ):
@@ -34,6 +34,7 @@ end:
 
 GSIDtab := table( proc(i) error('Dataset '.i.' not known') end ):
 GSIDtab['RefSet5'] := LoadGenomeStartIDs('RefSet5');
+GSIDtab['RefSet17'] := LoadGenomeStartIDs('RefSet17');
 #GSIDtab['OMA']  := LoadGenomeStartIDs('OMA');
 
 NrOfGenomes := proc( ; (ref='OMA'):string )

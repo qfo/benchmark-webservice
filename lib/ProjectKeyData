@@ -5,7 +5,7 @@ fn := datdir.'projectKeys.drw';
                 
 
 PKeyData := proc(PID:string, Title:string, fnBase:string, createDat:string,
-                 ref:{'OMA','RefSet5'},
+                 ref:{'OMA','RefSet5','RefSet17'},
                  isPublic:boolean, directMap:boolean, 
                  NSeqSub:{0,posint}, 
                  NOrthSub:posint, 
