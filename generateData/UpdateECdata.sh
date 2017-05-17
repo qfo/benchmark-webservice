@@ -1,20 +1,21 @@
 #!/bin/bash
-dataset="${$1:-RefSet5}"
+dataset="${1:-RefSet5}"
 enzRaw="/tmp/enzymes.dat"
 enzDrw="/tmp/enzymes.drw"
 enzDat="$DARWIN_ORTHOLOG_BENCHMARKDATA_PATH/data/enzymes_$dataset.drw"
+gen_dir="$(dirname $0)"
 
 wget "ftp://ftp.expasy.org/databases/enzyme/enzyme.dat" -O $enzRaw
 if [ $? -ne 0 ] ; then echo "could not download enzyme.dat"; exit 1; fi
 
-data/convert_ec.pl $enzRaw $enzDrw
+$gen_dir/convert_ec.pl $enzRaw $enzDrw
 if [ $? -ne 0 ] ; then echo "could not convert enzymes into darwin format"; exit 1; fi
 
 
 darwin  << EOA
 wdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
 if wdir='' then error('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH not set') fi:
-ReadProgram('wdir.'/lib/darwinit');
+ReadProgram(wdir.'/lib/darwinit');
 ddir := eval(symbol(lowercase('$dataset').'DBpath'));
 IDDB := LoadIndex(ddir.'IDIndex.db');
 
