@@ -10,6 +10,7 @@ rawurl := '/raw/':
 brwrel := 'All.May2010';
 omaDBpath := getenv('DARWIN_BROWSERDATA_PATH').'/';
 refset5DBpath := ddir . '/reference5/';
+refset17DBpath := ddir . '/reference17/';
 datdir := ddir . '/data/';
 sessiondir := ddir . '/sessions/';
 resdir := ddir . '/results/';
