@@ -1,7 +1,17 @@
 #!/bin/bash
 
+########################################################################
+# Creates a new version for a reference proteome dataset from QfO      #
+# - Set name to the name of the resulting folder in the project share  #
+# - set root to a folder that will contain the temporary data and a    #
+#   symlink 'raw' pointing to the extracted seqxml files.              #
+########################################################################
+
 name="reference17"
 root="/pub/scratch/adriaal/refgenomes"
+
+export DARWIN_GENOMES_PATH=$root/genomes
+export DARWIN_OMADATA_PATH=/pub/projects/cbrg-ortholog-benchmark-service/$name
 
 darwin -E << EOF
  wdir := '$root';
@@ -11,9 +21,6 @@ EOF
 
 #inputs=$(find -H $root/raw -name "*.seqxml.gz")
 python Converter.py --speciesinfo=$root/SpeciesInfo.txt --datadir=$root/genomes $root/raw/*/*.seqxml.gz 
-
-export DARWIN_GENOMES_PATH=$root/genomes
-export DARWIN_OMADATA_PATH=/pub/projects/cbrg-ortholog-benchmark-service/$name
 
 echo "genomes := []:" > $DARWIN_GENOMES_PATH/Summaries.drw
 echo "GenomeSummaries := table():" >> $DARWIN_GENOMES_PATH/Summaries.drw
