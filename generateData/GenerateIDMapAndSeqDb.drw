@@ -15,46 +15,59 @@ NS := length(genomes):
 Goff := CreateArray(1..NS+1):
 for i to NS do Goff[i+1] := Goff[i]+GS[genomes[i],TotEntries] od:
 
+primary_tag := 'AC';
+second_tags := ['ID','IPI','EntrezGene','ENSEMBL','EnsemblGenomes','EnsemblGenomes_PRO','EnsemblGenomes_TRS','Ensembl',
+                'Ensembl_PRO','Ensembl_TRS','CRC64','RefSeq','GeneID','EMBL-CDS','UniProtKB','UniProtKB-ID'];
 seqs := CreateArray(1..Goff[NS+1]):
-mapping := []:
-tags := ['AC','ID','IPI','EntrezGene','ENSEMBL'];
+prim := CreateArray(1..Goff[NS+1]):
+scnd := []:
 for i to NS do 
     g := genomes[i];
     DB := ReadDb( GenomeFileName[g] );
     for eNr to DB[TotEntries] do
-        e := Entry(eNr); lst := [];
+        e := Entry(eNr); 
         seqs[eNr+Goff[i]] := SearchTag('SEQ',e):
-        for tag in tags do 
+        prim[eNr+Goff[i]] := SearchTag(primary_tag, e):
+        lst := []:
+        for tag in second_tags do 
             t := SearchTag(tag,e);
             if t<>'' then 
                 lst := append(lst, op(SearchDelim('; ',t)));
             fi:
         od:
-        mapping := append(mapping, seq([z,eNr+Goff[i]],z={op(lst)}));
+        scnd := append(scnd, seq([z,eNr+Goff[i]],z={op(lst)}));
     od:
+    printf('# collected ids from %s (%d/%d). tot nr ids so far: %d\n', g, i, NS, length(scnd)):
 od:
+
+# assert that primary ids are uniq
+prim_set := {op(prim)}:
+assert(length(prim_set) = length(prim));
+printf('# all prim acs are unique. checking now for duplicated secondary ids\n');
 
 # find duplicates and remove them. Search for ids which map do different
 # proteins. These need to be removed from the mapping and kept in special list
-mapping := [op({op(mapping)})]:
-lenMapping := length(mapping);
-remove := CreateArray(1..lenMapping,false):
-for i to lenMapping do 
-    for j from i+1 to lenMapping while mapping[i,1]=mapping[j,1] do od:
-    if j-i>1 then 
-        for k from i to j-1 do remove[k]:=true; od;
-        i := j-1;
+scnd := [op({op(scnd)})]:
+lenM := length(scnd);
+mapping := [seq([prim[i], i], i=1..Goff[NS+1])]:
+remID := []:
+for i to lenM do 
+    for j from i+1 to lenM while scnd[i,1]=scnd[j,1] do od:
+    if j-i=1 and not member(scnd[i, 1], prim_set) then 
+        mapping := append(mapping, scnd[i]):
+    else i := j-1;
     fi:
 od:
-
-remIDs  := {seq( If(remove[z], mapping[z,1],NULL), z=1..lenMapping)}:
-mapping := [seq( If(remove[z], NULL, mapping[z]),  z=1..lenMapping)]:
+mapping := sort(mapping):
+printf('# found %d unique IDs (incl primary ACs) for %d sequences in %d genomes. Building Index now...\n', 
+    length(mapping), Goff[NS+1], NS);
 
 Set(printgc=false):
 fn := getenv('DARWIN_OMADATA_PATH').'/IDmapping.drw';
 OpenWriting( fn );
-printf('IDmapping := %A:\nremIDs := %A:\n',mapping, remIDs);
+printf('IDmapping := %A:\n',mapping);
 OpenWriting(previous);
+CallSystem('gzip -f9 '.fn);
 
 ReadProgram( getenv('DARWIN_BROWSER_REPO_PATH').'/lib/Index');
 fn := getenv('DARWIN_OMADATA_PATH').'/IDIndex.db';
