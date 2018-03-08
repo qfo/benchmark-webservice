@@ -539,7 +539,12 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        sel := [seq(If(length(z)>9 and z[1..9]='pTT'.king[1..3].'Prj', parse(z[10..-1]), NULL), z=pnames)];
+    else
+        sel := [seq(i,i=1..length(projs))];
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
@@ -587,10 +592,15 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    baseParam := 'pSTD'.problem.'Prj'; 
-    lenBaseParam := length(baseParam);
-    sel := [seq(If(length(z)>lenBaseParam and z[1..lenBaseParam]=baseParam, 
-        parse(z[lenBaseParam+1..-1]), NULL), z=pnames)];
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        baseParam := 'pSTD'.problem.'Prj'; 
+        lenBaseParam := length(baseParam);
+        sel := [seq(If(length(z)>lenBaseParam and z[1..lenBaseParam]=baseParam, 
+            parse(z[lenBaseParam+1..-1]), NULL), z=pnames)];
+    else
+        sel := [seq(i,i=1..length(projs))];
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     meth := ParseStrategy(pnames,params):
@@ -649,8 +659,14 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    prefix := sprintf('p%sPhyloPrj', testset); 
-    sel := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on'); 
+
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        prefix := sprintf('p%sPhyloPrj', testset); 
+        sel := ParseAllPrefixParams( prefix, pnames, params, 'onlyIf'='on'); 
+    else
+        sel := [seq(i,i=1..length(projs))];
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
     
@@ -698,7 +714,12 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        sel := [seq(If(length(z)>6 and z[1..6]='pECPrj', parse(z[7..-1]), NULL), z=pnames)];
+    else
+        sel := [seq(i,i=1..length(projs))];
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
 
@@ -741,8 +762,14 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', 
+
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        sel := [seq(If(length(z)>6 and z[1..6]='pGOPrj', 
                    parse(z[7..-1]), NULL), z=pnames)];
+    else
+        sel := [seq(i,i=1..length(projs))];
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
     vars['PIDs'] := projs:
 
@@ -787,7 +814,12 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
     
     projs := [op( {op(GetPublicProjects(vars['ref']))} minus {GetPKeyData(PID)} )];
     projs := sort( projs, x->x['Title'] );
-    sel := [seq(If(length(z)>7 and z[1..7]='pHomPrj', parse(z[8..-1]), NULL), z=pnames)];
+    is_all_pub := parse(string(ParseParam('pAllPublic', pnames, params, 'default'=false))):
+    if not is_all_pub then
+        sel := [seq(If(length(z)>7 and z[1..7]='pHomPrj', parse(z[8..-1]), NULL), z=pnames)];
+    else
+        sel := [seq(i,i=1..length(projs))]:
+    fi:
     projs := [seq(projs[i,'PID'], i=sel), PID];
 
     meth := ParseStrategy(pnames,params):
