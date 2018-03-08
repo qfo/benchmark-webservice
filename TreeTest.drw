@@ -152,7 +152,7 @@ ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,pos
             Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
         WriteLock(lock,msg);
     od:
-    Logger( sprint('TreeTest result for %s:\n  %A\n  %A', 
+    Logger( sprintf('TreeTest result for %s:\n  %A\n  %A', 
         ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
     return( [RFstat, rawDat, IdentStat] );
 end:

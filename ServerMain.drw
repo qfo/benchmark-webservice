@@ -564,7 +564,7 @@ StartTreeTest := proc(PID:string, king:string, params:list, pnames:list )
             'treebuilder := ''%s''; '.
             'ReadProgram(''%s/TreeTest.drw''): done:" | nice -n 19 %s &',
             cdir, resFn, datdir, king, vars['ref'], projs, lock, meth, treebuilder, cdir, darwin64);
-        Logger( 'starting command: '.cmd, 'DEBUG');
+        Logger( 'starting TreeTest command: '.cmd, 'INFO');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
@@ -622,7 +622,7 @@ StartSTDTest := proc(PID:string, problem:string, params:list, pnames:list )
             'confidence := %d: treebuilder := ''%s'': '.
             'ReadProgram(''%s/SpeciesTreeDiscordanceTest.drw''): done:" | nice -n 19 %s &',
             cdir, resFn, projs, lock, meth, problem, conf_int, treebuilder, cdir, darwin64);
-        Logger( 'starting command: '.cmd, 'DEBUG');
+        Logger( 'starting STDTreeTest command: '.cmd, 'INFO');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
@@ -691,7 +691,7 @@ StartRefPhyloTest := proc(PID:string, params:list, pnames:list ;
            'testset := %A: ReadProgram(''%s/RefPhyloTest.drw''): done:" '.
            '| nice -n 19 %s &',
                cdir, resFn, projs, lock, problems, measure, meth, testset, cdir, darwin64);
-        Logger( 'starting command: '.cmd, 'DEBUG');
+        Logger( 'starting RefPhylo command: '.cmd, 'INFO');
         CallSystem( cmd );
         WriteLog('started command: '.cmd);
         vars['content'] := '<p>Computation started...</p>';
@@ -739,7 +739,7 @@ StartEcTest := proc(PID:string, params:list, pnames:list)
            'projs := %A: lock:=%A: measure:=%A: meth:=%A: '.
            'ReadProgram(''%s/EcTest.drw''): done;" | nice -n 19 %s &',
                cdir, resFn, projs, lock, measure, meth, cdir, darwin64);
-        Logger(sprintf('%a',cmd),'INFO'):
+        Logger( 'starting EcTest command: '.cmd, 'INFO');
 
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
@@ -792,7 +792,7 @@ StartGoTest := proc(PID:string, params:list, pnames:list)
                'projs := %A: lock:=%A: measure:=%A: meth := %A: '.
            'ReadProgram(''%s/GoTest.drw''): done:" | nice -n 19 %s &',
                cdir, resFn, filter, projs, lock, measure, meth, cdir, darwin64);
-        Logger(sprintf('%a',cmd),'INFO'):
+        Logger( 'starting GoTest command: '.cmd, 'INFO');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
@@ -841,7 +841,7 @@ StartHomologyTest := proc(PID:string, params:list, pnames:list)
            'projs := %A: problems := %A: measure := %A: lock:=%A: meth:=%A: '.
            'ReadProgram(''%s/HomologyTest.drw''): done:" | nice -n 19 %s &',
                cdir, resFn, projs, problems, measure, lock, meth, cdir, darwin64);
-        Logger(sprintf('%a',cmd),'INFO'):
+        Logger( 'starting HomologyTest command: '.cmd, 'INFO');
         CallSystem( cmd );
         vars['content'] := '<p>Computation started...</p>';
     fi:
