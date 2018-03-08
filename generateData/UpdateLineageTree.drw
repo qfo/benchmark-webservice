@@ -17,6 +17,7 @@ dataset := 'Eukaryota';
 #dataset := 'Bacteria';
 
 #reference := 'OMA'
+#reference := 'RefSet17';
 if not assigned(reference) then 
     warning('''reference'' is not specified. will use ''RefSet5'' as default');
     reference := 'RefSet5';

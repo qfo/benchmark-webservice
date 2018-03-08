@@ -120,7 +120,7 @@ StoreResult := proc(fn:string, FPR, TPR, PIDs, measure, problems, meth ;
     CallSystem('gzip -9f '.fn);
 end:
 
-if meth='INTERSECT' or meth='REFSET5' then
+if meth='INTERSECT' or (length(meth)>6 and meth[1..6]='REFSET') then
     iSet  := GetProjISets(prj):
     prjNrs:= [seq(i,i=1..nP)];
     curP := 1; maxP := 1;

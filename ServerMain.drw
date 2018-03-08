@@ -202,8 +202,14 @@ return(GenerateTemplate(cdir.'/templates/index.html',vars));
 end:
 
 bsShowProject := proc()
-    if nargs=1 then 
-        prjs := [GetPKeyData(args[1])];
+    if nargs=1 then
+        if args[1]='RefSet5' then
+            prjs := GetPublicProjects('RefSet5');
+        elif args[1]='RefSet17' then
+            prjs := GetPublicProjects('RefSet17');
+        else
+            prjs := [GetPKeyData(args[1])];
+        fi
     elif nargs=0 then
         prjs := GetPublicProjects('RefSet5');
     else error('unexpected parameters');

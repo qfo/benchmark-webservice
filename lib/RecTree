@@ -29,6 +29,8 @@ RTtab := table(proc(i) error('Dataset '.i.' not known') end):
 RTtab['OMA'] := LoadReconciledTrees('OMA','');
 RTtab['RefSet5'] := LoadReconciledTrees('RefSet5','');
 RTtab['RefSet5SemiAuto'] := LoadReconciledTrees('RefSet5','SemiAuto');
+RTtab['RefSet17'] := LoadReconciledTrees('RefSet17','');
+RTtab['RefSet17SemiAuto'] := LoadReconciledTrees('RefSet17','SemiAuto');
 RTtab['OMASemiAuto'] := table():
 
 

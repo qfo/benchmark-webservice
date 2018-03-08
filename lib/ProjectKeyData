@@ -59,7 +59,7 @@ AddPKeyData := proc(tit:string, fnbase:string ;
    'NSeqMap'=((NSeqMap=-1):integer),
    'NOrthMap'=((NOrthMap=-1):integer),
    'isPublic'=((isPublic=false):boolean),
-   'reference'=((reference='OMA'):{'OMA','RefSet5'}),
+   'reference'=((reference='OMA'):{'OMA','RefSet5','RefSet17'}),
    'url'=((url=''):string),
    'description'=((desc=''):string),
    'isObsolete'=((isObsolete=false):boolean),
