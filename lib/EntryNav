@@ -155,7 +155,7 @@ ENr2XRef := proc(oE:posint ; (ref='OMA'):string, 'typ'=((typ=NULL):string))
     DB := GSIDtab[ref,'IndDB'];
     ids := SearchTag( If(ref='OMA', 'ID','MAPIDS'), Entry(oE)):
     xref := TrimID(ids, typ);
-    if xref=NULL then xref := ENr2Label(oE) fi:
+    if xref=NULL then xref := ENr2Label(oE, ref) fi:
     if type(curDB,database) then DB := curDB fi:
     return( xref );
 end:

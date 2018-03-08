@@ -1,7 +1,7 @@
 UniProtAC := proc(ids)
-    for z in ids do if length(z)=6 then
-        ascii := AsciiToInt(z[1]);
-        if ascii>=65 and ascii<=90 then return(z) fi;
+    UP_REGEX := '^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$';
+    for z in ids do if length(z)=6 or length(z)=10 then
+        if length(MatchRegex(UP_REGEX, z)) > 0 then return(z) fi:
     fi od:
     return( NULL );
 end:
