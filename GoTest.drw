@@ -173,7 +173,7 @@ StoreRawData := proc(rawData_, prjs_, filter, measure, meth)
         fn := sprintf('GO/GO.%a.tsv.gz', hash_sha2([prjs[p,'PID'],filter,measure,meth]));
         OpenWriting(rawdir.fn[1..-4]);
         printf('# GO Similarities between orthologs from %s\n',prjs[p,'Title']);
-        printf('# Protein ID 1<tab>Protein ID 2<tab>EC Similarity\n');
+        printf('# Protein ID 1<tab>Protein ID 2<tab>GO Similarity\n');
         for z in rawData[p] do
             id1 := ENr2XRef(z[1], dataset);
             id2 := ENr2XRef(z[2], dataset);
