@@ -89,12 +89,27 @@
             <div class="col-md-2 col-sm-2  text-center">
                 <a href="gateway.pl?f=About">About</a>
             </div>
+            
             <div class="col-md-2  col-sm-2 text-center">
-                <a href="gateway.pl?f=ShowProject">Public Projects</a>
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                    Public Projects <span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu">
+               <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet5">QfO Reference proteomes 2011</a></li>
+               <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet17">QfO Reference proteomes 2017</a></li>
+              </ul>
             </div>
+            
             <div class="col-md-3 col-sm-3  text-center">
-                <a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">Public Results</a>
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                    Public Presults <span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu">
+               <li><a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">QfO Reference proteomes 2011</a></li>
+               <li><a href="gateway.pl?f=CheckResults&amp;p1=c6f7dc6125f3686d68e1e938">QfO Reference proteomes 2017</a></li>
+              </ul>
             </div>
+            
             <div class="col-md-3 col-sm-3  text-center">
                 <a href="gateway.pl">Submit predictions</a>
             </div>
@@ -276,7 +291,7 @@
 </script>
 <nav class="navbar navbar-default navbar-fixed-bottom">
     <div class="container">
-        <p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a
+        <p class="navbar-text"><em>&copy;2011-2018, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a
                 href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
     </div>
 </nav>

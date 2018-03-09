@@ -34,10 +34,22 @@
           <a href="gateway.pl?f=About">About</a>
         </div>
         <div class="col-md-2  col-sm-2 text-center">
-          <a href="gateway.pl?f=ShowProject">Public Projects</a>
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                Public Projects <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+           <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet5">QfO Reference proteomes 2011</a></li>
+           <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet17">QfO Reference proteomes 2017</a></li>
+          </ul>
         </div>
         <div class="col-md-3 col-sm-3  text-center">
-          <a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">Public Results</a>
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                Public Presults <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+           <li><a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">QfO Reference proteomes 2011</a></li>
+           <li><a href="gateway.pl?f=CheckResults&amp;p1=c6f7dc6125f3686d68e1e938">QfO Reference proteomes 2017</a></li>
+          </ul>
         </div>
         <div class="col-md-3 col-sm-3  text-center">
         <a href="#" onclick="$('#myModal').modal('show')">Submit predictions</a>
@@ -59,7 +71,14 @@
               <p><a href="gateway.pl?f=ShowProject">Click here</a> for a list of ortholog datasets based on the <a href="http://www.ebi.ac.uk/reference_proteomes/" target="_new">QfO reference proteomes</a>. <br> Please note that for this service we currently use the <a href="ftp://ftp.ebi.ac.uk/pub/databases/reference_proteomes/previous_releases/qfo_release-2011_04/">QfO dataset from 2011_04</a>. </p>
               <div class="row"> <!-- nav -->
                 <div class="col-md-6 col-sm-6 ">
-                  <a type="button" href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2" class="btn btn-success btn-block">Public results</a>
+                  <a class="dropdown-toggle btn btn-success btn-block" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                    Public Results <span class="caret"></span>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">QfO Reference proteomes 2011</a></li>
+                    <li><a href="gateway.pl?f=CheckResults&amp;p1=c6f7dc6125f3686d68e1e938">QfO Reference proteomes 2017</a></li>
+                  </ul>
+
                 </div>
                 <div class="col-md-6 col-sm-6 ">
                   <a type="button" href="gateway.pl?f=TestSelection&amp;pPID=4k7hS2c1UmL92vF" class="btn btn-default btn-block">Customise...</a>
@@ -249,7 +268,7 @@
 
   <nav class="navbar navbar-default navbar-fixed-bottom">
     <div class="container">
-      <p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+      <p class="navbar-text"><em>&copy;2011-2018, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
     </div>
   </nav>
 

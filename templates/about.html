@@ -15,41 +15,51 @@
 
 
 
+  <div class="container-fluid">
+    <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
 
-
-	<div class="container-fluid" id="main">
-
-		<div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1"> 
-			
-			<div class="row">  <!-- header -->
-				<div class="col-md-6  col-sm-6 "> <!-- logo -->
+      <div class="row">  <!-- header -->
+        <div class="col-md-6  col-sm-6 "> <!-- logo -->
           <a href="gateway.pl"><img alt="Brand" class="img-responsive" src="/imgs/logo.png" id="logo"></a>
-				</div>
+        </div>
 
-				<div class="col-md-6  col-sm-6 "> <!-- page title -->
-					<h1>About</h1>
-				</div>
-			</div>
-			<hr >
-			<div class="row"> <!-- nav -->
-				<div class="col-md-2 col-sm-2 text-center">
-					<a href="gateway.pl">Home</a>
-				</div>
-				<div class="col-md-2 col-sm-2  text-center">
-					<a href="gateway.pl?f=About">About</a>
-				</div>
-				<div class="col-md-2  col-sm-2 text-center">
-					<a href="gateway.pl?f=ShowProject">Public Projects</a>
-				</div>
-				<div class="col-md-3 col-sm-3  text-center">
-          <a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">Public Results</a>
-				</div>
-				<div class="col-md-3 col-sm-3  text-center">
-					<a href="gateway.pl" >Submit predictions</a>
-				</div>
-			</div> <!-- end nav -->
-			<hr >
-			<br>
+        <div class="col-md-6  col-sm-6 "> <!-- page title -->
+          <h1>About</h1>
+        </div>
+      </div>
+      <hr >
+      <div class="row"> <!-- nav -->
+        <div class="col-md-2 col-sm-2 text-center">
+          <a href="gateway.pl">Home</a>
+        </div>
+        <div class="col-md-2 col-sm-2  text-center">
+          <a href="gateway.pl?f=About">About</a>
+        </div>
+        <div class="col-md-2  col-sm-2 text-center">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                Public Projects <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+           <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet5">QfO Reference proteomes 2011</a></li>
+           <li><a href="gateway.pl?f=ShowProject&amp;p1=RefSet17">QfO Reference proteomes 2017</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 col-sm-3  text-center">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                Public Presults <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+           <li><a href="gateway.pl?f=CheckResults&amp;p1=72d29d4aebb02e0d396fcad2">QfO Reference proteomes 2011</a></li>
+           <li><a href="gateway.pl?f=CheckResults&amp;p1=c6f7dc6125f3686d68e1e938">QfO Reference proteomes 2017</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 col-sm-3  text-center">
+        <a href="#" onclick="$('#myModal').modal('show')">Submit predictions</a>
+        </div>
+      </div> <!-- end nav -->
+      <hr >
+      <br>
+
 
 
 
@@ -190,7 +200,7 @@
 
 	<nav class="navbar navbar-default navbar-fixed-bottom" >
 		<div class="container">
-			<p class="navbar-text"><em>&copy;2011-2015, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
+			<p class="navbar-text"><em>&copy;2011-2018, <a href="http://lab.dessimoz.org">Dessimoz Lab</a> and <a href="http://questfororthologs.org/">Quest for Orthologs benchmarking working group.</a></em></p>
 		</div>
 	</nav>
 </body>
