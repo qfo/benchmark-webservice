@@ -98,9 +98,11 @@ Handle2dROCFiles_INTERSECT := proc(resFn:string, resBase:string,
                 plotTab[i,'title'] := prjNames[i];
                 plotTab[i,'style'] := i;
             od:
-            pareto := GetParetoPoints(op(transpose(dats)), 'NE');
-            printf('# pareto points\n');
-            for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
+            if length(dats) > 0 then
+                pareto := GetParetoPoints(op(transpose(dats)), 'NE');
+                printf('# pareto points\n');
+                for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
+            fi:
             OpenWriting(previous);
             t['pareto_index'] := length(prjNames);
             t['plot'] := plotTab;
@@ -342,9 +344,11 @@ GenerateIntersectPlot := proc( data:list(Stat), resPlotFn, resBase ;
         plotTab[i,'title'] := data[i,'Description'];
         plotTab[i,'style'] := i;
     od:
-    pareto := GetParetoPoints(op(transpose(dats)), betterDir);
-    printf('# pareto points\n');
-    for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
+    if length(dats) > 0 then 
+        pareto := GetParetoPoints(op(transpose(dats)), betterDir);
+        printf('# pareto points\n');
+        for pnt in pareto do printf('%f\t%f\n', op(pnt)) od:
+    fi:
     OpenWriting(previous);
 
     t['pareto_index'] := length(data);
