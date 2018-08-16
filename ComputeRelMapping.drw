@@ -59,7 +59,7 @@ PairRelations := proc(rel:list)
         p1 := MapIDtoENr(z[1]);
         p2 := MapIDtoENr(z[2]);
         if p1=NULL or p2=NULL then 
-            ignored := append(ignored, [z, If(p1=NULL,NULL,z[1]), If(p2=NULL,NULL,z[2])]); 
+            ignored := append(ignored, [z, If(p1=NULL,z[1],NULL), If(p2=NULL,z[2],NULL)]); 
             next 
         fi:
 
