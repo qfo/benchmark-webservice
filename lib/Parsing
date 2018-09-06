@@ -5,7 +5,7 @@ ParseStrategy := proc(pnames:list, params:list)
     if k<=0 then error('TestStrategy not defined') fi:
 
     meth := uppercase(params[k]):
-    if not member(meth, {'PAIRWISE','INTERSECT','REFSET5', 'REFSET17'}) then
+    if not member(meth, {'PAIRWISE','INTERSECT','REFSET5', 'REFSET17', 'REFSET18'}) then
         error('TestStrategy not allowed: '.meth);
     fi:
     return(meth);

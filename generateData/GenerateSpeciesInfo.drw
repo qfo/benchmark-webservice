@@ -22,10 +22,10 @@ GenerateSpeciesInfo := proc(tax_ids)
 end:
 
 GetDataset := proc(root)
-    t := TimedCallSystem('find -H ' . root . ' -name "*.seqxml.gz"');
+    t := TimedCallSystem('find -H ' . root . ' -regex ".*[0-9]\.xml"');
     if t[1]<>0 then error('cannot load Dataset') fi:
     files := [seq(trim(z), z=SplitLines(t[2]))]:
-    re := '.*(UP[0-9]+)_([0-9]+).seqxml.*';
+    re := '.*(UP[0-9]+)_([0-9]+).xml.*';
     dataset := table():
     for file in files do 
         m := MatchRegex(re, file);

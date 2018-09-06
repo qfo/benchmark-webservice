@@ -22,6 +22,7 @@ logfile := getenv('DARWIN_LOG_PATH').'/BS_server.log';
 
 NrGenomes('RefSet5');
 NrGenomes('RefSet17');
+NrGenomes('RefSet18');
 google_analytics := ReadRawFile(cdir.'/templates/analytics.htmlc'):
 
 
@@ -207,6 +208,8 @@ bsShowProject := proc()
             prjs := GetPublicProjects('RefSet5');
         elif args[1]='RefSet17' then
             prjs := GetPublicProjects('RefSet17');
+        elif args[1]='RefSet18' then
+            prjs := GetPublicProjects('RefSet18');
         else
             prjs := [GetPKeyData(args[1])];
         fi

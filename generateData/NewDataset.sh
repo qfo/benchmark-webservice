@@ -7,7 +7,7 @@
 #   symlink 'raw' pointing to the extracted seqxml files.              #
 ########################################################################
 
-name="reference17"
+name="reference18"
 root="/pub/scratch/adriaal/refgenomes"
 
 export DARWIN_GENOMES_PATH=$root/genomes
@@ -20,7 +20,7 @@ darwin -E << EOF
 EOF
 
 #inputs=$(find -H $root/raw -name "*.seqxml.gz")
-python Converter.py --speciesinfo=$root/SpeciesInfo.txt --datadir=$root/genomes $root/raw/*/*.seqxml.gz 
+python Converter.py --speciesinfo=$root/SpeciesInfo.txt --datadir=$root/genomes $root/raw/*/*[0-9].xml 
 
 echo "genomes := []:" > $DARWIN_GENOMES_PATH/Summaries.drw
 echo "GenomeSummaries := table():" >> $DARWIN_GENOMES_PATH/Summaries.drw

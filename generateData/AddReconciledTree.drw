@@ -203,7 +203,7 @@ AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 # |_| \_\___|_| |____/ \___|\__|____/  |____/_/   \_\_/_/   \_\____/|_____| |_|  
 #                                                                                
 ##################################################################################
-SetDatasetVariables('RefSet17');
+SetDatasetVariables('RefSet18');
 if overwrite=true then
     for f in [outfile, outfile_semiauto] do 
         OpenWriting(f);
