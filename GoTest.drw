@@ -33,6 +33,7 @@ for i in allterms do GOparents[i] := GOsuperclassR(i) od:
 
 ddir := eval(symbol(lowercase(dataset).'DBpath'));
 DB := GODB := ReadDb(ddir.'ServerIndexed.db'):
+lprint('GO annotations from '.GODB['FileName']);
 
 
 # extract important all GO annotations from ServerIndexed.db
@@ -230,7 +231,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
     maxP := nP:
     for curP to nP do
         resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([prj[curP,'PID'],measure,meth]) );
+        lprint('checking '.resFnPart);
         if FileExists(resFnPart.'.gz') then
+            lprint('--> loading file');
             SimsRes[curP] := 0;
             ReadProgram(resFnPart):
             assert(type(Sims,Stat));
@@ -239,7 +242,9 @@ elif length(meth)>=6 and meth[1..6]='REFSET' then
             RawDataFnRes[curP] := RawDataFn;
             maxP := maxP - 1;
         else
+            lprint('--> computing go-sim');
             LoadGOset(intersect()):
+            printf('loaded %d go annotations\n', sum(length(z), z=GOs));
             perf := ComputePerformance(intersect(), [curP]):
             SimsRes[curP] := perf[1,1];
             RawDataFnRes[curP] := StoreRawData(perf[2,1], prj[curP], filter, measure, meth);
