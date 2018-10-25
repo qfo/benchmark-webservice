@@ -3,6 +3,7 @@
 #
 #  in: resFn, projs, lock
 Set(printgc=false):
+SetRandSeed();
 
 WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
@@ -69,26 +70,40 @@ end:
 
 
 GetSeqOfOrthologs := proc( curProt, remSp )
+    global get_orth_calls, fail_fast;
+    get_orth_calls := get_orth_calls + 1;
+
+    #printf('calls: %d; -->%d, %A\n', get_orth_calls, curProt, remSp):
     res := NULL;
     vps := ParseLongList(SearchTag('VP',Entry(curProt)));
     nextSpeciesRange := GenomeRange(remSp[1], dataset);
-    for vp in Shuffle(vps) do if member(vp,iSet) then
+    idx1 := SearchOrderedArray(nextSpeciesRange[1]-1, vps)+1;
+    idx2 := SearchOrderedArray(nextSpeciesRange[2], vps);
+    cand_vps := Shuffle(vps[idx1..idx2]);
+    if length(cand_vps)>20 then cand_vps := cand_vps[1..20] fi:
+
+    for vp in cand_vps do if fail_fast[vp]='0' and member(vp,iSet) then
         if vp>=nextSpeciesRange[1] and vp<=nextSpeciesRange[2] then
             if length(remSp)=1 then res := vp;
             else 
                 res := remember(procname( vp, remSp[2..-1]));
             fi:
-            if res<>NULL then break fi:
+            if res<>NULL then break else fail_fast[vp] := '1'; fi:
         fi:
     fi od:
     if res<>NULL then 
         res := curProt, res;
+    else
+        fail_fast[curProt] := '1';
     fi:
+    #printf(' <--%d, %A: %A\n', curProt, remSp, If(res<>NULL, res, 'n/a')):
     return( res );
 end:
 
 
 SelectNextFam := proc()
+    global fail_fast, get_orth_calls:
+    t0 := time();
     maxTry := 10;
     for x to maxTry do 
         t := ShuffleTreeOrder(sptree):
@@ -108,14 +123,18 @@ SelectNextFam := proc()
         warning('no start protein in '.specList[1].' found in iSet');
         return(NULL) 
     fi:
+    t1 := time();
+    fail_fast := CreateString(SeqDB[TotEntries], '0'):
+    get_orth_calls := 0;
     orths := GetSeqOfOrthologs(start, specList[2..-1] );
     if orths<>NULL then res := [accTree, [orths]];
     else res := NULL fi:
+    #print('%d calls to get_orthologs. sampling completed: %A\n', get_orth_calls, nxt<>NULL);
     return( res );
 end:
 
 FindCases := proc(iSet, prjNrs:list)
-    global DB:
+    global DB;
     nP := length(prjNrs);
     cases := CreateArray(1..nP,[]):
     NrOrthologs := CreateArray(1..nP):
@@ -128,8 +147,23 @@ FindCases := proc(iSet, prjNrs:list)
         
         msg := 'sampling possible trees for '.prj[pNr,'Title'];
         WriteLock(lock, msg);
-        cand := {seq(SelectNextFam(),NR_TRIALS)};
-        cand := [op(cand)]:
+        cand := []: sampling_times := Stat('Stats of sampling times for '.prj[pNr,'Title']);
+        tLast := tBegin := time();
+        for trial to NR_TRIALS do
+            tCur := time();
+            nxt := SelectNextFam();
+            if nxt <> NULL then cand := append(cand, nxt) fi:
+            sampling_times + (time() - tCur);
+            if time()-tLast > 30 then
+                print(sampling_times);
+                WriteLock(lock, sprintf('%s\n %d of %d samplings done; %d samplings are complete.\n'.
+                                        '  sampling for %.1fmin (%.3fsec/sampling)\n\n', 
+                                        msg, trial, NR_TRIALS, length({op(cand)}), (time()-tBegin)/60,
+                                        (time()-tBegin)/trial));
+                tLast := time();
+            fi:
+        od:
+        cand := [op({op(cand)})]:
         cases[i2pNr] := cand;
         NrOrthologs[i2pNr] := CntOrthologs( protSet ):
     od:
