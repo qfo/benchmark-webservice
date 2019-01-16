@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import csv
 import math
 
 try:
@@ -130,6 +131,7 @@ class PairwiseOrthologRelationExtractor(object):
                     .format(len(rels), node.get('id', 'n/a'), len(nodes)))
         return rels
 
+
 def parse_orthoxml(fh, processor):
     nsmap = {}
     og_level = 0
@@ -154,16 +156,33 @@ def parse_orthoxml(fh, processor):
                 elem.clear()
 
 
+def parse_tsv(fh, valid_id_map):
+    dialect = csv.Sniffer().sniff(fh.read(2048))
+    fh.seek(0)
+    csv_reader = csv.reader(fh, dialect)
+    for line_nr, row in enumerate(csv_reader):
+        if len(row) < 2:
+            logger.warning("skipping relation on line {} ({})"
+                           .format(line_nr, row))
+            continue
+        try:
+            yield valid_id_map[row[0]], valid_id_map[row[1]]
+        except KeyError:
+            unkn = list(itertools.filterfalse(lambda x: x in valid_id_map, row[:2]))
+            logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
+
+
 def identify_input_type_and_parse(fpath, valid_id_mapping):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
-        fh.seek(0)
-        if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
+
+    if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
+        with auto_open(fpath, 'rb') as fh:
             processor = PairwiseOrthologRelationExtractor(valid_id_mapping)
             yield from parse_orthoxml(fh, processor)
-        else:
-            #parse_tsv(fh)
-            pass
+    else:
+        with auto_open(fpath, 'rt') as fh:
+            yield from parse_tsv(fh, valid_id_map)
 
 
 if __name__ == "__main__":
