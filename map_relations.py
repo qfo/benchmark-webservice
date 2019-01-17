@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+import collections
 import csv
+import json
 import math
+import sys
+from bisect import bisect_right
 
 try:
     import lxml.etree as etree
@@ -82,19 +86,29 @@ def load_IDIndex(path):
             m = pat.match(line)
             if m is not None:
                 lookup[m.group('key')] = int(m.group('val'))
-    logger.info("loaded valid_id_map with {} xrefs".format(len(lookup)))
+    logger.info("loaded lookup table with {} valid crossreferences for {} distinct proteins"
+                .format(len(lookup), len(frozenset(lookup.values()))))
     return lookup
 
 
+def load_mapping(path):
+    with auto_open(path, 'rb') as fh:
+        data = json.loads(fh.read().decode('utf-8'))
+    return data
+
+
 class PairwiseOrthologRelationExtractor(object):
-    def __init__(self, valid_id_map):
-        self.valid_id_map = valid_id_map
+    def __init__(self, mapping_data):
+        self.valid_id_map = mapping_data['mapping']
+        self.internal_genome_offs = mapping_data['Goff']
+        self.species_order = mapping_data['species']
         self.genome_cnt = 0
         self.generef_to_internal_id = {}
         self.internal_to_genome_nr = {}
 
     def add_genome_genes(self, genome_node):
         self.genome_cnt += 1
+        internal_ids = []
         for gene in genome_node.findall('.//{http://orthoXML.org/2011/}gene'):
             gene_id = gene.get('id')
             gene_prot_id = gene.get('protId')
@@ -102,16 +116,40 @@ class PairwiseOrthologRelationExtractor(object):
                 internal_id = self.valid_id_map[gene_prot_id]
                 self.generef_to_internal_id[int(gene_id)] = internal_id
                 self.internal_to_genome_nr[internal_id] = self.genome_cnt
+                internal_ids.append(internal_id)
             except KeyError:
-                logger.warning("protId {} of gene(id={}) is not known in this dataset"
-                               .format(gene_prot_id, gene_id))
+                logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
+                               .format(gene_prot_id, gene_id, genome_node.get('name')))
+        min_id = min(internal_ids) - 1
+        max_id = max(internal_ids) - 1
+        k_min = bisect_right(self.internal_genome_offs, min_id)
+        k_max = bisect_right(self.internal_genome_offs, max_id)
+        if k_min != k_max:
+            cnts = collections.Counter(
+                (self.species_order[bisect_right(self.internal_genome_offs, int_id-1) - 1]
+                for int_id in internal_ids)).most_common()
+            logger.error("Not all crossreferences used in species '{}' map to the same species: {}"
+                         .format(genome_node.get('name'), cnts))
+            return False
+        return True
+
+    def check_unique_id_mapping(self):
+        mapping_ok = True
+        c = collections.Counter(self.generef_to_internal_id.values())
+        for internal_id, cnts in filter(lambda x: x[1]>1, c.most_common()):
+            gene_refs = list(filter(lambda x: x[1]==internal_id, self.generef_to_internal_id.items()))
+            logger.error("{} different geneRefs {} map to the same reference protein"
+                         .format(cnts, gene_refs))
+            mapping_ok = False
+        return mapping_ok
 
     def extract_pairwise_relations(self, node):
         rels = []
+
         def _rec_extract(node):
             if node.tag == "{http://orthoXML.org/2011/}geneRef":
                 try:
-                    return set([self.generef_to_internal_id[int(node.get('id'))]])
+                    return {self.generef_to_internal_id[int(node.get('id'))]}
                 except KeyError:
                     logger.info("skipping relations involving gene(id={})".format(node.get('id')))
                     return set([])
@@ -139,12 +177,16 @@ def parse_orthoxml(fh, processor):
     def fixtag(ns, tag):
         return "{" + nsmap[ns] + "}" + tag
 
+    logger.info("start mapping of orthoxml formatted input file")
     for event, elem in etree.iterparse(fh, events=('start-ns', 'start', 'end')):
         if event == 'start-ns':
             ns, url = elem
             nsmap[ns] = url
-        if event == 'start' and elem.tag == fixtag('', 'orthologGroup'):
+        elif event == 'start' and elem.tag == fixtag('', 'orthologGroup'):
             og_level += 1
+        elif event == 'start' and elem.tag == fixtag('', 'groups'):
+            if not processor.check_unique_id_mapping():
+                sys.exit(2)
         if event == 'end':
             if elem.tag == fixtag('', 'orthologGroup'):
                 og_level -= 1
@@ -152,11 +194,15 @@ def parse_orthoxml(fh, processor):
                     yield from processor.extract_pairwise_relations(elem)
                     elem.clear()
             elif elem.tag == fixtag('', 'species'):
-                processor.add_genome_genes(elem)
+                if not processor.add_genome_genes(elem):
+                    sys.exit(2)
                 elem.clear()
 
 
-def parse_tsv(fh, valid_id_map):
+def parse_tsv(fh, mapping_data):
+    logger.info("start mapping of tsv formatted input data")
+    valid_id_map = mapping_data['mapping']
+    goff = mapping_data['Goff']
     dialect = csv.Sniffer().sniff(fh.read(2048))
     fh.seek(0)
     csv_reader = csv.reader(fh, dialect)
@@ -166,39 +212,46 @@ def parse_tsv(fh, valid_id_map):
                            .format(line_nr, row))
             continue
         try:
-            yield valid_id_map[row[0]], valid_id_map[row[1]]
+            id1, id2 = (valid_id_map[z] for z in row[:2])
+            if bisect_right(goff, id1 - 1) == bisect_right(goff, id2 - 1):
+                logger.warning("skipping dubious orthology relation {} within same gnome"
+                               .format(row))
+                continue
+            yield id1, id2
         except KeyError:
             unkn = list(itertools.filterfalse(lambda x: x in valid_id_map, row[:2]))
             logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
 
 
-def identify_input_type_and_parse(fpath, valid_id_mapping):
+def identify_input_type_and_parse(fpath, mapping_data):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
 
     if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
         with auto_open(fpath, 'rb') as fh:
-            processor = PairwiseOrthologRelationExtractor(valid_id_mapping)
+            processor = PairwiseOrthologRelationExtractor(mapping_data)
             yield from parse_orthoxml(fh, processor)
     else:
         with auto_open(fpath, 'rt') as fh:
-            yield from parse_tsv(fh, valid_id_map)
+            yield from parse_tsv(fh, mapping_data)
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Extract Pairwise relations from uploaded data")
-    parser.add_argument('IDIndex', help="Path to IDIndex of proper QfO dataset")
+    parser.add_argument('mapping', help="Path to mapping.json of proper QfO dataset")
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('--out', help="Path to output file")
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)-15s %(levelname)-7s: %(message)s")
 
     conf = parser.parse_args()
 
-    valid_id_map = load_IDIndex(conf.IDIndex)
-    predictions = [[] for _ in range(max(valid_id_map.values())+1)]
+    #valid_id_map = load_IDIndex(conf.IDIndex)
+    mapping_data = load_mapping(conf.mapping)
+    predictions = [[] for _ in range(mapping_data['Goff'][-1] + 1)]
     tot_pred = 0
-    for x, y in identify_input_type_and_parse(conf.input_rels, valid_id_map):
+    for x, y in identify_input_type_and_parse(conf.input_rels, mapping_data):
         predictions[x].append(y)
         predictions[y].append(x)
         tot_pred += 1
@@ -207,3 +260,5 @@ if __name__ == "__main__":
             fh.write("<E><OE>{}</OE><VP>[{}]</VP><SEQ>{}</SEQ></E>\n"
                      .format(i, ",".join([str(z) for z in sorted(predictions[i])]),
                              encode_nr_as_seq(i)))
+    logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
+                .format(tot_pred))
