@@ -265,8 +265,7 @@ sub process_datafiles{
     } 
 
     print DBGLOG "storing uploaded file with fnBase $fnBase in $fnProj\n" if $debug;
-    my $nrProt=0; my $nrOrth=0;
-    my $prot2spec = 0;
+    my $nrProt=1; my $nrOrth=1;
     my $reference = $req->param("reference");
 
     foreach my $upFile ( qw(rels seqs) ){

@@ -242,10 +242,14 @@ if __name__ == "__main__":
     parser.add_argument('mapping', help="Path to mapping.json of proper QfO dataset")
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('--out', help="Path to output file")
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)-15s %(levelname)-7s: %(message)s")
-
+    parser.add_argument('--log', help="Path to log file. Defaults to stderr")
     conf = parser.parse_args()
+
+    log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
+    if conf.log is not None:
+        log_conf['filename'] = conf.log
+    logging.basicConfig(**log_conf)
+
 
     #valid_id_map = load_IDIndex(conf.IDIndex)
     mapping_data = load_mapping(conf.mapping)
