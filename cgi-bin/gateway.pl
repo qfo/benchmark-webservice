@@ -7,7 +7,6 @@ use CGI::Carp qw/carpout fatalsToBrowser set_message/;
 use File::stat;
 use File::Basename;
 use File::Copy;
-use Time::localtime;
 use IO::Zlib;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
@@ -72,8 +71,8 @@ $cook =~ s/\n//sg;
 my $f = undef;
 my @p = ();
 my @a = ();
-my $cache = undef;
-my $session = undef;
+#my $cache = undef;
+#my $session = undef;
 
 # check whether server load is too high
 my $sysload = (getSysLoad())[0];
@@ -91,83 +90,15 @@ else {
     if ($f =~/[^A-Za-z0-9_]/) { die "Malformed function request"; }
     
     if ($f eq "UploadData") {
-        if ($session=param('session')) {
-            # we have a returning user who is waiting for session data
-            $cache = getCacheHandle();
-            my $data = $cache->get($session);
-            unless($data and ref $data eq "ARRAY"){
-                open(ERRLOG,">>$error_log");
-                print ERRLOG "session data invalid: $session\n";
-                close(ERRLOG);
-                delete_all();
-                print header(-status=>500);
-                print h1("Invalid session number");
-                print p('Sorry, you will need to start over: <a href="'
-                    . self_url() . '">home</a>');
-                #print redirect(self_url());
-                exit 0;
-            }
-            if ($data->[0] == 0){
-                # still computing
-                my $msg=$data->[1];
-                show_waiting( $msg );
-                print DBGLOG "[checker] not finished: ".$data->[0]."\n";
-                exit 0;
-            }
-            elsif ($data->[0] == 1){
-                @p = @{$data->[1][0]};
-                @a = @{$data->[1][1]};
-                print DBGLOG "[pickup] data loaded: [@p]  [@a]\n" if $debug;
-            } 
-            else {
-                # error happend in conversion
-                print header(-status=>500);
-                print $data->[1];
-                print end_html;
-                open(ERRLOG, ">>$error_log"); print ERRLOG $data->[0].":".$data->[1]."\n"; close(ERRLOG);
-                exit 0;
-            }
-        } 
-        else {
-            if ($req->param("reference") eq "OMA"){
-                print header(-status=>404);
-                print h1("Reference Dataset \"OMA\" is no longer supported");
-                print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
-                exit 0;
-            }
-            print DBLOG "upload data" if $debug;
-            $session = getSessionId();
-            $cache = getCacheHandle();
-            $cache->set($session, [0,""]);
-            print DBGLOG "cache set" if $debug;
-
-            if (my $pid = fork) {
-                # parent process
-                delete_all();
-                param('session', $session);
-                param('f','UploadData');
-                print DBGLOG "[parrent] session is $session\n" if $debug;
-
-                print redirect( self_url() );
-                exit 0;
-            } 
-            elsif (defined $pid){
-                # chlild process
-                close STDOUT; # allows parent to go on
-                open STDOUT, '>>', "$upload_log";
-
-                print DBGLOG "[child] session is $session\n" if $debug;
-                process_datafiles();
-                print DBGLOG "[child] finished conversion of datafile" if $debug;
-                close STDOUT;
-                exit 0;
-            } 
-            else { die "cannot fork: $!";
-            }
+        if ($req->param("reference") eq "OMA"){
+            print header(-status=>404);
+            print h1("Reference Dataset \"OMA\" is no longer supported");
+            print p('We do no longer support the reference dataset \"OMA\" anymore. Please use the QfO reference dataset instead. <a href="/">home</a>');
+            exit 0;
         }
+        print DBLOG "upload data" if $debug;
+        process_datafiles();
     }
- 
-
    
     if( $debug > 0 ){
         my @pa = $req->param();
@@ -299,166 +230,6 @@ close(DBGLOG) if $debug;
 unlink($file);
 unlink($file.'.alive');
 
-
-sub SeqFasta2Drw{
-    my ($fh, $fnSeq, $fnSps, $p2s) = @_;
-    
-    my %sps = ();
-    my $AA = "ACDEFGHIKLMNPQRSTVWXY";
-    open(F,">$fnSeq") or die($!);
-
-    my $cnt=0; my $err=0;
-    while( <$fh> ){
-        chomp;
-        if (/^>(\w[\w\.-_]*)(.*)/) {
-             my $spc = undef;
-             my $id = $1; my $headRest = $2;
-             
-             if ($p2s != 0 and defined $p2s->{$id}){ $spc=$p2s->{$id}; }
-             elsif ($headRest =~ /taxid:(\d+)/i) { $spc=$1;}
-             elsif ($headRest =~ /\[(.+)\]/) { $spc=$1; }
-             elsif ($id =~ /_([A-Z][A-Z0-9]{2,4})/) {$spc=$1; }
-             elsif ($id =~ /^([A-Z][A-Z0-9]{4})\d+/){$spc=$1; }
-             elsif ($id =~ /^(ENS\w*)[G|P|T]\d+/) {$spc=$1;}
-             elsif ($headRest =~ /(ENS\w*)[G|P|T]\d+/) {$spc=$1;}
-             else { $err++; };
-
-             $sps{$spc}=1;
-             print F "']:\n" if ($cnt>0);
-             print F "Protein := ['$id','$spc','";
-             $cnt++;
-        }
-        elsif (/^;/) {} # ignore comments 
-        else { 
-            uc;           # uppercase letters
-            s/\*$//;      # remove stop-codon symbol
-            s/[^$AA]/X/g; # replace any non-amino by X
-            print F;
-        }
-    }
-    print F "']:\n";
-    close(F);
-    
-    open(F, ">$fnSps") or die($!);
-    print F "SPS := [\n";
-    for my $k (keys( %sps )) { print F "'$k',\n"; }
-    print F "NULL]:\n";
-    close(F);
-
-    return($cnt);
-}
-
-
-
-
-sub SeqXML2Drw {
-    my ($fh, $fnSeq, $fnSps) = @_;
-    
-    my ($seqFh, $spsFh);
-    open( $seqFh, ">$fnSeq");
-    open( $spsFh, ">$fnSps");
-    my $handler = SeqXML->new($seqFh, $spsFh);
-    my $parser = XML::Parser::Lite->new(Handler => $handler);
-    $parser->parse($fh);
-    close( $seqFh );
-    close( $spsFh );
-    return( $handler->get_nr_of_sequences());
-
-}
-
-sub RelXML2Drw {
-    my ($fh, $fn) = @_;
-    
-    my $relFh;
-    $cache->set($session,[0,"processing orthoXML file. This may take a while, e.g. a 45Mb file requires roughly 20min to be processed"]);
-    open( $relFh, ">$fn") or die("cannot open $fn for writing: $!");
-    my $handler = OrthoXML->new($relFh);
-    my $parser = XML::SAX::ParserFactory->parser(Handler => $handler);
-    print "[$session] parser initialized, start parsing...\n";
-    $parser->parse_file($fh) or die("can't parse: $!");
-    print "[$session] ...finished parsing\n";
-    close( $relFh );
-    return( $handler->get_nr_of_relations());
-}
-
-sub RelText2Drw {
-    my ($fh, $fn) = @_;
-    
-    my $cnt = 0;
-    open(F,">$fn") or die($!);
-    print F "PairRelations([\n";
-    while( <$fh> ){
-        chomp;
-    if ( /([\w.-]+)\s+([\w.-]+)/ ){
-        print F "['$1','$2'],\n";
-        $cnt++;
-        if ($cnt % 50000 == 0){ print F "NULL]):\nPairRelations([\n";}
-        }
-    }
-    print F "NULL]):\n";
-    close(F);
-    return($cnt);
-}
-
-sub RelCOG2Drw {
-    my ($fh, $fn) = @_;
-
-    my $cnts = 0; 
-    my $state = 2;  #1: appending; 2: Ended
-    my %p2s = {};
-    my ($spec, $rowl);
-
-    open(F, ">$fn");
-    while( <$fh> ){
-        chomp;
-        next if ($_ eq '');
-
-        # cog title
-        if (/^\[(\w{1,6})\] (\w+) / and $state == 2){
-            $state = 1;
-            $rowl = 0;
-            print F "GroupRelations([\n";
-        }
-        # species entry
-        elsif (/^ +(\w{3,5}): +(.+)/ and $state == 1){
-            $spec = $1;
-            foreach my $l ( split(/\s+/, $2) ){
-                $p2s{$l} = $spec;
-                print F "'$l',";
-                print F "\n" if ( (++$rowl % 10)==0); 
-            }
-        }
-        # delimiter
-        elsif (/\_{5}/ and $state==1){
-            print F "NULL]);\n";
-            $state = 2;
-            $cnts += ($rowl*($rowl-1)/2);
-        }
-        # multiline species
-        elsif( /^\s{7,}(.+)/ ){
-            foreach my $l (split(/\s+/, $1)){
-                $p2s{$l} = $spec;
-                print F "'$l',";
-                print F "\n" if ( (++$rowl % 10)==0); 
-            }
-        }
-    }
-    close(F);
-    return( ($cnts, \%p2s) );
-}
-
-sub show_waiting {
-    my @content = @_;
-    print header;
-    print start_html(-title=>"Processing data",
-                     -head=>["<meta http-equiv=refresh content=10>"]);
-    print h1("Processing data");
-    print escapeHTML(@content[0]);
-    print p(i("... continuing ..."));
-    print end_html;
-
-}
-
 sub process_datafiles{
     # store uploaded data
     my $methName = $req->param("methName");
@@ -467,7 +238,7 @@ sub process_datafiles{
     my $fnBase = $req->param("methName");
     $fnBase =~ tr/ /_/;
     $fnBase =~ s/[^A-Za-z0-9_.-]//g;
-    my $timestamp = ""; #strftime("%Y%m%d-%H%M", localtime());
+    my $timestamp = strftime("%Y%m%d-%H%M", localtime());
     print DBGLOG "[worker] $fnBase - $timestamp\n" if $debug;
     my $fnRoot = $ENV{DARWIN_ORTHOLOG_BENCHMARKDATA_PATH};
     my $fnProj = $fnRoot . "/projects";
@@ -500,87 +271,48 @@ sub process_datafiles{
     my $reference = $req->param("reference");
 
     foreach my $upFile ( qw(rels seqs) ){
-        next if ($upFile eq "seqs" && $reference ne "OMA");
+        next if ($upFile eq "seqs"); 
 
         if (!$req->param($upFile)) {
-           my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\n";
+           my $msg = "Error (gateway.pl): A problem during the upload of your $upFile occured.\nMost likely it was too big.";
            open(ERRLOG, ">>$error_log"); print ERRLOG $msg; close(ERRLOG);
-           $cache->set($session, [-1, $msg] );
+           print header(-status=>500);
+           print $msg;
+           print end_html;
            exit;
         }
-        
-        $cache->set($session,[0,"saving ".$upFile." file"]);
+
         my $fn = "$fnProj/$fnBase.$upFile";
         my ($fileName,$path,$suffix) = fileparse($req->param($upFile),qr/\.(gz|bz2)/);
         my $fh = $req->upload($upFile);
         if (!$fh && cgi_error) {
-            $cache->set($session, [-1, "CGI error: ".&cgi_error]);
+            die "CGI error: ".&cgi_error ;
             exit 0;
         }
-        print "[$session] upload of ".$upFile." finished\n";
+        print DBGLOG "[$session] upload of ".$upFile." finished\n" if $debug;
         $fh = $fh->handle;
         
-        open( my $decmpFh,  ">$fn.raw");
-        if ($suffix eq ".gz"){
-            gunzip( $fh => $decmpFh) or die "gunzip failed: $GunzipError\n";
-            print "[$session] gz decompression finished\n";
-        } elsif ($suffix eq ".bz2"){
-            bunzip2( $fh => $decmpFh) or die "bunzip2 failed: $Bunzip2Error\n";
-            print "[$session] gz decompression finished\n";
-        } elsif ($suffix eq "") {
-            while (<$fh>) { print $decmpFh $_;}
+        open( my $upFh,  ">$fn.raw$suffix" );
+        binmode $upFh;
+        while (<$fh>){ print $upFh $_; }
+        close($upFh);
+
+        if ($suffix eq ""){
+            gzip "$fn.raw" => "$fn.raw.gz" or die "gzip failed: $GzipError\n";
+            $suffix = ".gz"
         }
-        close( $decmpFh );
-        close( $fh );
-        $fh = new IO::File("$fn.raw", "r");
-        print "[$session] fh reset\n";
         
-        if( $upFile eq "seqs"){
-           if ($req->param("seqType") eq "fasta"){ $nrProt = SeqFasta2Drw($fh, $fn, "$fnProj/$fnBase.sps",$prot2spec);
-           } elsif ($req->param("seqType") eq "xml"){ $nrProt = SeqXML2Drw($fh, $fn, "$fnProj/$fnBase.sps");
-           } else {die("unknown seqType: ".$req->param("seqType"));}
-        }
-        else {
-           if ($req->param("relType") eq "txt"){ $nrOrth = RelText2Drw($fh,$fn);
-           } elsif ($req->param("relType") eq "xml"){ $nrOrth = RelXML2Drw($fh, $fn);
-           } elsif ($req->param("relType") eq "cog"){ 
-               ($nrOrth, $prot2spec) = RelCOG2Drw($fh, $fn);
-           } else {die("unknown relType: ".$req->param("relType"));}
-        }
         print DBGLOG "successfully uploaded $upFile into $fnBase.$upFile\n" if $debug;
-        print "[$session] successfully uploaded $upFile into $fnBase.$upFile\n";
-        my $status = gzip "$fn.raw" => "$fn.raw.gz" or die "gzip failed: $GzipError\n";
-        unlink( "$fn.raw" );
-        if ($upFile eq "rels") {
-            my $lnkFn = "$fnRawLnk/$fnBase.$upFile.raw.gz";
-            $status = eval{ symlink( "$fn.raw.gz", "$lnkFn" ); 1 };
-            if (not $status){
-               copy( "$fn.raw.gz", "$lnkFn") or die "symlinking and copying failed for $fn.raw.gz to $lnkFn: $!\n";
-            }
+        my $lnkFn = "$fnRawLnk/$fnBase.$upFile.raw.gz";
+        my $status = eval{ symlink( "$fn.raw$suffix", "$lnkFn" ); 1 };
+        if (not $status){
+            copy( "$fn.raw$suffix", "$lnkFn") or die "symlinking and copying failed for $fn.raw$suffix to $lnkFn: $!\n";
         }
     }
     push(@p, "'$fnProj/$fnBase'", "'".$methName."'", $nrProt, $nrOrth, "'".$reference."'", $vis, "'".$methDesc."'","'".$methURL."'", "'".$email."'");
     push(@a, "'fnBase'", "'methName'", "'nrProt'", "'nrOrth'", "'reference'","'isPublic'","'methDesc'","'methURL'","'email'");
-    $cache->set($session,[1,[\@p,\@a]]);
-} 
-
-sub getCacheHandle {
-  require Cache::FileCache;
-
-  Cache::FileCache->new
-      ({
-        namespace => 'BenchmarkService',
-        username => 'nobody',
-        default_expires_in => '48 hours',
-        auto_purge_interval => '240 hours',
-       });
 }
 
-sub getSessionId {
-    require Digest::MD5;
-
-    Digest::MD5::md5_hex(Digest::MD5::md5_hex(time().{}.rand().$$));
-}
 
 sub getSysLoad {
     my $fh = new IO::File('/proc/loadavg', 'r');
