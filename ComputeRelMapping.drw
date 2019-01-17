@@ -15,7 +15,7 @@ LogMessage('*** Starting mapping of uploaded relations ***');
 pKey := GetPKeyData(PID);
 referenceDatSet := pKey['ref'];
 mapping_data_filename := eval(symbol(lowercase(referenceDatSet).'DBpath')) . 'mapping.json.gz';
-converter_script := cdir . '/map_relations.py'
+converter_script := cdir . '/map_relations.py';
 rels_filename := trim(TimedCallSystem('ls -t '.relsinfn.'* | head -n 1')[2]);
 cmd := ['python3', converter_script, '--log', logFn, '--out', resDBfn, mapping_data_filename, rels_filename];
 cmd := ConcatStrings(cmd, ' ');

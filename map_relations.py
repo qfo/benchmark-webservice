@@ -5,7 +5,7 @@ import json
 import math
 import sys
 from bisect import bisect_right
-
+from time import time
 try:
     import lxml.etree as etree
 except ImportError:
@@ -105,6 +105,7 @@ class PairwiseOrthologRelationExtractor(object):
         self.genome_cnt = 0
         self.generef_to_internal_id = {}
         self.internal_to_genome_nr = {}
+        self.processed_stats = {'last': time(), 'processed_toplevel': 0, 'relations': 0}
 
     def add_genome_genes(self, genome_node):
         self.genome_cnt += 1
@@ -165,8 +166,15 @@ class PairwiseOrthologRelationExtractor(object):
             else:
                 return set([])
         nodes = _rec_extract(node)
-        logger.info("extracting {} pairwise orthologous relations from toplevel group {} with {} valid genes"
-                    .format(len(rels), node.get('id', 'n/a'), len(nodes)))
+        logger.debug("extracting {} pairwise orthologous relations from toplevel group {} with {} valid genes"
+                     .format(len(rels), node.get('id', 'n/a'), len(nodes)))
+        self.processed_stats['processed_toplevel'] += 1
+        self.processed_stats['relations'] += len(rels)
+        if time() - self.processed_stats['last'] > 20:
+            logger.info("processed {} toplevel orthologGroups with {} induced pairwise relations"
+                        .format(self.processed_stats['processed_toplevel'],
+                                self.processed_stats['relations']))
+            self.processed_stats['last'] = time()
         return rels
 
 
@@ -243,11 +251,14 @@ if __name__ == "__main__":
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('--out', help="Path to output file")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
+    parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
     conf = parser.parse_args()
 
     log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
     if conf.log is not None:
         log_conf['filename'] = conf.log
+    if conf.debug:
+        log_conf['level'] = logging.DEBUG
     logging.basicConfig(**log_conf)
 
 
