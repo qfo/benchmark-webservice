@@ -72,7 +72,6 @@ my $f = undef;
 my @p = ();
 my @a = ();
 #my $cache = undef;
-#my $session = undef;
 
 # check whether server load is too high
 my $sysload = (getSysLoad())[0];
@@ -289,7 +288,7 @@ sub process_datafiles{
             die "CGI error: ".&cgi_error ;
             exit 0;
         }
-        print DBGLOG "[$session] upload of ".$upFile." finished\n" if $debug;
+        print DBGLOG "upload of ".$upFile." finished\n" if $debug;
         $fh = $fh->handle;
         
         open( my $upFh,  ">$fn.raw$suffix" );
