@@ -10,216 +10,46 @@ LogMessage := proc(msg)
     OpenAppending(previous);
 end:
 
-GenerateProteinMapping := proc( seqMapFn:string, selOrg:list )
-    global MappingComb;
-    MappingComb := 0;
-    ReadProgram(seqMapFn):
-    if MappingComb=0 then error('could not read sequence mapping file') fi:
+CallSystem('rm -f '.logFn);
+LogMessage('*** Starting mapping of uploaded relations ***');
+pKey := GetPKeyData(PID);
+referenceDatSet := pKey['ref'];
+mapping_data_filename := eval(symbol(lowercase(referenceDatSet).'DBpath')) . 'mapping.json.gz';
+converter_script := cdir . '/map_relations.py'
+rels_filename := trim(TimedCallSystem('ls -t '.relsinfn.'* | head -n 1')[2]);
+cmd := ['python3', converter_script, '--log', logFn, '--out', resDBfn, mapping_data_filename, rels_filename];
+cmd := ConcatStrings(cmd, ' ');
+CallSystem(cmd);
 
-    mapping := []:
-    for pg to length(selOrg) do if selOrg[pg]>0 then
-        mapping := append(mapping, op(MappingComb[pg,selOrg[pg]]));
-    fi od:
-    mapping := sort(mapping);
-    pset := {seq(z[2],z=mapping)};
-    plist:= [op(pset)];
-    mapping := transpose( [seq([z[1],z[2],SearchOrderedArray(z[2],plist)], 
-                           z=mapping)]);
-    return(mapping, pset);
-end:
+WriteLock(lock, 'Storing final project data');
+LogMessage('\n*** Storing data and update project summary information ***');
+ReadDb(resDBfn):
 
-UpdateRemainingTime := proc()
-    remTime := time()/relDone * (pKey['NOrthSub']-relDone);
-    unit := 'sec';
-    if remTime>120 then remTime := remTime/60; unit:='min'; fi:
-    WriteLock(lock, sprintf(
-        '%d/%d (%.1f%%) relations/groups processed. Estimated remaining time:%.0f%s\n',
-	 relDone, pKey['NOrthSub'], 100*relDone/pKey['NOrthSub'], remTime, unit));
-end:
-
-MapIDtoENr := proc(id:string)
-    i := SearchOrderedArray(id, mapping[1]);
-    if i<=0 or i>length(mapping[1]) or mapping[1,i]<>id then
-        return(NULL);
-    else return(mapping[-1,i]) fi: # return the last column value, i.e. the project eNr
-end:
-
-BackMapENrToID := proc(hcl, e1)
-    possible_ids := {seq(mapping[1,z], z=SearchAllArray(e1, mapping[-1]))};
-    used_ids := intersect(possible_ids, indets(hcl, string));
-    return(ConcatStrings([op(used_ids)], '/'));
-end:
-
-
-# callback function pairwise data
-PairRelations := proc(rel:list)
-    global VPs, relDone, t0, relMapped;
-    ignored := []:
-    for z in rel do
-        p1 := MapIDtoENr(z[1]);
-        p2 := MapIDtoENr(z[2]);
-        if p1=NULL or p2=NULL then 
-            ignored := append(ignored, [z, If(p1=NULL,z[1],NULL), If(p2=NULL,z[2],NULL)]); 
-            next 
+relMapped := NM := 0; lst_gNr := -1; covered_genomes := []:
+for i to DB[TotEntries] do 
+    nr_vps := length(parse(SearchTag('VP', Entry(i)))):
+    if nr_vps > 0 then
+        NM := NM + 1;
+        relMapped := relMapped + nr_vps;
+        gNr := GenomeNrFromENr(i, referenceDataSet);
+        if gNr<>lst_gNr then 
+            lst_gNr := gNr; 
+            covered_genomes := append(covered_genomes, GenomeCodeFromENr(i));
         fi:
-
-        VPs[p1] := append(VPs[p1], p2); 
-        VPs[p2] := append(VPs[p2], p1);
-	    relMapped := relMapped+1;
-    od:
-    relDone := relDone + length(rel);
-    if length(ignored)>0 then
-        msg := ConcatStrings([seq(sprintf('relation %a ignored: %a invalid', x[1], 
-                                          If(length(x)<2, 'both ids', x[2])), 
-                                  x=ignored)], '\n');
-        LogMessage(msg);
     fi:
-    if not assigned(t0) or time()-t0>5 then 
-        UpdateRemainingTime(); t0 := time(); 
-    fi:
-end:
-
-ExtractInducedPairsR := proc(hcl; (lev=0):integer)
-    global logbuffer;
-    if not member(op(0,hcl), {OG,PG}) then 
-        error('unexpeced argument: '.op(0,hcl)) fi:
-
-    indOrthologs := indParalogs := membProt := [];
-    for z in hcl do 
-        if type(z,string) then 
-            # this is a single protein. no recursion necessay.
-            eNr := MapIDtoENr(z);
-            if eNr<>NULL then membProt := append(membProt, {eNr}) 
-            else logbuffer := append(logbuffer, z.' not mapped') fi:
-        elif type(z, structure) and member(op(0,z),{OG,PG}) then 
-            child := procname(z, lev+1);
-            indOrthologs := append(indOrthologs, op(child[1]));
-            indParalogs := append(indParalogs, op(child[2]));
-            membProt := append( membProt, child[3] );
-        else error('unexpected data: '.string(z)) fi:
-    od:
-    
-    NSubGroup := length(membProt):
-    if NSubGroup<2 then 
-        logbuffer := append(logbuffer, 
-            sprintf('%s%s group with only one member (nesting depth: %d)', 
-                    If(lev>0, 'Sub-',''), If(op(0,hcl)='OG','orthologous','paralogous'),
-                    lev));
-    fi:
-    if op(0,hcl)=OG then
-        orgs := [seq([seq( GenomeNrFromENr(x1,referenceDatSet), 
-            x1=subgroups)], subgroups=membProt)];
-        for i to NSubGroup do for j from i+1 to NSubGroup do
-            for x1 to length(membProt[i]) do for y1 to length(membProt[j]) do 
-                e1 := membProt[i,x1]; e2 := membProt[j,y1];
-                if e1>e2 then t := e1; e1:=e2; e2 := t; fi:
-                if e1=e2 then 
-                    dupl_id := BackMapENrToID(hcl, e1);
-                    logbuffer := append(logbuffer, 'protein '.dupl_id.
-                            ' appears twice in different sub-groups. '.
-                            'This would imply being orthologous/paralogous '.
-                            'to itself.');
-                    next;
-                fi:
-                # within an orthologous group, pairs are orthologs unless they belong 
-                # both to the same species
-                if orgs[i,x1]<>orgs[j,y1] then 
-                    indOrthologs := append(indOrthologs, [e1, e2] );
-                else indParalogs := append(indParalogs, [e1, e2] );
-                fi:
-            od od:
-        od od:
-    elif op(0,hcl)=PG then 
-        for i to NSubGroup do for j from i+1 to NSubGroup do
-            indParalogs := append( indParalogs, seq(seq(If(x<y,[x,y],[y,x]),
-                y=membProt[j]), x=membProt[i]) );
-        od od:
-    fi:
-    return( indOrthologs, indParalogs, union(op(membProt)) ):
-end:
-
-# callback function group data
-GroupRelations := proc(og)
-    global VPs, relDone, relMapped, logbuffer, t0;
-    logbuffer := ['Mapping orthologous group nr '.relDone+1];
-    t := ExtractInducedPairsR(og):
-    for z in t[1] do 
-        VPs[z[1]] := append(VPs[z[1]], z[2]);
-        VPs[z[2]] := append(VPs[z[2]], z[1]);
-        relMapped := relMapped + 1;
-    od:
-    if length(logbuffer)>1 then LogMessage(ConcatStrings(logbuffer, '\n  ')); fi:
-    relDone := relDone + 1;
-    if not assigned(t0) or time()-t0>5 then 
-        UpdateRemainingTime(); t0 := time(); 
-    fi:
-end:
-
-
-WriteDB := proc(fn:string, VPs)
-    verb := Set(printgc=false);
-    OpenWriting(fn);
-    for i to length(VPs) do
-        oE := iSet[i]; 
-        vps := [op({seq(iSet[z],z=VPs[i])})];
-        printf('<E><OE>%d</OE><VP>%A</VP><SEQ>%s</SEQ></E>\n',
-           oE, vps, Nr2SEQ(oE) );
-    od:
-    OpenWriting(previous);
-    
-    OpenWriting( fn[1..-3].'iset' );
-    printf('ISET := %A:\n', If(referenceDatSet='OMA',iSet,intersect()));
-    OpenWriting( previous ); 
-    Set(printgc=verb);
-end:
-
-CheckIfOrthologsInGenome := proc(g:string, reference:string)
-    hasOrthologs := false;
-    rng := GenomeRange(g, reference):
-    for eNr from rng[1] to rng[2] do
-        if length(VPs[eNr])>0 then hasOrthologs := true; break fi:
-    od:
-    return( hasOrthologs );
-end:
-
-# to break at error
-to 1 do
-    LogMessage('*** Starting mapping of uploaded relations ***');
-    pKey := GetPKeyData(PID);
-    referenceDatSet := pKey['ref'];
-    if referenceDatSet='OMA' then
-        t := GenerateProteinMapping(seqmapfn, orgMap):
-        mapping := t[1]; iSet := t[2]:
-    else
-        IDmapping := 0;
-        ReadProgram( eval(symbol(lowercase(referenceDatSet).'DBpath')) . 'IDmapping.drw'):
-        if IDmapping=0 then error('could not read IDmapping file'); fi:
-        mapping := transpose(sort(IDmapping)):
-        iSet := {seq(i,i=1..NrOfProteins(referenceDatSet))};
-    fi:
-    NM := length(iSet):
-    VPs := CreateArray(1..NM,[]);
-    relDone := relMapped := 0;
-    ReadProgram(relsinfn);
-    LogMessage(sprintf('Analyzed %d orthologous groups/relations. '.
-        'Extracted %d orthologous relations', relDone, relMapped));
-    WriteLock(lock, 'Storing final project data');
-    LogMessage('\n*** Storing data and update project summary information ***');
-    WriteDB(resDBfn, VPs, mapping);
-    ReadDb(resDBfn):
-
-    pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
-    orgs := {seq(If(CheckIfOrthologsInGenome(g, referenceDatSet), g, NULL), 
-        g=KnownSpecies(referenceDatSet))}:
-    pKey['OrgsCovered'] := orgs:
-    UpdatePKeyDataPermanent(pKey);
-    missing_orthologs_for_genomes := minus({op(KnownSpecies(referenceDatSet))}, orgs);
-    if length(missing_orthologs_for_genomes) > 0 then
-        LogMessage(sprintf('Warning: no orthologs for these %d species have been uploaded:'.
-                           '\n  %a\n  Missing genomes are treated as false negatives',
-                           length(missing_orthologs_for_genomes), missing_orthologs_for_genomes));
-    fi:
-    LogMessage('\n*** Successfully finished project upload and integration ***');
-    CallSystem('rm -f '.lock);
 od:
+
+pKey['NSeqMap'] := NM; pKey['NOrthMap'] := relMapped;
+orgs := {op(covered_genomes)}:
+pKey['OrgsCovered'] := orgs:
+UpdatePKeyDataPermanent(pKey);
+missing_orthologs_for_genomes := minus({op(KnownSpecies(referenceDatSet))}, orgs);
+if length(missing_orthologs_for_genomes) > 0 then
+    LogMessage(sprintf('Warning: no orthologs for these %d species have been uploaded:'.
+                       '\n  %a\n  Missing genomes are treated as false negatives',
+                       length(missing_orthologs_for_genomes), missing_orthologs_for_genomes));
+fi:
+LogMessage('\n*** Successfully finished project upload and integration ***');
+CallSystem('rm -f '.lock);
+
 done

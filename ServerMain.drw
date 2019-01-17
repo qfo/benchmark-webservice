@@ -303,9 +303,9 @@ bsMapData := proc(PID:string)
         if pKey['email']<>'' then
             map_data_url := 'http://'.host.'/cgi-bin/gateway.pl?f=MapRels&p1='.PID;
             msg := 'The orthology benchmarking status of your submitted project '.
-                   'is be available on the following page for you: '.map_data_url.
-                   '\n\nWe thank you for using the benchmarking webservice.'; 
-            traperror(SendEMail(msg, email, 'Link to benchmark project'));
+                   'is be available on the following page for you:\n'.pKey['Title'].': '.map_data_url.
+                   '\n\nWe thank you for using the orthology benchmarking webservice.'; 
+            traperror(SendEMail(msg, email, 'Link to benchmark project "'.pKey['Title'].'"'));
         fi:
         return('Location: gateway.pl?f=MapRels&p1='.PID.'\n\n');
     else 
@@ -339,7 +339,6 @@ bsMapRels := proc(PID:string)
     global SPS:
     fnBase := GetPKeyData(PID)['fnBase'];
     dbFn := fnBase.'.db';
-    seqMapFn := fnBase.'.seqmap';
     lock := fnBase.'.rel.lock';
     logFn := fnBase.'.rel.log';
     reference := GetPKeyData(PID)['ref'];
@@ -359,17 +358,11 @@ bsMapRels := proc(PID:string)
     else 
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
-        if reference='OMA' then
-            SPS := 0; ReadProgram(fnBase.'.sps'); assert(SPS<>0);
-            if nargs<=length(SPS) then error('too few arguments received') fi;
-            orgMap := [seq( SearchArray(z, genomes), z=[args[2..length(SPS)+1]] )];
-        fi:
-    
         # start computation as background process
-        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': seqmapfn:= ''%s'': '.
-                      'relsinfn := ''%s'': lock:=''%s'': logFn:=''%s''; orgMap := %A: PID := ''%s'': '.
-                      'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s &',
-                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, logFn, orgMap, PID, cdir, darwin64);
+        cmd := sprintf('echo "ReadProgram(''%s/lib/darwinit''): resDBfn:=''%s'': '.
+                      'relsinfn := ''%s'': lock:=''%s'': logFn:=''%s''; PID := ''%s'': '.
+                      'ReadProgram(''%s/ComputeRelMapping.drw''): done;" | nice -n 19 %s -E &',
+                      cdir, dbFn, seqMapFn, fnBase.'.rels', lock, logFn, PID, cdir, darwin64);
         Logger( 'starting command: '.cmd, 'INFO');
     
         CallSystem( cmd );
