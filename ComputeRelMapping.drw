@@ -31,10 +31,10 @@ for i to DB[TotEntries] do
     if nr_vps > 0 then
         NM := NM + 1;
         relMapped := relMapped + nr_vps;
-        gNr := GenomeNrFromENr(i, referenceDataSet);
+        gNr := GenomeNrFromENr(i, referenceDatSet);
         if gNr<>lst_gNr then 
             lst_gNr := gNr; 
-            covered_genomes := append(covered_genomes, GenomeCodeFromENr(i));
+            covered_genomes := append(covered_genomes, GenomeCodeFromENr(i, referenceDatSet));
         fi:
     fi:
 od:

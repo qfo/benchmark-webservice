@@ -346,15 +346,14 @@ bsMapRels := proc(PID:string)
     vars := table(''):
     vars['tit'] := GetPKeyData(PID)['Title'];
 
-    # in general, this should not be the case!
-    if FileExists(dbFn) then
-        # provide test selection page:
-        return( bsTestSelection(PID) );
-    fi:
-
     # check if mapping process is already running
     if FileExists(lock) then
         vars['content'] := HandleLockFile(lock);
+    elif FileExists(dbFn) then
+        # in general, this should not be the case!
+        # provide test selection page:
+        return( bsTestSelection(PID) );
+
     else 
         # the mapping did not start. start it! :-)
         CallSystem('touch '.lock);
