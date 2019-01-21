@@ -127,9 +127,12 @@ GetProjISets := proc(prjs_:{string,PKeyData,list})
             PKobj := GetPKeyData(z);
         else error('invalid project id') fi:
 
-        ISET := 0;
-        ReadProgram(PKobj['fnBase'].'.iset');
-        if ISET=0 then error('could not load iSet of '.PKobj['Title']) fi:
+        ISET := 0; path := PKobj['fnBase'] . '.iset';
+        if FileExists(path) then
+            ReadProgram(PKobj['fnBase'].'.iset');
+            if ISET=0 then error('could not load iSet of '.PKobj['Title']) fi:
+        else ISET := intersect() 
+        fi:
 
         iSet := intersect(iSet, ISET);
     od:
