@@ -458,7 +458,7 @@ HandleBoxRFFiles_REFSET := proc(resFn, resBase, vars:table)
     else 
         if RawDataFn=0 then RawDataFn := CreateArray(1..length(RFstat)) fi:
 
-        covLabels := ['# trees','# uploaded orthologs'];
+        covLabels := ['# trees','# uploaded ortholog pairs'];
         corLabels := ['avg RF distance( genetree , speciestree )','avg fraction incorrect trees'];
         statsList := [RFstat, IdentStat]:
         PIDs := vars['PIDs'];
