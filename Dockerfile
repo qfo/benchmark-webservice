@@ -6,9 +6,14 @@ RUN apt-get update && apt-get install -y curl
 RUN mkdir /darwin && cd /darwin && \
     curl -SL -O http://biorecipes.com/darwin/darwin.linux64 && \
     curl -SL http://biorecipes.com/darwin/darwin-lib.tgz | tar -xz  && \
-    chmod +x darwin.linux64
+    chmod +x darwin.linux64 && \
+    sed -i -e "s/\(datadirname\s*:=\s*\)'[^']*'[:;]/\1'\/refset':/" lib/darwinit
 
 RUN echo "#!/bin/bash\nulimit -s unlimited\n/darwin/darwin.linux64 -l /darwin/lib $*\n" > /darwin/darwin && \
     chmod +x /darwin/darwin 
+
+WORKDIR /benchmark
+
+COPY . /benchmark
 
 #ENTRYPOINT ["/darwin/darwin"]
