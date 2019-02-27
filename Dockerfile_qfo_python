@@ -1,0 +1,10 @@
+# Use an official Python runtime as a parent image
+FROM python:3-slim
+
+WORKDIR /benchmark
+
+COPY "requirements.txt" /benchmark
+
+RUN apt-get update && apt-get install -y libxml2  &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt
+
+COPY . /benchmark

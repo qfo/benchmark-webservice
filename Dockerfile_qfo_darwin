@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 #RUN apk add --no-cache curl
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y curl mafft
 
 RUN mkdir /darwin && cd /darwin && \
     curl -SL -O http://biorecipes.com/darwin/darwin.linux64 && \
