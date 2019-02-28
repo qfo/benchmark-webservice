@@ -10,7 +10,8 @@ RUN mkdir /darwin && cd /darwin && \
     sed -i -e "s/\(datadirname\s*:=\s*\)'[^']*'[:;]/\1'\/refset':/" lib/darwinit
 
 RUN echo "#!/bin/bash\nulimit -s unlimited\n/darwin/darwin.linux64 -l /darwin/lib $*\n" > /darwin/darwin && \
-    chmod +x /darwin/darwin 
+    chmod +x /darwin/darwin
+ENV PATH "$PATH:/darwin"
 
 WORKDIR /benchmark
 

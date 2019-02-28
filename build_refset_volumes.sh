@@ -13,6 +13,7 @@ for year in 2011 2018 ; do
     docker run --rm -t -i --mount source=$VOL,target=/refset qfo_darwin:latest bash -c "cd /refset;
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/Summaries.drw.gz;
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/GOdata.drw.gz
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/mapping.json.gz
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db.map
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db.tree"
