@@ -1,35 +1,42 @@
 #!/usr/bin/env nextflow
 
-params.in = "$basedir/upload/predictions.txt"
-predictions = file(params.in)
+predictions = file(params.predictions_file)
+method_name = params.participant_name
+refset_dir = params.refset
+result = file(params.results_dir)
+
 
 /*
- * extract pairwise predicitons and store in darwin compatible database
+ * extract pairwise predictions and store in darwin compatible database
  */
 process convertPredictions {
 
+    label "py"
+
     input: 
-    file 'prediction' from predictions
+    file predictions
 
     output:
-    file "/method/predictions.db" into db
+    file 'predictions.db' into db
 
     """
-    python3 map_relations.py --out /method/predictions.db /refset/mapping.json.gz prediction
+    /benchmark/map_relations.py --out predictions.db $refset_dir/mapping.json.gz $predictions
     """
 }
 
 
 process go_benchmark {
-    container: 'darwin:latest'
+
+    label "darwin"
 
     input:
-    file method from db
+    file db from db
 
     output:
-    /method/GO/stdout.log, /method/GO/result.json, /method/GO/raw_data.txt.gz
+    file "GO/result.json"
+    file "GO/raw_data.txt.gz"
 
     """
-    GoTest.sh file 'project-name'
+    /benchmark/GoTest.sh $db $method_name
     """
 }
