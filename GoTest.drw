@@ -1,17 +1,34 @@
-# 
+#
 # A script to measures the similarity between the putative orthologs 
 # based on the code of the benchmark paper.
 #
-#                               Adrian Altenhoff, Sept 2006
-#                  rewritten    Adrian Altenhoff, July 13, 2007
-#   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009  
+#                               Adrian Altenhoff, Sep 2006
+#                  rewritten    Adrian Altenhoff, Jul 13, 2007
+#   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009
+#   rewritten for EBench        Adrian Altenhoff, Feb 2019
 #
-#  in: resFn, filter, projs, lock, measure
+#  input arguments:
+#     refset_path     path to reference dataset
+#     project_db      path to predictions in darwin db format
+#     title           name of the method which is evaluated
+#     measure         similarity measure, e.g 'avg Schlicker'
+#     evidences       evidence codes to consider, passed as a list/set, e.g. [EXP, IDA]
+#     out_dir         directory where output is written to. must exist
+
 printlevel := 2;
 Set(printgc=false); Set(gc=5e6): 
-if not assigned(dataset) then 
-    error('dataset not assigned');
+if not assigned(refset_path) then
+    error('refset_path not assigned');
 fi:
+
+if not assigned(raw_out) then raw_out := sprintf('GOraw-%s.txt.gz', title) fi:
+filter := {op(evidences)} intersect {'EXP','IDA','IPI','IMP','IGI','IEP',  # experiments
+                                     'HTP','HDA','HMP','HGI','HEP',        # high throughput
+                                     'IBA','IBD','IKR','IRD',              # phylogenetic
+                                     'ISS','ISO','ISA','ISM','IGC','RCA',  # computational analysis
+                                     'TSA','NSA',                          # Author statement
+                                     'IC', 'ND', 'IEA'}:                   # curator / electronic
+if length(filter)=0 then error('no evidences provided that make sense') fi:
 
 # hacky thing to make sure Ontolgy_name is loaded and can be accessed.
 GOname(55):
@@ -19,8 +36,7 @@ allterms := Indices(Ontology_name):
 GOparents := table({}):
 for i in allterms do GOparents[i] := GOsuperclassR(i) od:
 
-ddir := eval(symbol(lowercase(dataset).'DBpath'));
-DB := GODB := ReadDb(ddir.'ServerIndexed.db'):
+DB := GODB := ReadDb(refset_path.'/ServerIndexed.db'):
 lprint('GO annotations from '.GODB['FileName']);
 
 
@@ -40,7 +56,7 @@ LoadGOset := proc()
             annotation := parse(z[2]);
             evidence := {seq( x[1], x=annotation)};
             if length( intersect(evidence, filter) )>0 then
-                GOs[eNe] := append(GOs[eNe], parse(z[1,4..-1]) );
+                GOs[eNr] := append(GOs[eNr], parse(z[1,4..-1]) );
             fi;
         od:
     od:
@@ -144,8 +160,8 @@ StoreRawData := proc(rawData, name, fname_)
     printf('# Computing timestamp: %s\n', date());
     printf('# Protein ID 1<tab>Protein ID 2<tab>GO Similarity\n');
     for z in rawData do
-        id1 := ENr2XRef(z[1], dataset);
-        id2 := ENr2XRef(z[2], dataset);
+        id1 := ENr2XRef(z[1]);
+        id2 := ENr2XRef(z[2]);
         printf('%s\t%s\t%f\n', id1, id2, z[3]);
     od:
     OpenWriting(previous);
@@ -158,6 +174,7 @@ StoreResult := proc(fn:string, data:table)
 end:
 
 projDB := ReadDb(project_db);
+raw_out_fn := sprintf('GOraw-%s.txt.gz', sha2(string([filter, measure, title, project_db]))[1..12]);
 LoadGOset():
 printf('loaded %d go annotations\n', sum(length(z), z=GOs));
 result := table():
@@ -168,10 +185,9 @@ perf := t[1]; raw_data := t[2];
 result['nr_orthologs'] := perf['Number'];
 result['similarity'] := perf['Mean'];
 result['stderr'] := perf['StdErr'];
-result['raw_data_fn'] := sprintf('GO/%s-tba.txt.gz', title);
-StoreRawData(raw_data, title, result['raw_data_fn']):
-StoreResult('GO/result.json', result);
+result['raw_data_fn'] := raw_out_fn:
+StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
+StoreResult(out_dir.'/result.json', result);
 
-CallSystem('rm -f '.lock);
 done;
 

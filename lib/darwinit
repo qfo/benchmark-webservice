@@ -1,23 +1,6 @@
 # darwinit file for the special functions of the Benchmark Service
 cdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
-ddir := getenv('DARWIN_ORTHOLOG_BENCHMARKDATA_PATH');
-imgdir := ddir . '/htdocs/imgs/':
-imgurl := '/imgs/':
-resimgdir := ddir.'/htdocs/resultimgs/':
-resimgurl := '/resultimgs/';
-rawdir := ddir . '/htdocs/raw/':
-rawurl := '/raw/':
-brwrel := 'All.May2010';
-omaDBpath := getenv('DARWIN_BROWSERDATA_PATH').'/';
-refset5DBpath := ddir . '/reference5/';
-refset17DBpath := ddir . '/reference17/';
-refset18DBpath := ddir . '/reference18/';
-datdir := ddir . '/data/';
-sessiondir := ddir . '/sessions/';
-resdir := ddir . '/results/';
-
-host := getenv('DARWIN_ORTHOLOG_BENCHMARK_HOST');
-if host='' then host := 'orthology.benchmarkservice.org' fi:
+if not assigned(refset_path) then refset_path := getenv('QFO_REFSET_PATH') fi:
 
 
 GenerateTemplate := noeval(ReadLibrary( cdir.'/lib/GenerateTemplate', GenerateTemplate)):

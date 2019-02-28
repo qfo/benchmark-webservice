@@ -13,19 +13,23 @@ Options
   -m    similarity measure. Can be one of 'avg Sim', 'max Sim', 'avg Info',
         'max Info' or 'avg Schlicker'
 
-  -o    filename of the raw output, i.e. the evaluated orthologs and their 
-        similarity score. Defaults to GO/<name>-tba.txt.gz'
+  -o    output directory, where result.json and raw data file will be stored.
+        Raw data is a file that contains the evaluated orthologs and their
+        similarity score. The filename of raw data is available in the
+        result.json file
 
 Positional arguments:
-  prject_db   Path to prject database
+  project_db   Path to project database
   
-  title       Name of the project
+  title        Name of the project
+
+  refset       Path to refset data
 
 EOF
 }
 
 measure="avg Schlicker"
-raw_out="GO/raw.txt.gz"
+out_dir="GO"
 while getopts "m:o:h" opt ; do
     case $opt in
         h) usage
@@ -38,7 +42,7 @@ while getopts "m:o:h" opt ; do
               exit 1
            fi
            ;;
-        o) raw_out="$OPTARG"
+        o) out_dir="$OPTARG"
            ;;
         \?)  echo "invalid option" >&2
            usage
@@ -59,14 +63,20 @@ if [ ! -f $project_db ] ; then
     exit 1
 fi
 title="$2"
+refset="$3"
+benchmark_dir="$(dirname $0)"
 
+if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; fi
 
 darwin -E  << EOF
    project_db := '$project_db':
    measure := '$measure':
-   filter := ['EXP']:
+   evidences := ['EXP']:
    title := '$title':
-   ReadProgram('GoTest.drw');
+   refset_path := '$refset':
+   out_dir := '$out_dir':
+   ReadProgram('$benchmark_dir/lib/darwinit');
+   ReadProgram('$benchmark_dir/GoTest.drw');
    done;
 EOF
 
