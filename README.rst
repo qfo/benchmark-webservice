@@ -1,48 +1,50 @@
-Orthology-Benchmarking-Webservice
-=================================
+Quest for Orthologs benchmarking with OpenEBench
+================================================
 
-This repository contains the codebase that runs the webservice 
-to benchmark orthology predictions on a common reference proteome 
-dataset. The webservice is available for public usage at 
-http://orthology.benchmark-service.org
-
-This codebase is primarly intendent for as an implementation 
-reference and for people interested in providing 
-additional benchmarks. 
+Quest for Orthologs (QfO) Benchmark pipeline with Nextflow and Docker. This branch of the
+repository contains the development implementation for running the QfO benchmarking
+http://orthology.benchmark-service.org on the OpenEBench platform. The codebase is by no
+means stable nor bug free.
 
 
-Installation
-------------
-If you intend to run your own instance of the webservice, here is 
-what you need to do. The service is designed to be run on a 
-ubuntu machine, but other linux systems should be ok as well 
-(although you might need to change some packages, paths, etc).
+Description
+-----------
 
-Before anything else, clone the repository on your dev machine and 
-deploy everything from there.
+The workflow takes as input the ortholog predictions of a method in
+either tab-delimited format that lists pairs of orthologs or an
+orthoxml file. The predictions must be done on the QfO reference proteomes, either
+on the dataset of 2011 or 2018. For how to retrieve the reference proteomes, please
+consider the instructions on the current `benchmark service`_. The workflow will
+(i) validate the input predictions, (ii) convert the predictions into an internal format,
+and (iii) compute the benchmark metrics for various benchmarks.
 
- 1. Setup Host/VM
 
-    Along in this repostitory there comes a `cdist`_ installation configuration, 
-    that configures a bare-bone ubuntu server. You must have root access 
-    to the machine in order to use it. After adding your ssh public key to 
-    .cdist/manifest/ssh/ execute cdist from the 
-    root directory of the repository like this:
-       
-       cdist config --conf-dir .cdist <host>
+Data
+----
+Orthology predictions must be provided by the user. An example file is available in the
+example directory. Reference datasets have to be made available in docker volumes (one per
+reference dataset). See Usage for more details how to obtain them.
 
- 2. Deploy webservice to the web server. 
+Usage
+-----
 
-    use the deploy script to setup the host:
-    
-      ./deploy cbrg-obs@<host> <path/to/dataroot>
-    
-    make sure that the <path/to/dataroot> directory exists and that the user 
-    cbrg-obs has read-write access to it.
+ #. You must have a running installation of Docker_ and Nextflow_.
 
- 
- 3. The service should be running...
+ #. Clone this repository
+
+ #. Create the necessary docker images by running ``./build_dockers.sh latest``
+
+ #. Create the necessary docker volumes by running ``./build_refset_volumes.sh``
+
+ #. Run the pipeline with ``nextflow run benchmark.nf``
+
+this will launch the pipeline with the default parameters that are specified in the
+`nextflow config`_ file. Output files will be created by default into ``out/``.
 
 .. _cdist: http://www.nico.schottelius.org/software/cdist/
+.. _Docker: https://www.docker.com
+.. _Nextflow: https://www.nextflow.io
+.. _benchmark service: https://orthology.benchmark-service.org
+.. _nextflow config: nextflow.config
 
 

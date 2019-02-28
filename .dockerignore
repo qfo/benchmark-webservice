@@ -1,5 +1,6 @@
 work
 .nextflow*
+.idea
 example
 generateData
 generators_public
