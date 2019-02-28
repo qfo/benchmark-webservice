@@ -31,12 +31,11 @@ process go_benchmark {
 
     input:
     file db from db
+    val method_name
+    val result
 
-    output:
-    file "GO/result.json"
-    file "GO/raw_data.txt.gz"
 
     """
-    /benchmark/GoTest.sh $db $method_name
+    /benchmark/GoTest.sh -o "$result/GO" $db $method_name $refset_dir
     """
 }

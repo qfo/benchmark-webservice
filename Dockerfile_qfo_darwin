@@ -12,6 +12,7 @@ RUN mkdir /darwin && cd /darwin && \
 RUN echo "#!/bin/bash\nulimit -s unlimited\n/darwin/darwin.linux64 -l /darwin/lib $*\n" > /darwin/darwin && \
     chmod +x /darwin/darwin
 ENV PATH "$PATH:/darwin"
+ENV DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH /benchmark
 
 WORKDIR /benchmark
 
