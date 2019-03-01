@@ -34,7 +34,9 @@ Usage
 
  #. Create the necessary docker images by running ``./build_dockers.sh latest``
 
- #. Create the necessary docker volumes by running ``./build_refset_volumes.sh``
+ #. Create the necessary docker volumes by running ``./build_refset_volumes.sh``. This
+    will create two docker volumes named *refset2011* and *refset2018* and are populated
+    with the necessary data to run the benchmarks.
 
  #. Run the pipeline with ``nextflow run benchmark.nf``
 
