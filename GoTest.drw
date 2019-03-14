@@ -21,12 +21,28 @@ if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
 
-filter := {op(evidences)} intersect {'EXP','IDA','IPI','IMP','IGI','IEP',  # experiments
-                                     'HTP','HDA','HMP','HGI','HEP',        # high throughput
-                                     'IBA','IBD','IKR','IRD',              # phylogenetic
-                                     'ISS','ISO','ISA','ISM','IGC','RCA',  # computational analysis
-                                     'TSA','NSA',                          # Author statement
-                                     'IC', 'ND', 'IEA'}:                   # curator / electronic
+existing_evidence_codes := {'EXP','IDA','IPI','IMP','IGI','IEP',  # experiments
+                            'HTP','HDA','HMP','HGI','HEP',        # high throughput
+                            'IBA','IBD','IKR','IRD',              # phylogenetic
+                            'ISS','ISO','ISA','ISM','IGC','RCA',  # computational analysis
+                            'TSA','NSA',                          # Author statement
+                            'IC', 'ND', 'IEA'}:                   # curator / electronic
+
+
+if not type(evidences, {string, list}) then
+    error('evidences not propperly assigned');
+elif type(evidences, string) then
+    if lowercase(evidences) = 'all' then evidences := intersect();
+    elif lowercase(evidences) = 'exp' then 
+        evidences := ['EXP','IDA','IPI','IMP','IGI','IEP'];
+    elif lowercase(evidences) = 'cur' then
+        evidences := [op(minus(existing_evidence_codes, {'ND','IEA'}))];
+    else
+        error('invalid evidence code class: '.evidences);
+    fi:
+fi:
+
+filter := {op(evidences)} intersect existing_evidence_codes;
 if length(filter)=0 then error('no evidences provided that make sense') fi:
 
 # hacky thing to make sure Ontolgy_name is loaded and can be accessed.

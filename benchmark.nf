@@ -7,6 +7,10 @@ log.info """ \
          method name : ${params.participant_name}
          refeset path: ${params.refset}
          results directory: ${params.results_dir}
+
+         GO benchmark:
+            evidence filter: ${params.go_evidences}
+
          """
 .stripIndent()
 
@@ -14,7 +18,7 @@ predictions = file(params.predictions_file)
 method_name = params.participant_name
 refset_dir = params.refset
 result = file(params.results_dir)
-
+go_evidences = params.go_evidences
 
 /*
  * validate input file
@@ -61,28 +65,36 @@ process convertPredictions {
 process go_benchmark {
 
     label "darwin"
+    publishDir "$result", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
+    val go_evidences
+
+    output:
+    val "GO"
     //val result
 
 
     """
-    /benchmark/GoTest.sh -o "GO" $db "$method_name" $refset_dir
+    /benchmark/GoTest.sh -o "GO" -e "$go_evidences" $db "$method_name" $refset_dir
     """
 }
 
 process ec_benchmark {
 
     label "darwin"
+    publishDir "$result", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
-    //val result
+
+    output:
+    val "EC"
 
 
     """
