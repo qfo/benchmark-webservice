@@ -16,7 +16,8 @@ for year in 2011 2018 ; do
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/mapping.json.gz
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db.map
-        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db.tree"
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ServerIndexed.db.tree
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/enzymes.drw.gz"
 done
 
 

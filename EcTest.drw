@@ -4,28 +4,25 @@
 #
 #                               Adrian Altenhoff, Sept 2006
 #                  rewritten    Adrian Altenhoff, July 13, 2007
-#   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009  
+#   rewritten for BenchService  Adrian Altenhoff, Dec 4, 2009
+#   rewritten for EBench        Adrian Altenhoff, Mar 2019
 #
-#  in: resFn, filter, projs, lock, measure, meth
+#  input arguments:
+#     refset_path     path to reference dataset
+#     project_db      path to predictions in darwin db format
+#     title           name of the method which is evaluated
+#     measure         similarity measure, e.g 'avg Schlicker'
+#     out_dir         directory where output is written to. must exist
 
-Set(printgc=false); Set(gc=5e6): 
-WriteLock(lock,'initializing computations');
 
-prj := [seq(GetPKeyData(z),z=projs)]:
-dataset := prj[-1,'ref'];
 
-# load the project databases
-nP := length(prj); dbs := CreateArray(1..nP):
-for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
-if not type(dbs, list(database)) then 
-   OpenWriting(resFn);
-   printf('error(''could not open databases'');\n');
-   OpenWriting(previous);
-   CallSystem('rm -f '.lock);
-   quit
+printlevel := 2;
+Set(printgc=false); Set(gc=5e6):
+if not assigned(refset_path) then
+    error('refset_path not assigned');
 fi:
 
-ReadProgram(datdir.'enzymes_'.dataset.'.drw'); # assigns EC
+ReadProgram(refset_path.'/enzymes.drw'); # assigns EC
 
 # get the superclasses for a given EC including the empty class -> any Enzyme.
 ECsuperclassR := proc( c:string )
@@ -33,21 +30,18 @@ ECsuperclassR := proc( c:string )
     return( ['', seq(c[1..z-1], z=i), c] );
 end:
 
-ECFreqs := proc( proteins:{set,intersect()} )
+LoadECFreqs := proc()
     t := []:
-    direct := evalb(proteins=intersect());
-    for i to If(direct,length(EC),length(proteins)) do
-        z := If(direct,i,proteins[i]);
-        if EC[z]<>0 then for x in EC[z] do 
+    for eNr to length(EC) do
+        if EC[eNr]<>0 then for x in EC[eNr] do 
             t := append(t, op(ECsuperclassR(x)) ):
         od fi;
     od:
     freqs := transpose( [seq([z,0], z=[op({op(t)})] )] ):
 
     cnts := 0;
-    for i to If(direct,length(EC),length(proteins)) do
-        z := If(direct, i, proteins[i]);
-        if EC[z]<>0 then for x in EC[z] do 
+    for eNr to length(EC) do
+        if EC[eNr]<>0 then for x in EC[eNr] do 
             for term in ECsuperclassR(x) do
                 k := SearchOrderedArray(term, freqs[1]):
                 assert(freqs[1,k]=term);
@@ -73,16 +67,16 @@ ComputeSimilarity := proc(data:list; 'method'=(method:string))
     elif method='avg Schlicker' then
         max1 := CreateArray(1..max(seq(z[4],z=data)),1..2,-DBL_MAX);
         max2 := CreateArray(1..max(seq(z[5],z=data)),1..2,-DBL_MAX);
-	for i to length(data) do
-	     z := data[i];
-	     if z[2] > max1[z[4],1] then max1[z[4]] := [z[2],i]; fi; 
-	     if z[2] > max2[z[5],1] then max2[z[5]] := [z[2],i]; fi; 
-	od:
-	s := c := 0;
-	for i in [op(max1),op(max2)] do
-	    if i[1]>-DBL_MAX then s := s+i[1]; c:=c+1; fi:
-	od:
-	return( s/c );
+        for i to length(data) do
+             z := data[i];
+             if z[2] > max1[z[4],1] then max1[z[4]] := [z[2],i]; fi; 
+             if z[2] > max2[z[5],1] then max2[z[5]] := [z[2],i]; fi; 
+        od:
+        s := c := 0;
+        for i in [op(max1),op(max2)] do
+            if i[1]>-DBL_MAX then s := s+i[1]; c:=c+1; fi:
+        od:
+        return( s/c );
     else error('similarity not implemented') fi:
 end:
 
@@ -94,150 +88,93 @@ GetFreq := proc(ec:string)
 end:
 
 # measure similarities between putative orthologs
-ComputePerformance := proc(iSet, prjNrs:list)
+ComputePerformance := proc(prjDB, title)
     global DB;
-    Sims := [seq(Stat(prj[z,'Title']), z=prjNrs)];
-    directMap := evalb(iSet=intersect());
-    nProt := If(directMap,length(EC),length(iSet));
-    rawData := CreateArray(1..length(prjNrs),[]):
+    Sim := Stat(title);
+    nProt := length(EC);
+    assert(nProt = prjDB['TotEntries']);
+    rawData := []:
+    DB := prjDB;
+    last_timereport := time():
+    for eNr to nProt do 
+        if EC[eNr]<>0 then
+            vps := ParseLongList(SearchTag('VP', Entry(eNr)));
+            for vp in vps do 
+                if vp<eNr then next fi: # uni-directional
+                if EC[vp]=0 then next fi: # ortholog has no EC tag
 
-    for pNr to length(prjNrs) do 
-        DB := dbs[prjNrs[pNr]];
-        for i to nProt do 
-            oE1 := If(directMap,i,iSet[i]);
-            if EC[oE1]<>0 then
-                eNr := If( prj[prjNrs[pNr],'directMap'], oE1, DbEntryNrFromENr(oE1) );
-                vps := ParseLongList(SearchTag('VP', Entry(eNr)));
-                for vp in vps do 
-                    if vp<oE1 then next fi: # uni-directional
-                    if not member(vp, iSet) then next fi; # not in intersection set 
-                    if EC[vp]=0 then next fi: # ortholog has no EC tag
-                   
-                    pairs := [];
-                    for ig1 to length(EC[oE1]) do for ig2 to length(EC[vp]) do
-                        ec1 := EC[oE1,ig1]; fec1 := GetFreq(ec1); 
-                        ec2 := EC[vp,ig2];  fec2 := GetFreq(ec2); 
-                        ic := intersect( {op(ECsuperclassR(ec1))}, {op(ECsuperclassR(ec2))} );
-                         #                     2*ln(prob(interClass[i]))
-                         # similarity   sim = ---------------------------
-                         #                    ln(prob(go1))+ln(prob(go2))
-                        simRun := infoRun := -DBL_MAX;
-                        for int in ic do
-                            info := -2*ln(GetFreq(int));
-                            sim  := If(info=0, 0, -info/(ln(fec1)+ln(fec2)));
-                            if info > infoRun then infoRun := info; infoInt := int fi;
-                            if sim  > simRun  then simRun := sim; simInt := int fi;
-                        od:
-                        pairs := append(pairs, [1, simRun, infoRun, ig1, ig2] );
-                    od od:
-                    if length(pairs)>0 then
-                        simPair :=  ComputeSimilarity(pairs, 'method'=measure);
-                        Sims[pNr] + simPair;
-                        rawData[pNr] := append(rawData[pNr], [oE1, vp, simPair]);
-                    fi:
-                od:
-            fi;
-            if mod(i,5000)=0 then
-	        t := (curP-1+((pNr-1)*nProt+i)/(nProt*length(prjNrs)))/maxP;
-    	        WriteLock(lock, sprintf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)/t*time()));
-            fi:
-        od:
-    od:
-    return(Sims,rawData);
-end:
-           
-StoreRawData := proc(rawData_, prjs_, filter, measure, meth)
-    if type(prjs_, list) then
-        prjs := prjs_; rawData := rawData_;
-    elif type(prjs_,PKeyData) then
-        prjs := [prjs_]; rawData := [rawData_];
-    else error('unexpected prjs parameter'); fi:
-
-    RawDataFn := CreateArray(1..length(prjs)):
-    for p to length(prjs) do
-        fn := sprintf('EC/EC.%a.tsv.gz', hash_sha2([prjs[p,'PID'],filter,measure,meth]));
-        OpenWriting(rawdir.fn[1..-4]);
-        printf('# EC Similarities between orthologs from %s\n',prjs[p,'Title']);
-        printf('# Protein ID 1<tab>Protein ID 2<tab>EC Similarity\n');
-        for z in rawData[p] do
-            id1 := ENr2XRef(z[1], dataset);
-            id2 := ENr2XRef(z[2], dataset);
-            printf('%s\t%s\t%f\n', id1, id2, z[3]);
-        od:
-        OpenWriting(previous);
-        CallSystem('gzip -9f '.rawdir.fn[1..-4]);
-        RawDataFn[p] := fn;
-    od:
-    return( If(length(prjs)>1,RawDataFn,RawDataFn[1]) );
-end:
-
-
-StoreResult := proc(fn:string, Sims, PIDs, filter, measure, meth; RawDataFn:{string,list(string)} )
-    OpenWriting(fn):
-    printf('Sims := %A:\n', Sims):
-    printf('PIDs := %A:\n', PIDs);
-    if assigned(RawDataFn) then printf('RawDataFn := %A:\n', RawDataFn); fi;
-    printf('# filter := %A:\n# measure := %A:\n#meth := %A:\n', filter, measure, meth);
-    OpenWriting(previous):
-    CallSystem('gzip -9f '.fn);
-end:
-
-if meth='INTERSECT' then
-    iSet  := GetProjISets(prj):
-    prjNrs:= [seq(i,i=1..nP)];
-    freqs := ECFreqs(iSet):
-    curP := 1; maxP := 1;
-    SimsRes := ComputePerformance(iSet, prjNrs):
-    RawDataFn := StoreRawData( SimRes[2], [seq(prj[i], i=prjNrs)], filter, measure, meth);
-    StoreResult(resFn, SimsRes[1], [seq(prj[i,'PID'], i=prjNrs)], filter, measure, meth, RawDataFn);
-elif meth='PAIRWISE' then
-    maxP := nP-1;
-    SimsRes := CreateArray(1..maxP):
-    prjNrs := [seq([i,nP],i=1..maxP)];
-    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-    for curP to maxP do 
-        curPrjPIDs := [seq(prj[j,'PID'],j=prjNrs[curP])]:
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([curPrjPIDs,measure,'INTERSECT']) );
-        if FileExists(resFnPart.'.gz') then 
-            SimsRes[curP] := 0; ReadProgram(resFnPart): assert(length(Sims)=2); SimsRes[curP] := Sims;
-        else
-            iSet := GetProjISets( [seq(prj[j],j=prjNrs[curP])] ):
-            freqs := ECFreqs(iSet):
-            SimsRes[curP] := ComputePerformance(iSet, prjNrs[curP])[1]:
-            StoreResult(resFnPart, SimsRes[curP], [seq(prj[j,'PID'], j=prjNrs[curP])], filter, measure, 'INTERSECT');
+                pairs := [];
+                for ig1 to length(EC[eNr]) do for ig2 to length(EC[vp]) do
+                    ec1 := EC[eNr,ig1]; fec1 := GetFreq(ec1); 
+                    ec2 := EC[vp,ig2];  fec2 := GetFreq(ec2); 
+                    ic := intersect( {op(ECsuperclassR(ec1))}, {op(ECsuperclassR(ec2))} );
+                     #                     2*ln(prob(interClass[i]))
+                     # similarity   sim = ---------------------------
+                     #                    ln(prob(go1))+ln(prob(go2))
+                    simRun := infoRun := -DBL_MAX;
+                    for int in ic do
+                        info := -2*ln(GetFreq(int));
+                        sim  := If(info=0, 0, -info/(ln(fec1)+ln(fec2)));
+                        if info > infoRun then infoRun := info; infoInt := int fi;
+                        if sim  > simRun  then simRun := sim; simInt := int fi;
+                    od:
+                    pairs := append(pairs, [1, simRun, infoRun, ig1, ig2] );
+                od od:
+                if length(pairs)>0 then
+                    simPair :=  ComputeSimilarity(pairs, 'method'=measure);
+                    Sim + simPair;
+                    rawData := append(rawData, [eNr, vp, simPair]);
+                fi:
+            od:
+        fi;
+        if time() - last_timereport > 10 then 
+            t := eNr / nProt;
+            printf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)/t*time());
+            last_timereport := time();
         fi:
     od:
-    StoreResult(resFn, SimsRes, [seq([prj[i,'PID'],prj[nP,'PID']],i=1..maxP)], filter, measure, meth);
-elif length(meth)>=6 and meth[1..6]='REFSET' then
-    SimsRes := CreateArray(1..nP):
-    RawDataFnRes := CreateArray(1..nP):
-    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-    maxP := nP:
-    for curP to nP do 
-        resFnPart := sprintf('%s%a.drw', resFnBase, hash_sha2([prj[curP,'PID'],measure,meth]) );
-        if FileExists(resFnPart.'.gz') then 
-            SimsRes[curP] := 0; 
-            ReadProgram(resFnPart): 
-            assert(type(Sims,Stat));
-            assert(type(RawDataFn,string)); 
-            SimsRes[curP] := Sims;
-            RawDataFnRes[curP] := RawDataFn; 
-            maxP := maxP - 1;
-        else
-            freqs := ECFreqs(intersect()):
-            perf := ComputePerformance(intersect(), [curP]):
-            SimsRes[curP] := perf[1,1]; 
-            RawDataFnRes[curP] := StoreRawData(perf[2,1], prj[curP], filter, measure, meth);
-            StoreResult(resFnPart, SimsRes[curP], [prj[curP,'PID']], filter, measure, meth, 
-                RawDataFnRes[curP]);
-        fi:
+    return(Sim, rawData);
+end:
+
+StoreRawData := proc(rawData, name, fname_)
+    fname := fname_;
+    if length(fname) > 4 and fname[-3..-1] = '.gz' then
+        fname := fname[1..-4];
+        do_gzip := true;
+    else do_gzip := false fi:
+
+    OpenWriting(fname);
+    printf('# EC Similarities between orthologs from %s\n', name);
+    printf('# Computing timestamp: %s\n', date());
+    printf('# Protein ID 1<tab>Protein ID 2<tab>EC Similarity\n');
+    for z in rawData do
+        id1 := ENr2XRef(z[1]);
+        id2 := ENr2XRef(z[2]);
+        printf('%s\t%s\t%f\n', id1, id2, z[3]);
     od:
-    StoreResult(resFn, SimsRes, [seq(prj[i,'PID'], i=1..nP)], filter, measure, meth, RawDataFnRes);
+    OpenWriting(previous);
+    if do_gzip then  CallSystem('gzip -9f '.fname); fi:
+end:
 
-else error('unknown strategy method:'.meth); 
-fi:
 
+StoreResult := proc(fn:string, data:table)
+    OpenWriting(fn): prints(json(data)): OpenWriting(previous);
+end:
 
-CallSystem('rm -f '.lock);
-done;
+projDB := ReadDb(project_db);
+raw_out_fn := sprintf('ECraw-%s.txt.gz', sha2(string([measure, title, project_db]))[1..12]);
+freqs := LoadECFreqs():
+printf('loaded %d EC annotations\n', sum(length(z), z=freqs));
+result := table():
+result['measure'] := measure;
+t := ComputePerformance(projDB, title):
+perf := t[1]; raw_data := t[2];
+result['nr_orthologs'] := perf['Number'];
+result['similarity'] := perf['Mean'];
+result['stderr'] := perf['StdErr'];
+result['raw_data_fn'] := raw_out_fn:
+StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
+StoreResult(out_dir.'/result.json', result);
+
+done
 
