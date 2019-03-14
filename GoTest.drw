@@ -21,7 +21,6 @@ if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
 
-if not assigned(raw_out) then raw_out := sprintf('GOraw-%s.txt.gz', title) fi:
 filter := {op(evidences)} intersect {'EXP','IDA','IPI','IMP','IGI','IEP',  # experiments
                                      'HTP','HDA','HMP','HGI','HEP',        # high throughput
                                      'IBA','IBD','IKR','IRD',              # phylogenetic
@@ -104,6 +103,7 @@ ComputePerformance := proc(prjDB, title)
     onts := [3674, 5575, 8150]:
     rawData := []:
     DB := prjDB;
+    last_timereport := time():
     for eNr to nProt do 
         if length(GOs[eNr]) > 0 then
             vps := ParseLongList(SearchTag('VP', Entry(eNr)));
@@ -140,9 +140,10 @@ ComputePerformance := proc(prjDB, title)
                 fi:
             od:
         fi;
-        if mod(eNr,5000)=0 then
+        if time() - last_timereport > 10 then
             t := eNr/nProt;
             printf('%.0f%% done. Estimated remaining time: %.0fsec\n', 100*t, (1-t)/t*time());
+            last_timereport := time();
         fi:
     od:
     return(Sim, rawData):
