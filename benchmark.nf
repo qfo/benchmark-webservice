@@ -65,11 +65,28 @@ process go_benchmark {
     input:
     file db from db
     val method_name
-    val result
+    val refset_dir
+    //val result
 
 
     """
-    /benchmark/GoTest.sh -o "$result/GO" $db $method_name $refset_dir
+    /benchmark/GoTest.sh -o "GO" $db "$method_name" $refset_dir
+    """
+}
+
+process ec_benchmark {
+
+    label "darwin"
+
+    input:
+    file db from db
+    val method_name
+    val refset_dir
+    //val result
+
+
+    """
+    /benchmark/EcTest.sh -o "EC" $db "$method_name" $refset_dir
     """
 }
 
