@@ -65,7 +65,7 @@ process convertPredictions {
 process go_benchmark {
 
     label "darwin"
-    publishDir "$result", mode: 'copy', overwrite: true
+    publishDir path: "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
@@ -74,8 +74,7 @@ process go_benchmark {
     val go_evidences
 
     output:
-    val "GO"
-    //val result
+    file "GO"
 
 
     """
@@ -86,7 +85,7 @@ process go_benchmark {
 process ec_benchmark {
 
     label "darwin"
-    publishDir "$result", mode: 'copy', overwrite: true
+    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
@@ -94,7 +93,7 @@ process ec_benchmark {
     val refset_dir
 
     output:
-    val "EC"
+    file "EC"
 
 
     """
