@@ -44,7 +44,6 @@ NrOfProteins := proc( )
 end:
 
 GenomeNrFromENr := proc(eNr:posint)
-    gsDat := GSIDtab[ref];
     g := SearchOrderedArray(eNr, GSIDtab['GSID', 1]):
     assert(g > 0 and g <= GSIDtab['NS']):
     return( g ):

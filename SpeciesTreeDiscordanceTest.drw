@@ -1,21 +1,27 @@
 ##
 #  Script to run the species tree discordance test  
 #
-#  in: resFn, projs, lock
-Set(printgc=false):
+#  input arguments:
+#     refset_path     path to reference dataset
+#     project_db      path to predictions in darwin db format
+#     title           name of the method which is evaluated
+#     problem         problem instance of tree benchmark, i.e. clade name
+#     confidence      minimum confidence level of species tree internal nodes
+#     treebuilder     LSTree (or BIONJ)
+#     out_dir         directory where output is written to. must exist
+
+Set(printgc=false): printlevel := 2;
 SetRandSeed();
 
-WriteLock(lock, 'initialize Species Tree discordance test compuation');
 CreateDayMatrices();
 NR_TRIALS := 50000;
 MAX_NR_TREES := 3000;
 
-prj := [seq(GetPKeyData(z),z=projs)]:
-dataset := prj[-1,'ref'];
-hashOfAllProjPIDs := hash_sha2(projs):
-
+if not assigned(refset_path) then
+    error('refset_path not assigned');
+fi:
 if not assigned(confidence) then
-    confidence := NULL;
+    confidence := 81;
 elif type(confidence, posint) then
     confidence := '_conf'.confidence;
 else error('unexpected type for confidence parameter');
@@ -29,7 +35,8 @@ fi;
 # load species tree as nested list of list, e.g.
 # sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
 # i.e. the tree is non-binary
-ReadProgram(datdir.'speciestree_'.problem.'_'.dataset.string(confidence).'.drw'); 
+ReadProgram(refset_path.'/speciestree_'.problem.'_conf'.string(confidence).'.drw');
+SeqDB := ReadDb( refset_path.'/ServerIndexed.db');
 
 ShuffleTreeOrder := proc(t)
     cpy := copy(t):
@@ -76,7 +83,7 @@ GetSeqOfOrthologs := proc( curProt, remSp )
     #printf('calls: %d; -->%d, %A\n', get_orth_calls, curProt, remSp):
     res := NULL;
     vps := ParseLongList(SearchTag('VP',Entry(curProt)));
-    nextSpeciesRange := GenomeRange(remSp[1], dataset);
+    nextSpeciesRange := GenomeRange(remSp[1]);
     idx1 := SearchOrderedArray(nextSpeciesRange[1]-1, vps)+1;
     idx2 := SearchOrderedArray(nextSpeciesRange[2], vps);
     cand_vps := Shuffle(vps[idx1..idx2]);
@@ -113,7 +120,7 @@ SelectNextFam := proc()
     od:
     if x>maxTry then return(NULL) fi:
 
-    startRange := GenomeRange(specList[1], dataset);
+    startRange := GenomeRange(specList[1]);
     fnd := false;
     for xx to 50 do 
         start := Rand(startRange);
@@ -133,53 +140,36 @@ SelectNextFam := proc()
     return( res );
 end:
 
-FindCases := proc(iSet, prjNrs:list)
-    global DB;
-    nP := length(prjNrs);
-    cases := CreateArray(1..nP,[]):
-    NrOrthologs := CreateArray(1..nP):
-    protSet := intersect(iSet, GetProtsInSPtree()):
-
-    for i2pNr to nP do
-        pNr := prjNrs[i2pNr];
-        assert( prj[pNr,'directMap'] );
-        DB := dbs[pNr];
-        
-        msg := 'sampling possible trees for '.prj[pNr,'Title'];
-        WriteLock(lock, msg);
-        cand := []: sampling_times := Stat('Stats of sampling times for '.prj[pNr,'Title']);
-        tLast := tBegin := time();
-        for trial to NR_TRIALS do
-            tCur := time();
-            nxt := SelectNextFam();
-            if nxt <> NULL then cand := append(cand, nxt) fi:
-            sampling_times + (time() - tCur);
-            if time()-tLast > 30 then
-                print(sampling_times);
-                WriteLock(lock, sprintf('%s\n %d of %d samplings done; %d samplings are complete.\n'.
-                                        '  sampling for %.1fmin (%.3fsec/sampling)\n\n', 
-                                        msg, trial, NR_TRIALS, length({op(cand)}), (time()-tBegin)/60,
-                                        (time()-tBegin)/trial));
-                tLast := time();
-            fi:
-        od:
-        cand := [op({op(cand)})]:
-        cases[i2pNr] := cand;
-        NrOrthologs[i2pNr] := CntOrthologs( protSet ):
+FindCases := proc()
+    Logger('sampling possible trees', 'INFO');
+    cand := []: sampling_times := Stat('Stats of sampling times');
+    tLast := tBegin := time();
+    for trial to NR_TRIALS do
+        tCur := time();
+        nxt := SelectNextFam();
+        if nxt <> NULL then cand := append(cand, nxt) fi:
+        sampling_times + (time() - tCur);
+        if time()-tLast > 30 then
+            print(sampling_times);
+            Logger(sprintf('%s\n %d of %d samplings done; %d samplings are complete.\n'.
+                           '  sampling for %.1fmin (%.3fsec/sampling)\n\n',
+                           msg, trial, NR_TRIALS, length({op(cand)}), (time()-tBegin)/60,
+                           (time()-tBegin)/trial));
+            tLast := time();
+        fi:
     od:
-   
-    Logger( sprintf('nr of cases in total: %d',sum(length(z),z=cases)), 'INFO');
-    return(cases, NrOrthologs):
+    cand := [op({op(cand)})]:
+    Logger(sprintf('nr of cases in total: %d', length(cand)), 'INFO');
+    return(cand):
 end:
 
 GetProtsInSPtree := proc()
     genomesInTree := indets(sptree, string):
-    protSet := {seq(seq(eNr, eNr=GenomeRange(g,dataset)),g=genomesInTree)};
+    protSet := {seq(seq(eNr, eNr=GenomeRange(g)),g=genomesInTree)};
     return( protSet );
 end:
 
 CntOrthologs := proc(iSet)
-    # precondition: project has directMap
     cnt := 0;
     for eNr to DB[TotEntries] do
         if not member(eNr,iSet) then next fi:
@@ -201,159 +191,137 @@ InferDistTree := proc(D, V, labs)
     return(tree);
 end:
 
-ComputeCongruenceStat := proc(prjNrs:list(posint), cases:list, totNrTrees:{0,posint})
+ComputeCongruenceStat := proc(cases:list, title)
     global DB, Ndone:
-    RFstat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
-    IdentStat := [seq( Stat(prj[i,'Title']), i=prjNrs)];
-    rawDat := CreateArray(1..length(prjNrs),[]):
+    RFstat := Stat('RobinsonFoulds - '.title);
+    IdentStat := Stat('Fraction Incorrect Trees - '.title);
+    rawDat := []:
     
     DB := SeqDB: 
     cErr := Counter('# errors in PhylogeneticTree');
-    if not type(Ndone, integer) then Ndone:=0 fi:
+    tot_nr_trees := length(cases);
+    if not type(Ndone, integer) then Ndone := 0 fi:
 
-    tLast := 0;
-    for pNr to length(prjNrs) do
-        for cas in cases[pNr] do
-            seqs := labs := spec := [];
-            speciestree := cas[1];
-            for i to length(cas[2]) do 
-                eNr := cas[2,i];
-                seqs := append(seqs, Sequence(Entry(eNr)));
-                labs := append(labs, eNr);
-                spec := append(spec, GenomeCodeFromENr(eNr,dataset));
-            od:
-            nseq := length(seqs):
-            msa := traperror(MafftMSA(seqs)):
-            if msa=lasterror then cErr+1; next fi:
-            D := CreateArray(1..nseq,1..nseq):
-            V := CreateArray(1..nseq,1..nseq):
-            for i to nseq do for j from i+1 to nseq do
-                 dps := EstimatePam(msa[AlignedSeqs,i],msa[AlignedSeqs,j],DMS):
-                 D[i,j] := D[j,i] := dps[2];
-                 V[i,j] := V[j,i] := dps[3];
-            od od:
-            genetree := traperror( InferDistTree(D,V,labs) ):
-            if genetree=lasterror then cErr+1; next fi;
-            
-            pruned_st := PruneTree(copy(speciestree), spec);
-            for l in Leaves(pruned_st) do 
-                x := SearchArray(l['Label'], spec);
-                l['Label'] := labs[x];
-            od:
+    tLast := 0; t0 := time();
+    for cas in cases do
+        seqs := labs := spec := [];
+        speciestree := cas[1];
+        for i to length(cas[2]) do
+            eNr := cas[2,i];
+            seqs := append(seqs, Sequence(Entry(eNr)));
+            labs := append(labs, eNr);
+            spec := append(spec, GenomeCodeFromENr(eNr));
+        od:
+        nseq := length(seqs):
+        msa := traperror(MafftMSA(seqs)):
+        if msa=lasterror then cErr+1; next fi:
+        D := CreateArray(1..nseq,1..nseq):
+        V := CreateArray(1..nseq,1..nseq):
+        for i to nseq do for j from i+1 to nseq do
+             dps := EstimatePam(msa[AlignedSeqs,i],msa[AlignedSeqs,j],DMS):
+             D[i,j] := D[j,i] := dps[2];
+             V[i,j] := V[j,i] := dps[3];
+        od od:
+        genetree := traperror( InferDistTree(D,V,labs) ):
+        if genetree=lasterror then cErr+1; next fi;
 
-            rfdist := RobinsonFoulds([genetree, pruned_st])[1,2];
-            RFstat[pNr] + rfdist;
-            IdentStat[pNr] + If(rfdist>0,1,0);
-            rawDat[pNr] := append(rawDat[pNr], [genetree, pruned_st, rfdist]);
-            Ndone := Ndone + 1;
-            if time()-tLast>30 then
-               t := Ndone/totNrTrees;
-               msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. '.
-                   'Estimated remaining time: %.1fmin\n', 
-                   Ndone, totNrTrees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
-               WriteLock(lock,msg);
-               tLast := time();
-            fi;
-        od;
-    od:
-    Logger( sprint('STDTest result for %s:\n  %A\n  %A', 
-        ConcatStrings([seq(prj[i,'Title'],i=prjNrs)],' - '), op(RFstat), cErr), 'INFO');
+        pruned_st := PruneTree(copy(speciestree), spec);
+        for l in Leaves(pruned_st) do
+            x := SearchArray(l['Label'], spec);
+            l['Label'] := labs[x];
+        od:
+
+        rfdist := RobinsonFoulds([genetree, pruned_st])[1,2];
+        RFstat + rfdist;
+        IdentStat + If(rfdist > 0, 1, 0);
+        rawDat := append(rawDat, [genetree, pruned_st, rfdist]);
+        Ndone := Ndone + 1;
+        if time()-tLast>30 then
+           t := Ndone/tot_nr_trees;
+           msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. '.
+               'Estimated remaining time: %.1fmin\n',
+               Ndone, tot_nr_trees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
+           tLast := time();
+        fi;
+    od;
+    Logger( sprintf('STDTest result for %s:\n  %A\n  %A',
+        title, RFstat, cErr), 'INFO');
     return( [RFstat, rawDat, IdentStat] );
 end:
 
-StoreResult := proc(fn:string, RFstat, IdentStat, NrOrthologs, NrTrees, RawDataFn, PIDs)
-    OpenWriting(fn):
-    printf('RFstat := %A:\n', RFstat):
-    printf('PIDs := %A:\n', PIDs );
-    printf('RawDataFn := %A:\n', RawDataFn);
-    printf('IdentStat := %A:\n', IdentStat);
-    printf('NrOrthologs := %A:\n', NrOrthologs);
-    printf('NrTrees := %A:\n', NrTrees);
-    printf('#problem := %A: confidence := %A: treebuilder := %A:\n', 
-           problem, confidence, treebuilder);
-    OpenWriting(previous):
-    CallSystem('gzip -9f '.fn);
-end:
+StoreRawData := proc(raw_data, name, fname_)
+    fname := fname_;
+    if length(fname) > 4 and fname[-3..-1] = '.gz' then
+        fname := fname[1..-4];
+        do_gzip := true;
+    else do_gzip := false fi:
 
-StoreRawData := proc(fn:string, RawData, projects)
-    OpenWriting(fn);
+    OpenWriting(fname);
+    printf('# Generalized Species Tree Discordance benchmark results\n');
+    printf('# Reported are infered gene tree and expected species tree (both in\n');
+    printf('# newick format) and the normalised Robinson-Foulds distance between them\n');
+    printf('# Computing timestamp: %s\n', date());
     printf('# Project <TAB> gene tree <TAB> species tree <TAB> RF distance\n');
-    for pNr to length(projects) do 
-        pName := projects[pNr,'Title'];
-        for z in RawData[pNr] do
-            for k to 2 do for l in Leaves(z[k]) do 
-                oE := l['Label']; 
-                if not type(oE,integer) then next fi:
-                l['Label'] := ENr2XRef(oE, dataset); 
-            od od:
-            printf('%s\t%s\t%s\t%f\n', pName, Tree_Newick(z[1]), 
-                Tree_Newick(z[2]), z[3]);
-        od:
+    for z in raw_data do
+        for k to 2 do for l in Leaves(z[k]) do
+            oE := l['Label'];
+            if not type(oE, integer) then next fi:
+            l['Label'] := ENr2XRef(oE);
+        od od:
+        printf('%s\t%s\t%s\t%f\n', name, Tree_Newick(z[1]),
+            Tree_Newick(z[2]), z[3]);
     od:
     OpenWriting(previous);
-    CallSystem('gzip -9f '.fn);
+    if do_gzip then  CallSystem('gzip -9f '.fname); fi:
 end:
 
-# load the project databases
-nP := length(prj); dbs := CreateArray(1..nP):
-for i to nP do dbs[i] := DB := ReadDb( prj[i,'fnBase'].'.db' ); od:
 
-# load index database
-ddir := eval(symbol(lowercase(dataset).'DBpath'));
-SeqDB := ReadDb( ddir.'/ServerSeqs.db');
+StoreResult := proc(fn:string, data:table)
+    OpenWriting(fn): prints(json(data)): OpenWriting(previous);
+end:
 
 
-if length(meth)>=6 and meth[1..6]='REFSET' then
-    cases := CreateArray(1..nP,[]):
-    RFstats := CreateArray(1..nP):
-    IdentStats := CreateArray(1..nP):
-    NrOrthologList := CreateArray(1..nP):
-    NrTreesList := CreateArray(1..nP):
-    RawData := CreateArray(1..nP):
-    prjNrs := [seq(i,i=1..nP)];
-    resFnParts := CreateArray(1..nP):
-    resFnBase := resFn[1..(SearchAllString('.',resFn)[-2])];
-    rawDataFn := CreateArray(1..nP):
-    iSet := intersect():
-    for i to nP do 
-        hash_of_cur_proj := hash_sha2([problem, prj[i,'PID'], meth, confidence, treebuilder]);
-        resFnParts[i] := sprintf('%s%a.drw', resFnBase, hash_of_cur_proj); 
-        rawDataFn[i] := sprintf('STDTest/STD_%s.%a.tsv.gz', meth, hash_of_cur_proj); 
-        if FileExists(resFnParts[i].'.gz') then next fi:
-        
-        casesAndCnts := FindCases( intersect(), [i] );
-        cases[i] := casesAndCnts[1,1]; NrOrthologList[i] := casesAndCnts[2,1];
-        NrTreesList[i] := length(cases[i]);
-        cases[i] := If(NrTreesList[i]>MAX_NR_TREES, Shuffle(cases[i])[1..MAX_NR_TREES], cases[i]):
-    od:
-    t0 := time();
-    totNrTrees := sum(length(z),z=cases):
-    for i to nP do
-        if FileExists(resFnParts[i].'.gz') then
-            RFstat := RawDataFn := 0;
-            ReadProgram(resFnParts[i]): 
-            assert(type(RFstat,Stat)); 
-            assert(type(IdentStat,Stat)); 
-            assert(type(RawDataFn,string));
-            RFstats[i] := RFstat;
-            IdentStats[i] := IdentStat;
-            rawDataFn[i] := RawDataFn;
-            NrOrthologList[i] := NrOrthologs;
-            NrTreesList[i] := NrTrees;
-        else
-            compRes := ComputeCongruenceStat([prjNrs[i]], [cases[i]], 
-                totNrTrees):
-            # compRes[1]: RFstat ; compRes[2]: raw data to be stored away
-            RFstats[i] := compRes[1,1]; rawdata := compRes[2,1]; IdentStats[i] := compRes[3,1];
-            StoreRawData(rawdir.rawDataFn[i,1..-4], [rawdata], [prj[i]]);
-            StoreResult(resFnParts[i], RFstats[i], IdentStats[i], NrOrthologList[i], NrTreesList[i], rawDataFn[i], 
-                [prj[i,'PID']]);
-        fi:
-    od:
-    StoreResult(resFn, RFstats, IdentStats, NrOrthologList, NrTreesList, rawDataFn, [seq(prj[i,'PID'],i=1..nP)]);
-else error('unknown strategy method:'.meth); 
-fi: 
 
-CallSystem('rm -f '.lock);
+projDB := ReadDb(project_db);
+hash_of_cur_proj := hash_sha2([problem, project_db, confidence, treebuilder]);
+raw_out_fn := sprintf('STD-%s_%a.tsv.gz', problem, hash_of_cur_proj);
+
+iSet := GetProtsInSPtree();
+cases := FindCases();
+nr_trees := length(cases);
+nr_orthologs := CntOrthologs(iSet);
+# limit nr of gene tree cases to compute to max, but keeping info on how many we found
+cases := If(nr_trees > MAX_NR_TREES, Shuffle(cases)[1..MAX_NR_TREES], cases):
+
+# compute gene trees and their congruence to the species tree
+compRes := ComputeCongruenceStat(cases, title):
+RFstat := compRes[1]; raw_data := compRes[2]; IdentStat := compRes[3];
+
+
+result := table():
+result['problem'] := problem;
+result['confidence'] := confidence;
+result['treebuilder'] := treebuilder;
+recall_nr_orth := table(): recall_sampled := table():
+recall_nr_orth['name'] := 'Number of predicted ortholog pairs';
+recall_nr_orth['value'] := nr_orthologs;
+recall_nr_orth['stderr'] := 0;
+recall_sampled['name'] := 'Number of completed tree samplings (of 50k trials)';
+recall_sampled['value'] := nr_trees;
+recall_sampled['stderr'] := 1.96 * sqrt(nr_trees/NR_TRIALS * (1 - nr_trees/NR_TRIALS) * NR_TRIALS);
+result['recall_measures'] := [recall_sampled, recall_nr_orth];
+prec_rf := table(): prec_id := table():
+prec_rf['name'] := 'Avg RobinsonFoulds distance';
+prec_rf['value'] := RFstat['Mean'];
+prec_rf['stderr'] := RFstat['StdErr'];
+prec_id['name'] := 'Avg fraction of incorrect trees';
+prec_id['value'] := IdentStat['Mean'];
+prec_id['stderr'] := IdentStat['StdErr'];
+result['precision_measures'] := [prec_rf, prec_id]:
+result['raw_data_fn'] := raw_out_fn:
+StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
+StoreResult(out_dir.'/result.json', result);
+
 done;
+
 
