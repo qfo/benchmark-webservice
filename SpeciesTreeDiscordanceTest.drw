@@ -22,9 +22,8 @@ if not assigned(refset_path) then
 fi:
 if not assigned(confidence) then
     confidence := 81;
-elif type(confidence, posint) then
-    confidence := '_conf'.confidence;
-else error('unexpected type for confidence parameter');
+elif not type(confidence, posint) then
+    error('unexpected type for confidence parameter');
 fi:
 
 if not member(treebuilder, {'LSTree','BIONJ'}) then 
@@ -150,7 +149,6 @@ FindCases := proc()
         if nxt <> NULL then cand := append(cand, nxt) fi:
         sampling_times + (time() - tCur);
         if time()-tLast > 30 then
-            print(sampling_times);
             Logger(sprintf('%s\n %d of %d samplings done; %d samplings are complete.\n'.
                            '  sampling for %.1fmin (%.3fsec/sampling)\n\n',
                            msg, trial, NR_TRIALS, length({op(cand)}), (time()-tBegin)/60,
@@ -241,6 +239,7 @@ ComputeCongruenceStat := proc(cases:list, title)
            msg := sprintf( 'Finished %d / %d (%.1f%%) trees in %.1f min. '.
                'Estimated remaining time: %.1fmin\n',
                Ndone, tot_nr_trees, 100*t, (time()-t0)/60, (1-t)/t*(time()-t0)/60 );
+           Logger(msg);
            tLast := time();
         fi;
     od;
