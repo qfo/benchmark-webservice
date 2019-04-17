@@ -19,6 +19,7 @@ method_name = params.participant_name
 refset_dir = params.refset
 result = file(params.results_dir)
 go_evidences = params.go_evidences
+tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 
 /*
  * validate input file
@@ -110,13 +111,14 @@ process speciestree_benchmark {
     file db from db
     val method_name
     val refset_dir
+    val clade from tree_clades
 
     output:
-    file "STD_Luca"
+    file "STD_$clade"
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "STD_Luca" -p Luca $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "STD_$clade" -p $clade $db "$method_name" $refset_dir
     """
 }
 

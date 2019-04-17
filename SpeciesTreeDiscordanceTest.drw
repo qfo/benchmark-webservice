@@ -30,12 +30,19 @@ if not member(treebuilder, {'LSTree','BIONJ'}) then
     error('unexpected treebuilder method: '.treebuilder);
 fi;
 
+prob_short := If(lowercase(problem)='luca', 'Luca', lowercase(problem[1..3]));
+prob_short[1] := uppercase(prob_short[1]);
+
 
 # load species tree as nested list of list, e.g.
 # sptree := [[['HUMAN','PANTR'],['MOUSE','RATNO'],'CANFA'],'CHICK','XENTR'];
 # i.e. the tree is non-binary
-ReadProgram(refset_path.'/speciestree_'.problem.'_conf'.string(confidence).'.drw');
-SeqDB := ReadDb( refset_path.'/ServerIndexed.db');
+prob_path := refset_path.'/speciestree_'.prob_short.'_conf'.string(confidence).'.drw';
+if not FileExists(prob_path) then 
+    error(sprintf('problem file "%s" does not exist. Wrong problem parameter?', prob_path));
+fi:
+ReadProgram(prob_path); 
+SeqDB := ReadDb(refset_path.'/ServerIndexed.db');
 
 ShuffleTreeOrder := proc(t)
     cpy := copy(t):

@@ -46,7 +46,7 @@ while getopts "c:o:p:t:h" opt ; do
             ;;
         c) confidence="$OPTARG"
            ;;
-        e) problem="$OPTARG"
+        p) problem="$OPTARG"
            ;;
         t) treebuilder="$OPTARG"
            ;;
