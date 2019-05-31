@@ -24,6 +24,10 @@ Options
         similarity score. The filename of raw data is available in the
         result.json file
 
+  -a    flag to use the newer, more uniform species sampling approach.
+        If not set or set to 0, the original sampling strategy is used, with
+        1 the improved algorithm with a fixed nr of species per tree is used.
+
 Positional arguments:
   project_db   Path to project database
 
@@ -38,8 +42,9 @@ problem="Luca"
 out_dir="STD"
 confidence="81"
 treebuilder="LSTree"
+algo="SpeciesTreeDiscordanceTest.drw"
 
-while getopts "c:o:p:t:h" opt ; do
+while getopts "c:o:p:t:a:h" opt ; do
     case $opt in
         h) usage
             exit 0
@@ -51,6 +56,13 @@ while getopts "c:o:p:t:h" opt ; do
         t) treebuilder="$OPTARG"
            ;;
         o) out_dir="$OPTARG"
+           ;;
+        a) if [[ "$OPTARG" == "1" ]] ; then
+              algo="SpeciesTreeDiscordanceTest-fixedsize.drw"
+           elif [[ "$OPTARG" != "0" ]] ; then
+              usage
+              exit 1
+           fi
            ;;
         \?)  echo "invalid option" >&2
            usage
@@ -85,7 +97,7 @@ darwin -E  << EOF
    refset_path := '$refset';
    out_dir := '$out_dir';
    ReadProgram('$benchmark_dir/lib/darwinit');
-   ReadProgram('$benchmark_dir/SpeciesTreeDiscordanceTest.drw');
+   ReadProgram('$benchmark_dir/$algo');
    done;
 EOF
 
