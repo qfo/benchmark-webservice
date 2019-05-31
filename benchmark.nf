@@ -122,6 +122,23 @@ process speciestree_benchmark {
     """
 }
 
+process speciestree_benchmark_variant2 {
+    label "darwin"
+    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
+
+    input:
+    file db from db
+    val method_name
+    val refset_dir
+
+    output:
+    file "STD2_Luca"
+
+    """
+    /benchmark/SpeciesTreeDiscordanceTest.sh -a 1 -o STD2_Luca -p Luca $db "$method_name" $refset_dir
+    """
+}
+
 
 workflow.onComplete {
 	println ( workflow.success ? "Done!" : "Oops .. something went wrong" )

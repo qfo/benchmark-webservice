@@ -25,7 +25,6 @@ for year in 2011 2018 ; do
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/lineage_tree.phyloxml"
 done
 
-
-
+docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py Luca"
 
 
