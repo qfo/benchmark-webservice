@@ -37,12 +37,21 @@ def extract_relevant_newick_tree(fn_phyloxml, clade):
 
 
 if __name__ == "__main__":
-    clades = {'LUCA': 'LUCA', 'Fun': 'Fungi', 'Euk': 'Eukaryota', 'Ver': 'Euteleostomi'}
-    for lab, clade in clades.items():
-        newick = extract_relevant_newick_tree('/refset/lineage_tree.phyloxml', clade)
-        samples = sample_cases(newick)
-        with open('/refset/species_tree_samples_{}.nwk'.format(lab), 'wt') as fh:
-            for t in samples:
-                t.write(file=fh, schema='newick')
+    import argparse
+    clades = {'Luca': 'LUCA', 'Fun': 'Fungi', 'Euk': 'Eukaryota', 'Ver': 'Euteleostomi'}
+
+    parser = argparse.ArgumentParser(description="Compute relevant species samples for a certain clade")
+    parser.add_argument('clade', 
+            help="Clade for which the tree samples should be generated. "
+                 "Should be one of 'Luca', 'Fun', 'Euk' or 'Ver'", 
+            choices=list(clades.keys()))
+    conf = parser.parse_args()
+    lab = conf.clade
+    clade = clades[lab]
+    newick = extract_relevant_newick_tree('/refset/lineage_tree.phyloxml', clade)
+    samples = sample_cases(newick)
+    with open('/refset/species_tree_samples_{}.nwk'.format(lab), 'wt') as fh:
+        for t in samples:
+            t.write(file=fh, schema='newick')
 
 
