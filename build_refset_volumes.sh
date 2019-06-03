@@ -25,6 +25,8 @@ for year in 2011 2018 ; do
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/lineage_tree.phyloxml"
 done
 
+echo "Sampling species tree instances for SpeciesTreeDiscordanceTest benchmark. This will take a while..."
 docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py Luca"
+if [[ "$?" == "0" ]] ; then echo "Done \o/"; fi
 
 
