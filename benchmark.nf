@@ -20,6 +20,7 @@ refset_dir = params.refset
 result = file(params.results_dir)
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
+genetree_sets = Channel.from("SwissTrees", "SemiAuto")
 
 /*
  * validate input file
@@ -136,6 +137,25 @@ process speciestree_benchmark_variant2 {
 
     """
     /benchmark/SpeciesTreeDiscordanceTest.sh -a 1 -o STD2_Luca -p Luca $db "$method_name" $refset_dir
+    """
+}
+
+
+process reference_genetrees_benchmark {
+    label "darwin"
+    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
+
+    input:
+    file db from db
+    val method_name
+    val refset_dir
+    val testset from genetree_sets
+
+    output:
+    file "RefPhylo_$testset"
+
+    """
+    /benchmark/RefPhyloTest.sh -o "RefPhylo_$testset" -t "$testset" $db "$method_name" $refset_dir
     """
 }
 

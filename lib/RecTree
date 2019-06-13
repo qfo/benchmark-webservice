@@ -1,52 +1,5 @@
-module external RecTreeCase, GetTreeCase, GetAllTreeCases;
-local RTtab:
-
 RecTreeCase := proc(Name:string, DisplayName:string, MappedProts:set(posint), Relations:table, Tree:Tree, Reference:string)
     for z in [' ', '\n', '\t'] do assert(SearchString(z,Name)<0) od:
     noeval(procname(args));
 end:
 CompleteClass(RecTreeCase):
-
-
-LoadReconciledTrees := proc( ref:string, qualifier:string )
-    global ReconciledTrees:
-    if type(ReconciledTrees,table) then curRT := ReconciledTrees fi:
-
-    fn := sprintf('%s/ReconciledTrees%s_%s.drw', datdir, qualifier, ref);
-    if not FileExists(fn) then error('could not load ReconciledTree_'.ref.' datafile') fi;
-
-    ReconciledTrees := 0;
-    ReadProgram(fn):
-    if ReconciledTrees=0 then error('cannot load file: '.fn) fi:
-
-    t := ReconciledTrees:
-    if type(curRT,table) then ReconciledTrees := curRT fi:
-
-    return( t ):
-end:
-
-RTtab := table(proc(i) error('Dataset '.i.' not known') end):
-RTtab['OMA'] := LoadReconciledTrees('OMA','');
-RTtab['RefSet5'] := LoadReconciledTrees('RefSet5','');
-RTtab['RefSet5SemiAuto'] := LoadReconciledTrees('RefSet5','SemiAuto');
-RTtab['RefSet17'] := LoadReconciledTrees('RefSet17','');
-RTtab['RefSet17SemiAuto'] := LoadReconciledTrees('RefSet17','SemiAuto');
-RTtab['RefSet18'] := LoadReconciledTrees('RefSet18','');
-RTtab['RefSet18SemiAuto'] := LoadReconciledTrees('RefSet18','SemiAuto');
-RTtab['OMASemiAuto'] := table():
-
-
-GetTreeCase := proc(case:string ; (ref='OMA'):string,
-    'testset'=((qualifier=''):string) )
-    sel := sprintf('%s%s', ref, qualifier);
-    t := RTtab[sel,case];
-    if t=unassigned then error('unknown tree case:'.case) fi:
-    return( t ):
-end:
-
-GetAllTreeCases := proc(; (ref='OMA'):string,
-    'testset'=((qualifier=''):string) )
-    return( Indices(RTtab[ref.qualifier]) );
-end:
-
-end: #module

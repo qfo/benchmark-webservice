@@ -57,8 +57,6 @@ RatioOfRandVars  := noeval(ReadLibrary(cdir.'/lib/ResultHandler', RatioOfRandVar
 RelativeDifference := noeval(ReadLibrary(cdir.'/lib/ResultHandler', RelativeDifference));
 
 RecTreeCase := noeval(ReadLibrary(cdir.'/lib/RecTree', RecTreeCase));
-GetTreeCase := noeval(ReadLibrary(cdir.'/lib/RecTree', GetTreeCase));
-GetAllTreeCases := noeval(ReadLibrary(cdir.'/lib/RecTree', GetAllTreeCases));
 
 ParseStrategy := noeval(ReadLibrary(cdir.'/lib/Parsing', ParseStrategy));
 ParseAllPrefixParams := noeval(ReadLibrary(cdir.'/lib/Parsing',ParseAllPrefixParams)):
