@@ -1,5 +1,5 @@
 ##
-#  Script to run the species tree discordance test  
+#  Script to run the generalized species tree discordance test
 #
 #  input arguments:
 #     refset_path     path to reference dataset
@@ -250,7 +250,7 @@ ComputeCongruenceStat := proc(cases:list, title)
            tLast := time();
         fi;
     od;
-    Logger( sprintf('STDTest result for %s:\n  %A\n  %A',
+    Logger( sprintf('G_STDTest result for %s:\n  %A\n  %A',
         title, RFstat, cErr), 'INFO');
     return( [RFstat, rawDat, IdentStat] );
 end:
@@ -264,7 +264,7 @@ StoreRawData := proc(raw_data, name, fname_)
 
     OpenWriting(fname);
     printf('# Generalized Species Tree Discordance benchmark results\n');
-    printf('# Reported are infered gene tree and expected species tree (both in\n');
+    printf('# Reported are inferred gene tree and expected species tree (both in\n');
     printf('# newick format) and the normalised Robinson-Foulds distance between them\n');
     printf('# Computing timestamp: %s\n', date());
     printf('# Project <TAB> gene tree <TAB> species tree <TAB> RF distance\n');
@@ -290,7 +290,7 @@ end:
 
 projDB := ReadDb(project_db);
 hash_of_cur_proj := hash_sha2([problem, project_db, confidence, treebuilder]);
-raw_out_fn := sprintf('STD-%s_%a.tsv.gz', problem, hash_of_cur_proj);
+raw_out_fn := sprintf('G_STD-%s_%a.tsv.gz', problem, hash_of_cur_proj);
 
 iSet := GetProtsInSPtree();
 cases := FindCases();

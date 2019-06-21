@@ -6,7 +6,9 @@ $0 - run SpeciesTree Discordance benchmark
 
 Compute benchmark results for the species tree discordance benchmark for a single
 orthology method. You can specify the reference dataset, evidence filters
-and similarity measure using the below options
+and similarity measure using the below options. With the -a option, one can
+select between the different flavors, i.e. original species tree discordance
+benchmark, the generalized version and the improved generalized version.
 
 Options
 
@@ -24,9 +26,13 @@ Options
         similarity score. The filename of raw data is available in the
         result.json file
 
-  -a    flag to use the newer, more uniform species sampling approach.
-        If not set or set to 0, the original sampling strategy is used, with
-        1 the improved algorithm with a fixed nr of species per tree is used.
+  -a    option to select between different flavors of the species tree discordance
+        benchmark. The argument expects a numeric value between 0 and 2, where as 0
+        is the default value and corresponds to the initial SpeciesTreeDiscordance
+        benchmark. With 1, the Generalized SpeciesTreeDiscordance benchmark is
+        selected and with 2, a newer, more uniform species sampling approach for the
+        Generalized SpeciesTreeDiscordance benchmark is used.
+
 
 Positional arguments:
   project_db   Path to project database
