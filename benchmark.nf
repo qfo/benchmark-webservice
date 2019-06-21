@@ -21,6 +21,7 @@ result = file(params.results_dir)
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 genetree_sets = Channel.from("SwissTrees", "SemiAuto")
+tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
 
 /*
  * validate input file
@@ -103,7 +104,28 @@ process ec_benchmark {
     """
 }
 
+
 process speciestree_benchmark {
+
+    label "darwin"
+    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
+
+    input:
+    file db from db
+    val method_name
+    val refset_dir
+    val clade from tree_clades0
+
+    output:
+    file "STD_$clade"
+
+
+    """
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "STD_$clade" -p $clade $db "$method_name" $refset_dir
+    """
+}
+
+process g_speciestree_benchmark {
 
     label "darwin"
     publishDir "${params.results_dir}", mode: 'copy', overwrite: true
@@ -115,15 +137,15 @@ process speciestree_benchmark {
     val clade from tree_clades
 
     output:
-    file "STD_$clade"
+    file "G_STD_$clade"
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "STD_$clade" -p $clade $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "G_STD_$clade" -p $clade -a 1 $db "$method_name" $refset_dir
     """
 }
 
-process speciestree_benchmark_variant2 {
+process g_speciestree_benchmark_variant2 {
     label "darwin"
     publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
@@ -133,10 +155,10 @@ process speciestree_benchmark_variant2 {
     val refset_dir
 
     output:
-    file "STD2_Luca"
+    file "G_STD2_Luca"
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -a 1 -o STD2_Luca -p Luca $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -a 2 -o G_STD2_Luca -p Luca $db "$method_name" $refset_dir
     """
 }
 

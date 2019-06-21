@@ -48,7 +48,7 @@ problem="Luca"
 out_dir="STD"
 confidence="81"
 treebuilder="LSTree"
-algo="SpeciesTreeDiscordanceTest.drw"
+algo="TreeTest.drw"
 
 while getopts "c:o:p:t:a:h" opt ; do
     case $opt in
@@ -63,8 +63,11 @@ while getopts "c:o:p:t:a:h" opt ; do
            ;;
         o) out_dir="$OPTARG"
            ;;
-        a) if [[ "$OPTARG" == "1" ]] ; then
+        a) if [[ "$OPTARG" == "2" ]] ; then
               algo="SpeciesTreeDiscordanceTest-fixedsize.drw"
+           elif [[ "$OPTARG" == "1" ]] ; then
+              algo="SpeciesTreeDiscordanceTest.drw"
+
            elif [[ "$OPTARG" != "0" ]] ; then
               usage
               exit 1
@@ -103,7 +106,10 @@ darwin -E  << EOF
    refset_path := '$refset';
    out_dir := '$out_dir';
    ReadProgram('$benchmark_dir/lib/darwinit');
-   ReadProgram('$benchmark_dir/$algo');
-   done;
+   res := traperror(ReadProgram('$benchmark_dir/$algo'));
+   if res = lasterror then
+       exit(1);
+   fi:
+   done
 EOF
 

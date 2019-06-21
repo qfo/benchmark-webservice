@@ -24,7 +24,10 @@ for year in 2011 2018 ; do
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/speciestree_Fun_conf81.drw
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ReconciledTrees_SwissTrees.drw
         curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/ReconciledTrees_SemiAuto.drw
-        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/lineage_tree.phyloxml"
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/lineage_tree.phyloxml
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/TreeCat_Euk.drw
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/TreeCat_Bac.drw
+        curl -SL -O https://orthology.benchmarkservice.org/refsets/$year/TreeCat_Fun.drw"
 done
 
 echo "Sampling species tree instances for SpeciesTreeDiscordanceTest benchmark. This will take a while..."
