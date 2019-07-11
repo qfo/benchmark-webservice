@@ -1,27 +1,88 @@
 #!/usr/bin/env nextflow
 
-log.info """ \
-		   QfO Benchmark at OpenEBench
-      =============================
+
+if (params.help) {
+    log.info """
+    ===========================================
+      QFO ORTHOLOGY BENCHMARKING PIPELINE
+    ===========================================
+    Usage:
+    Run the pipeline with default parameters:
+    nexflow run benchmark.nf
+
+    Run with user parameters:
+    nextflow run benchmark.nf --predictions_file {orthology.predictions} --participant_name {tool.name} --results_dir {results.dir}
+
+    Mandatory arguments:
+        --predictions_file      Predicted orthologs in TSV or orthoxml file
+
+        --participant_name      Name of the tool / method
+
+
+    Additional options:
+        --challenges_ids        List of benchmarks / challenges to be run by the pipeline.
+                                Defaults to all available benchmarks
+
+        --event_year            QfO Reference Proteomes release, defaults to 2018
+
+        --community_id          Name or OEB permanent ID for the benchmarking community
+
+        --go_evidences          Evidence filter of GO annotation used in the GO benchmark
+                                Defaults to experimental annotations
+
+        --results_dir           Base result for all the following output directories, unless overwritten
+        --validation_result     The output directory where the results from validation step will be saved¬
+        --assessment_results    The output directory where the results from the computed metrics step will be saved¬
+        --aggregation_results   The output directory where the consolidation of the benchmark will be saved¬
+        --statistics_results    The output directory with nextflow statistics¬
+        --data_model_export_dir The output dir where json file with benchmarking data model contents will be saved¬
+        --other_dir             The output directory where custom results will be saved (no directory inside)¬
+
+    Flags:
+        --help                  Display this message¬
+    """.stripIndent()
+
+    exit 1
+}
+
+log.info """
+         ==============================================
+          QFO ORTHOLOGY BENCHMARKING PIPELINE
+         ==============================================
          input file: ${params.predictions_file}
          method name : ${params.participant_name}
          refeset path: ${params.refset}
-         results directory: ${params.results_dir}
-
-         GO benchmark:
-            evidence filter: ${params.go_evidences}
-
+         benchmarking community = ${params.community_id}
+         selected benchmarks: ${params.challenges_ids}
+         Evidence filter for GO benchmark: ${params.go_evidences}
+         validation results directory: ${params.validation_result}
+         assessment results directory: ${params.assessment_results}
+         consolidated benchmark results directory: ${params.aggregation_results}
+         Statistics results about nextflow run: ${params.statistics_results}
+         Benchmarking data model file location: ${params.data_model_export_dir}
+         Directory with community-specific results: ${params.other_dir}
          """
-.stripIndent()
+    .stripIndent()
 
+
+//input
 predictions = file(params.predictions_file)
 method_name = params.participant_name
 refset_dir = params.refset
-result = file(params.results_dir)
+benchmarks = params.challenges_ids
+community_id = params.community_id
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 genetree_sets = Channel.from("SwissTrees", "SemiAuto")
 tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
+
+//output
+validation_out = file(params.validation_result)
+assessment_out = file(params.assessment_results)
+aggregation_dir = file(params.aggregation_results)
+data_model_export_dir = file(params.data_model_export_dir)
+other_dir = file(params.other_dir)
+
 
 /*
  * validate input file
@@ -32,14 +93,19 @@ process validate_input_file {
     input:
     file predictions
     val refset_dir
+    val benchmarks
+    val community_id
+    val method_name
+    val validation_out
 
     output:
     val task.exitStatus into EXIT_STAT
 
     """
-    /benchmark/validate.py $refset_dir/mapping.json.gz $predictions
+    /benchmark/validate.py --com $community_id --challenges_ids "$benchmarks" --participant "$method_name" --out $validation_out $refset_dir/mapping.json.gz $predictions
     """
 }
+exit 1
 
 /*
  * extract pairwise predictions and store in darwin compatible database

@@ -15,6 +15,8 @@ from io import BytesIO
 import bz2
 import gzip
 import logging
+import JSON_templates
+
 logger = logging.getLogger("validator")
 
 
@@ -158,7 +160,7 @@ def identify_input_type_and_validate(fpath, valid_ids):
                 parse_orthoxml(fh, valid_ids)
         except AssertionError as e:
             logger.error('input file is not a valid orthoxml file: {}'.format(e))
-            sys.exit(1)
+            return False
 
     else:
         try:
@@ -166,7 +168,19 @@ def identify_input_type_and_validate(fpath, valid_ids):
                 parse_tsv(fh, valid_ids)
         except AssertionError as e:
             logger.error('input file is not a valid tab-separated file: {}'.format(e))
-            sys.exit(1)
+            return False
+    return True
+
+
+def write_participant_dataset_file(out_dir, participant_name, community, challenges, is_valid):
+    participant_id = participant_name.replace('_', '-').replace(' ', '-')
+    data_id = conf.com + ":" + conf.participant_id + "_P"
+    challenges = challenges.split() if isinstance(challenges, str) else challenges
+    output_json = JSON_templates.write_participant_dataset(data_id, community, challenges,
+                                                           participant_name, is_valid)
+    output_file = os.path.join(out_dir, "Dataset_{:s}_{:s}_P.json".format(community, participant_id))
+    with open(output_file, 'wt') as fout:
+        json.dump(output_json, fout, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 if __name__ == "__main__":
@@ -175,6 +189,10 @@ if __name__ == "__main__":
     parser.add_argument('mapping', help="Path to mapping.json of proper QfO dataset")
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
+    parser.add_argument('-c', '--com', required=True, help="Name or OEB permanent ID for the benchmarking community")
+    parser.add_argument('--challenges_ids', default=[], help="List of benchmarks that will be run")
+    parser.add_argument('-p', '--participant', required=True, help="Name of the tool")
+    parser.add_argument('-o', '--out', required=True, help="Output folder where the validation json is stored")
     conf = parser.parse_args()
 
     log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
@@ -183,4 +201,7 @@ if __name__ == "__main__":
     logging.basicConfig(**log_conf)
 
     mapping_data = load_mapping(conf.mapping)
-    identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'])
+    is_valid = identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'])
+    write_participant_dataset_file(conf.out, conf.participant, conf.com, conf.challenges_ids, is_valid)
+    if not is_valid:
+        sys.exit("ERROR: Submitted data does not validate against any reference data! Please check "+conf.out )
