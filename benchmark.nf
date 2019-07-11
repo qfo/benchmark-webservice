@@ -105,7 +105,6 @@ process validate_input_file {
     /benchmark/validate.py --com $community_id --challenges_ids "$benchmarks" --participant "$method_name" --out $validation_out $refset_dir/mapping.json.gz $predictions
     """
 }
-exit 1
 
 /*
  * extract pairwise predictions and store in darwin compatible database

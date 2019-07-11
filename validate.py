@@ -174,10 +174,11 @@ def identify_input_type_and_validate(fpath, valid_ids):
 
 def write_participant_dataset_file(out_dir, participant_name, community, challenges, is_valid):
     participant_id = participant_name.replace('_', '-').replace(' ', '-')
-    data_id = conf.com + ":" + conf.participant_id + "_P"
+    data_id = community + ":" + participant_id + "_P"
     challenges = challenges.split() if isinstance(challenges, str) else challenges
     output_json = JSON_templates.write_participant_dataset(data_id, community, challenges,
                                                            participant_name, is_valid)
+    os.makedirs(out_dir, exist_ok=True)
     output_file = os.path.join(out_dir, "Dataset_{:s}_{:s}_P.json".format(community, participant_id))
     with open(output_file, 'wt') as fout:
         json.dump(output_json, fout, sort_keys=True, indent=4, separators=(',', ': '))
