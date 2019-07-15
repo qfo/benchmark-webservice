@@ -133,20 +133,20 @@ process convertPredictions {
 process go_benchmark {
 
     label "darwin"
-    publishDir path: "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
+    file predictions
     file db from db
     val method_name
     val refset_dir
     val go_evidences
-
-    output:
-    file "GO"
+    val community_id
+    val assessment_out
+    val other_dir
 
 
     """
-    /benchmark/GoTest.sh -o "GO" -e "$go_evidences" $db "$method_name" $refset_dir
+    /benchmark/GoTest.sh -o "$other_dir" -a "$assessment_out" -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
     """
 }
 
@@ -245,7 +245,6 @@ process reference_genetrees_benchmark {
     /benchmark/RefPhyloTest.sh -o "RefPhylo_$testset" -t "$testset" $db "$method_name" $refset_dir
     """
 }
-
 
 workflow.onComplete {
 	println ( workflow.success ? "Done!" : "Oops .. something went wrong" )

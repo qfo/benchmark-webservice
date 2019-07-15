@@ -25,10 +25,14 @@ Options
 
         If not evidence filter is set, it defaults to the experimental codes.
 
-  -o    output directory, where result.json and raw data file will be stored.
+  -o    output directory, where the raw data file will be stored.
         Raw data is a file that contains the evaluated orthologs and their
-        similarity score. The filename of raw data is available in the
-        result.json file
+        similarity score.
+
+  -a    assessment directory, where the assessemnt json stub will be stored
+
+  -c    community_id, Name or OEB permanent ID for the benchmarking community
+
 
 Positional arguments:
   project_db   Path to project database
@@ -41,9 +45,11 @@ EOF
 }
 
 measure="avg Schlicker"
-out_dir="GO"
+out_dir=""
+assessment_dir=""
+community_id="QfO"
 evidences="exp"
-while getopts "m:o:e:h" opt ; do
+while getopts "a:c:e:m:o:h" opt ; do
     case $opt in
         h) usage
             exit 0
@@ -67,6 +73,10 @@ while getopts "m:o:e:h" opt ; do
            ;;
         o) out_dir="$OPTARG"
            ;;
+        a) assessment_dir="$OPTARG"
+           ;;
+        c) community_id="$OPTARG"
+           ;;
         \?)  echo "invalid option" >&2
            usage
            exit 1
@@ -89,7 +99,13 @@ title="$2"
 refset="$3"
 benchmark_dir="$(dirname $0)"
 
-if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; fi
+if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
+    echo "output and assessment directories are mandatory arguments"
+    exit 1
+fi
+echo "out_dir: $out_dir; assessment_dir: $assessment_dir"
+if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
+if [ ! -d "$assessment_dir" ] ; then mkdir -p "$assessment_dir"; echo "created $assessment_dir"; fi
 
 darwin -E  << EOF
    project_db := '$project_db':
@@ -98,6 +114,8 @@ darwin -E  << EOF
    title := '$title':
    refset_path := '$refset':
    out_dir := '$out_dir':
+   assessment_dir := '$assessment_dir':
+   community_id := '$community_id':
    ReadProgram('$benchmark_dir/lib/darwinit');
    ReadProgram('$benchmark_dir/GoTest.drw');
    done;

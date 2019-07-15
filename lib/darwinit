@@ -67,3 +67,5 @@ RawDataWLink := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', RawDataWLink));
 ProjectButtons := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectButtons));
 ProjectCheckbox := noeval(ReadLibrary(cdir.'/lib/DisplayFunctions', ProjectCheckbox));
 hash_sha2 := noeval(ReadLibrary(cdir.'/lib/hash', hash_sha2));
+
+AssessmentDataset := noeval(ReadLibrary(cdir.'/lib/JsonTemplates', AssessmentDataset));

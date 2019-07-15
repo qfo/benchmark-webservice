@@ -11,6 +11,8 @@
 #     refset_path     path to reference dataset
 #     project_db      path to predictions in darwin db format
 #     title           name of the method which is evaluated
+#     assessment_dir  directory where the assessment file should be written. must exist
+#     community_id    community id
 #     measure         similarity measure, e.g 'avg Schlicker'
 #     evidences       evidence codes to consider, passed as a list/set, e.g. [EXP, IDA]
 #     out_dir         directory where output is written to. must exist
@@ -19,6 +21,10 @@ printlevel := 2;
 Set(printgc=false); Set(gc=5e6): 
 if not assigned(refset_path) then
     error('refset_path not assigned');
+fi:
+
+if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
+    error('community_id, assessment_dir and out_dir all must be defined');
 fi:
 
 existing_evidence_codes := {'EXP','IDA','IPI','IMP','IGI','IEP',  # experiments
@@ -186,12 +192,13 @@ StoreRawData := proc(rawData, name, fname_)
 end:
 
 
-StoreResult := proc(fn:string, data:table)
+StoreResult := proc(fn:string, data)
     OpenWriting(fn): prints(json(data)): OpenWriting(previous);
 end:
 
 projDB := ReadDb(project_db);
-raw_out_fn := sprintf('GOraw-%s.txt.gz', sha2(string([filter, measure, title, project_db]))[1..12]);
+title_id := ReplaceString(' ','-', ReplaceString('_', '-', title));
+raw_out_fn := sprintf('GO_%s_%s_raw.txt.gz', title_id, sha2(string([filter, measure, title, project_db]))[1..12]);
 LoadGOset():
 printf('loaded %d go annotations\n', sum(length(z), z=GOs));
 result := table():
@@ -203,8 +210,13 @@ result['nr_orthologs'] := perf['Number'];
 result['similarity'] := perf['Mean'];
 result['stderr'] := perf['StdErr'];
 result['raw_data_fn'] := raw_out_fn:
+
+
+assessments := [AssessmentDataset(community, 'GO', title, 'NR_ORTHOLOGS', perf['Number'], 0),
+                AssessmentDataset(community, 'GO', title, masure, perf['Mean'], perf['StdErr'])];
+
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(out_dir.'/result.json', result);
+StoreResult(assessment_dir.'/GO_'.title_id.'.json', assessments);
 
 done;
 
