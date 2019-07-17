@@ -11,6 +11,8 @@
 #     refset_path     path to reference dataset
 #     project_db      path to predictions in darwin db format
 #     title           name of the method which is evaluated
+#     assessment_dir  directory where the assessment file should be written. must exist
+#     community_id    community id
 #     measure         similarity measure, e.g 'avg Schlicker'
 #     out_dir         directory where output is written to. must exist
 
@@ -20,6 +22,10 @@ printlevel := 2;
 Set(printgc=false); Set(gc=5e6):
 if not assigned(refset_path) then
     error('refset_path not assigned');
+fi:
+
+if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
+    error('community_id, assessment_dir and out_dir all must be defined');
 fi:
 
 ReadProgram(refset_path.'/enzymes.drw'); # assigns EC
@@ -157,12 +163,13 @@ StoreRawData := proc(rawData, name, fname_)
 end:
 
 
-StoreResult := proc(fn:string, data:table)
+StoreResult := proc(fn:string, data)
     OpenWriting(fn): prints(json(data)): OpenWriting(previous);
 end:
 
 projDB := ReadDb(project_db);
-raw_out_fn := sprintf('ECraw-%s.txt.gz', sha2(string([measure, title, project_db]))[1..12]);
+title_id := ReplaceString(' ','-', ReplaceString('_', '-', title));
+raw_out_fn := sprintf('EC_%s_%s_raw.txt.gz', title_id, sha2(string([measure, title, project_db]))[1..12]);
 freqs := LoadECFreqs():
 printf('loaded %d EC annotations\n', sum(length(z), z=freqs));
 result := table():
@@ -173,8 +180,13 @@ result['nr_orthologs'] := perf['Number'];
 result['similarity'] := perf['Mean'];
 result['stderr'] := perf['StdErr'];
 result['raw_data_fn'] := raw_out_fn:
-StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(out_dir.'/result.json', result);
 
-done
+
+assessments := [AssessmentDataset(community_id, 'EC', title, 'NR_ORTHOLOGS', perf['Number'], 0),
+                AssessmentDataset(community_id, 'EC', title, measure, perf['Mean'], perf['StdErr'])];
+
+StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
+StoreResult(assessment_dir.'/EC_'.title_id.'.json', assessments);
+
+done;
 

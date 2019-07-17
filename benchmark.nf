@@ -73,7 +73,7 @@ benchmarks = params.challenges_ids
 community_id = params.community_id
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
-genetree_sets = Channel.from("SwissTrees", "SemiAuto")
+genetree_sets = Channel.from("SwissTrees", "TreeFam-A")
 tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
 
 //output
@@ -135,7 +135,6 @@ process go_benchmark {
     label "darwin"
 
     input:
-    file predictions
     file db from db
     val method_name
     val refset_dir
@@ -143,6 +142,8 @@ process go_benchmark {
     val community_id
     val assessment_out
     val other_dir
+    // for mountpoint 
+    file predictions
 
 
     """
@@ -153,19 +154,20 @@ process go_benchmark {
 process ec_benchmark {
 
     label "darwin"
-    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
-
-    output:
-    file "EC"
+    val community_id
+    val assessment_out
+    val other_dir
+    // for mountpoint 
+    file predictions
 
 
     """
-    /benchmark/EcTest.sh -o "EC" $db "$method_name" $refset_dir
+    /benchmark/EcTest.sh -o "$other_dir" -a "$assessment_out" -c "$community_id" $db "$method_name" $refset_dir
     """
 }
 
@@ -173,61 +175,65 @@ process ec_benchmark {
 process speciestree_benchmark {
 
     label "darwin"
-    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
     val clade from tree_clades0
-
-    output:
-    file "STD_$clade"
+    val community_id
+    val assessment_out
+    val other_dir
+    // for mountpoint 
+    file predictions
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "STD_$clade" -p $clade $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$other_dir" -a "$assessment_out" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
     """
 }
 
 process g_speciestree_benchmark {
 
     label "darwin"
-    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
     val clade from tree_clades
-
-    output:
-    file "G_STD_$clade"
+    val community_id
+    val assessment_out
+    val other_dir
+    // for mountpoint 
+    file predictions
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "G_STD_$clade" -p $clade -a 1 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$other_dir" -a "$assessment_out" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
     """
 }
 
 process g_speciestree_benchmark_variant2 {
     label "darwin"
-    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
     val method_name
     val refset_dir
+    val community_id
+    val assessment_out
+    val other_dir
+    // for mountpoint 
+    file predictions
 
-    output:
-    file "G_STD2_Luca"
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -a 2 -o G_STD2_Luca -p Luca $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$other_dir" -a "$assessment_out" -c "$community_id" -p Luca -m 2 $db "$method_name" $refset_dir
     """
 }
 
-
+/* not yet ready
 process reference_genetrees_benchmark {
     label "darwin"
     publishDir "${params.results_dir}", mode: 'copy', overwrite: true
@@ -237,14 +243,40 @@ process reference_genetrees_benchmark {
     val method_name
     val refset_dir
     val testset from genetree_sets
+    val community_id
+    val assessment_out
+    val other_dir
+    // for mountpoint 
+    file predictions
 
-    output:
-    file "RefPhylo_$testset"
 
     """
-    /benchmark/RefPhyloTest.sh -o "RefPhylo_$testset" -t "$testset" $db "$method_name" $refset_dir
+    /benchmark/RefPhyloTest.sh -o "$other_dir" -a "$assessment_dir" -t "$testset" $db "$method_name" $refset_dir
     """
 }
+
+process consolidate {
+    label "py"
+
+    input:
+    file go_assessment
+    file ec_assessment
+    file std from std_assessments.collect()
+    file g_std from g_std_assessments.collect()
+    file g_std2_assessment
+    file validation_out
+    val assessment_out
+    val data_model_export_dir
+    //for mountpoint
+    file predictions
+
+    """
+    python /benchmark/merge_data_model_files.py -p "$validation_out" -m "$assessment_out" -a "$assessment_out" -o "$data_model_export_dir"
+    """
+}
+
+*/
+
 
 workflow.onComplete {
 	println ( workflow.success ? "Done!" : "Oops .. something went wrong" )

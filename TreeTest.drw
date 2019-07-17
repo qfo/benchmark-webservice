@@ -8,6 +8,8 @@
 #     problem         problem instance of tree benchmark, i.e. clade name
 #     treebuilder     LSTree (or BIONJ)
 #     out_dir         directory where output is written to. must exist
+#     assessment_dir  directory where the assessment file should be written. must exist
+#     community_id    community id
 #
 #               Initially written: Adrian Altenhoff, Dec 2009
 #               rewritten for QfO: Adrian Altenhoff, Jun 2011
@@ -15,12 +17,14 @@
 
 Set(printgc=false): printlevel := 2;
 SetRandSeed();
-#  in: resFn, problem, projs, lock
 
 CreateDayMatrices();
 
 if not assigned(refset_path) then
     error('refset_path not assigned');
+fi:
+if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
+    error('community_id, assessment_dir and out_dir all must be defined');
 fi:
 
 if not member(treebuilder, {'LSTree','BIONJ'}) then
@@ -175,13 +179,16 @@ StoreRawData := proc(raw_data, name, fname_)
     if do_gzip then  CallSystem('gzip -9f '.fname); fi:
 end:
 
-StoreResult := proc(fn:string, data:table)
+
+StoreResult := proc(fn:string, data)
     OpenWriting(fn): prints(json(data)): OpenWriting(previous);
 end:
 
 projDB := ReadDb(project_db);
+title_id := ReplaceString(' ','-', ReplaceString('_', '-', title));
+challenge := 'STD-'.problem:
 hash_of_cur_proj := hash_sha2([problem, project_db, treebuilder]);
-raw_out_fn := sprintf('STD-%s_%a.tsv.gz', problem, hash_of_cur_proj);
+raw_out_fn := sprintf('%s_%s_%a_raw.txt.gz', challenge, title_id, hash_of_cur_proj);
 
 casesAndCnts := FindCases();
 cases := casesAndCnts[1];
@@ -195,6 +202,12 @@ cases := If(nr_trees > MAX_NR_TREES, Shuffle(cases)[1..MAX_NR_TREES], cases):
 # compute gene trees and their congruence to the species tree
 compRes := ComputeCongruenceStat(cases, title):
 RFstat := compRes[1]; raw_data := compRes[2]; IdentStat := compRes[3];
+stderr_nr_trees := 1.96 * sqrt(nr_trees/nr_samplings * (1 - nr_trees/nr_samplings) * nr_samplings);
+assessments := [AssessmentDataset(community_id, challenge, title, 'NR_ORT HOLOGS', nr_orthologs, 0),
+                AssessmentDataset(community_id, challenge, title, 'NR_COMPLETED_TREE_SAMPLINGS', nr_trees, stderr_nr_trees),
+                AssessmentDataset(community_id, challenge, title, 'RF_DISTANCE', RFstat['Mean'], RFstat['StdErr']),
+                AssessmentDataset(community_id, challenge, title, 'FRAC_INCORRECT_TREES', IdentStat['Mean'], IdentStat['StdErr'])];
+
 
 result := table():
 result['problem'] := problem;
@@ -205,7 +218,7 @@ recall_nr_orth['value'] := nr_orthologs;
 recall_nr_orth['stderr'] := 0;
 recall_sampled['name'] := 'Number of completed tree samplings';
 recall_sampled['value'] := nr_trees;
-recall_sampled['stderr'] := 1.96 * sqrt(nr_trees/nr_samplings * (1 - nr_trees/nr_samplings) * nr_samplings);
+recall_sampled['stderr'] := stderr_nr_trees; 
 result['recall_measures'] := [recall_sampled, recall_nr_orth];
 prec_rf := table(): prec_id := table():
 prec_rf['name'] := 'Avg RobinsonFoulds distance';
@@ -217,7 +230,9 @@ prec_id['stderr'] := IdentStat['StdErr'];
 result['precision_measures'] := [prec_rf, prec_id]:
 result['raw_data_fn'] := raw_out_fn:
 result['nr_samplings'] := nr_samplings;
+result['participant'] := title;
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(out_dir.'/result.json', result);
+StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
+StoreResult(sprintf('%s/%s_%s.json', assessment_dir, challenge, title_id), assessments);
 
 done;

@@ -212,8 +212,8 @@ result['stderr'] := perf['StdErr'];
 result['raw_data_fn'] := raw_out_fn:
 
 
-assessments := [AssessmentDataset(community, 'GO', title, 'NR_ORTHOLOGS', perf['Number'], 0),
-                AssessmentDataset(community, 'GO', title, masure, perf['Mean'], perf['StdErr'])];
+assessments := [AssessmentDataset(community_id, 'GO', title, 'NR_ORTHOLOGS', perf['Number'], 0),
+                AssessmentDataset(community_id, 'GO', title, measure, perf['Mean'], perf['StdErr'])];
 
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
 StoreResult(assessment_dir.'/GO_'.title_id.'.json', assessments);

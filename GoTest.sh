@@ -103,7 +103,6 @@ if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
     echo "output and assessment directories are mandatory arguments"
     exit 1
 fi
-echo "out_dir: $out_dir; assessment_dir: $assessment_dir"
 if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
 if [ ! -d "$assessment_dir" ] ; then mkdir -p "$assessment_dir"; echo "created $assessment_dir"; fi
 
