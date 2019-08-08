@@ -34,7 +34,8 @@ ConvertLabelsToUniProtCode := proc(l:Leaf)
     tax := [seq(GS[g,'TAXONID'], g=knownSpecies)];
 
     lab := l['Label'];
-    re := MatchRegex('([a-zA-Z][a-zA-Z0-9]*)_{1,2}([a-zA-Z0-9_]*)__([0-9]*)', l['Label']);
+    re := MatchRegex('([a-zA-Z][a-zA-Z0-9]*)_{1,2}([a-zA-Z0-9._]*)__([0-9]*)', l['Label']);
+    if length(re)<4 then lprint(l); lprint(re) fi:
     assert(length(re)=4);
 
     org := BackwardMapping(re[2]):
@@ -121,7 +122,12 @@ problems['Euk'] := 'Eukaryota'; problems['Luca'] := 'all';
 problems['Ver'] := 'Vertebrata'; problems['Fun'] := 'Fungi';
 
 # standard trees with confidence values
-treeVers := '_conf_20141027';
+if dataset='RefSet5' then
+    treeVers := '_conf_20141027';
+elif dataset='RefSet17' then 
+    treeVers := '_conf_20190313';
+else error('not sure what tree to use')
+fi:
 t := ConvertRawTree(LoadSpeciesTree(treeVers));
 GS := GetGenomeSummaries(dataset):
 for problem in Indices(problems) do
@@ -136,8 +142,15 @@ for problem in Indices(problems) do
     od:
 od:
 
+
 # swisstree with collapsed 'possibly-ILS' branches
-treeVers := '_timetreefixes_conf_20141027';
+if dataset='RefSet5' then
+    treeVers := '_timetreefixes_conf_20141027';
+elif dataset='RefSet17' then 
+    treeVers := '_conf_20190313';
+else error('not sure what tree to use')
+fi:
+
 t := ConvertRawTree(LoadSpeciesTree(treeVers));
 GS := GetGenomeSummaries(dataset):
 for problem in Indices(problems) do
