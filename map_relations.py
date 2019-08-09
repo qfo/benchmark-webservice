@@ -289,5 +289,5 @@ if __name__ == "__main__":
                      .format(i, ",".join(orthologs), encode_nr_as_seq(i)))
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
                 .format(tot_pred))
-    if len(removed_duplicates) > 0:
-        logger.info('    Removed {:d} duplicated pairwise relations'.format(removed_duplicates))
+    if removed_duplicates > 0:
+        logger.info('    Removed {:.0f} duplicated pairwise relations'.format(removed_duplicates/2))
