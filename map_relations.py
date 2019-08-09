@@ -279,11 +279,15 @@ if __name__ == "__main__":
         predictions[x].append(y)
         predictions[y].append(x)
         tot_pred += 1
+
+    removed_duplicates = 0
     with open(conf.out, 'w') as fh:
         for i in range(1, len(predictions)):
+            orthologs = unique([str(z) for z in sorted(predictions[i])])
+            removed_duplicates += (len(predictions[i]) - len(orthologs))
             fh.write("<E><OE>{}</OE><VP>[{}]</VP><SEQ>{}</SEQ></E>\n"
-                     .format(i,
-                             ",".join(unique([str(z) for z in sorted(predictions[i])])),
-                             encode_nr_as_seq(i)))
+                     .format(i, ",".join(orthologs), encode_nr_as_seq(i)))
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
                 .format(tot_pred))
+    if len(removed_duplicates) > 0:
+        logger.info('    Removed {:d} duplicated pairwise relations'.format(removed_duplicates))
