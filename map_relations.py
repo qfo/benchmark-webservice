@@ -290,4 +290,4 @@ if __name__ == "__main__":
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
                 .format(tot_pred))
     if removed_duplicates > 0:
-        logger.info('    Removed {:d} duplicated pairwise relations'.format(removed_duplicates))
+        logger.info('    Removed {:.0f} duplicated pairwise relations'.format(removed_duplicates/2))
