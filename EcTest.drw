@@ -186,7 +186,8 @@ assessments := [AssessmentDataset(community_id, 'EC', title, 'NR_ORTHOLOGS', per
                 AssessmentDataset(community_id, 'EC', title, measure, perf['Mean'], perf['StdErr'])];
 
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(assessment_dir.'/EC_'.title_id.'.json', assessments);
+#StoreResult(assessment_dir.'/EC_'.title_id.'.json', assessments);
+StoreResult('EC.json', assessments);
 
 done;
 

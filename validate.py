@@ -172,15 +172,12 @@ def identify_input_type_and_validate(fpath, valid_ids):
     return True
 
 
-def write_participant_dataset_file(out_dir, participant_name, community, challenges, is_valid):
-    participant_id = participant_name.replace('_', '-').replace(' ', '-')
+def write_participant_dataset_file(outfn, participant_id, community, challenges, is_valid):
     data_id = community + ":" + participant_id + "_P"
     challenges = challenges.split() if isinstance(challenges, str) else challenges
     output_json = JSON_templates.write_participant_dataset(data_id, community, challenges,
-                                                           participant_name, is_valid)
-    os.makedirs(out_dir, exist_ok=True)
-    output_file = os.path.join(out_dir, "Dataset_{:s}_{:s}_P.json".format(community, participant_id))
-    with open(output_file, 'wt') as fout:
+                                                           participant_id, is_valid)
+    with open(outfn, 'wt') as fout:
         json.dump(output_json, fout, sort_keys=True, indent=4, separators=(',', ': '))
 
 
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--com', required=True, help="Name or OEB permanent ID for the benchmarking community")
     parser.add_argument('--challenges_ids', default=[], help="List of benchmarks that will be run")
     parser.add_argument('-p', '--participant', required=True, help="Name of the tool")
-    parser.add_argument('-o', '--out', required=True, help="Output folder where the validation json is stored")
+    parser.add_argument('-o', '--out', required=True, help="Output filename for validation json")
     conf = parser.parse_args()
 
     log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
