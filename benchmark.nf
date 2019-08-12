@@ -186,6 +186,7 @@ process ec_benchmark {
 process speciestree_benchmark {
 
     label "darwin"
+    tag "$clade"
 
     input:
     file db from db
@@ -213,6 +214,7 @@ process speciestree_benchmark {
 process g_speciestree_benchmark {
 
     label "darwin"
+    tag "$clade"
 
     input:
     file db from db
@@ -263,6 +265,7 @@ process g_speciestree_benchmark_variant2 {
 
 process reference_genetrees_benchmark {
     label "darwin"
+    tag "$testset"
 
     input:
     file db from db
