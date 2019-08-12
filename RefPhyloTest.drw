@@ -8,13 +8,14 @@
 #   rewritten for EBench        Adrian Altenhoff, Jun 2019
 #
 #  input arguments:
-#     refset_path     path to reference dataset
-#     project_db      path to predictions in darwin db format
-#     title           name of the method which is evaluated
-#     testset         type of trees, i.e. SwissTrees or TreeFam-A
-#     community_id    community id
-#     measure         similarity measure, e.g 'avg Schlicker'
-#     out_dir         directory where output is written to. must exist
+#     refset_path       path to reference dataset
+#     project_db        path to predictions in darwin db format
+#     title             name of the method which is evaluated
+#     testset           type of trees, i.e. SwissTrees or TreeFam-A
+#     community_id      community id
+#     assessment_fname  filename where the assessment file should be written
+#     measure           similarity measure, e.g 'avg Schlicker'
+#     out_dir           directory where output is written to. must exist
 #
 printlevel := 3;
 Set(printgc=false):
@@ -22,8 +23,8 @@ if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
 
-if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
-    error('community_id, assessment_dir and out_dir all must be defined');
+if not assigned(community_id) or not assigned(assessment_fname) or not assigned(out_dir) then
+    error('community_id, assessment_fname and out_dir all must be defined');
 fi:
 
 #Assigns ReconciledTrees (a table)
@@ -132,27 +133,34 @@ result['raw_data_fn'] := raw_out_fn:
 
 perf := ComputePerformance():
 PPV := perf[1]: TPR := perf[2]: raw_data := perf[3]:
-fams := []:
 print(TPR);
-for cNr to nrCases do
-    per_fam := table():
-    per_fam['case'] := cases[cNr];
-    recall := table(): precision := table():
-    print(TPR[cNr], TPR[cNr,1], TPR[cNr,2], PPV[cNr]);
-    if TPR[cNr]<>0 then
-        recall['name'] := 'true positive rate';
-        recall['value'] := TPR[cNr, 1];
-        recall['stderr'] := 1.96 * sqrt(TPR[cNr, 2]);
-        precision['name'] := 'positive predictive value rate';
-        precision['value'] := PPV[cNr, 1];
-        precision['stderr'] := 1.96 * sqrt(PPV[cNr, 2]);
-    fi:
-    per_fam['recall_measures'] := [recall];
-    per_fam['precision_measures'] := [precision];
-    fams := append(fams, per_fam);
-od:
-result['per_case_results'] := fams:
-print(result);
+
+fams := []:
+assessments := []:
+if nrCases > 1 then
+    for cNr to nrCases do
+        per_fam := table():
+        per_fam['case'] := cases[cNr];
+        recall := table(): precision := table():
+        print(TPR[cNr], TPR[cNr,1], TPR[cNr,2], PPV[cNr]);
+        if TPR[cNr]<>0 then
+            recall['name'] := 'true positive rate';
+            recall['value'] := TPR[cNr, 1];
+            recall['stderr'] := 1.96 * sqrt(TPR[cNr, 2]);
+            precision['name'] := 'positive predictive value rate';
+            precision['value'] := PPV[cNr, 1];
+            precision['stderr'] := 1.96 * sqrt(PPV[cNr, 2]);
+        fi:
+        per_fam['recall_measures'] := [recall];
+        per_fam['precision_measures'] := [precision];
+        fams := append(fams, per_fam);
+        challenge := testset.'-'.cases[cNr];
+        assessments := append(assessments,
+            AssessmentDataset(community_id, challenge, title, 'TPR', TPR[cNr, 1], 1.96 * sqrt(TPR[cNr, 2])),
+            AssessmentDataset(community_id, challenge, title, 'PPV', PPV[cNr, 1], 1.96 * sqrt(PPV[cNr, 2])));
+    od:
+    result['per_case_results'] := fams:
+fi;
 
 recall := table(): precision := table():
 recall['name'] := 'true positive rate';
@@ -169,7 +177,11 @@ else
 fi:
 result['recall_measures'] := [recall];
 result['precision_measures'] := [precision];
+assessments := append(assessments,
+    AssessmentDataset(community_id, testset, title, 'TPR', recall['value'], recall['stderr']),
+    AssessmentDataset(community_id, testset, title, 'PPV', precision['value'], precision['stderr']));
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']);
 StoreResult(out_dir.'/result.json', result);
+StoreResult(assessment_fname, assessments);
 done;
 

@@ -2,14 +2,14 @@
 #  Script to run the species tree discordance test
 #
 #  input arguments:
-#     refset_path     path to reference dataset
-#     project_db      path to predictions in darwin db format
-#     title           name of the method which is evaluated
-#     problem         problem instance of tree benchmark, i.e. clade name
-#     treebuilder     LSTree (or BIONJ)
-#     out_dir         directory where output is written to. must exist
-#     assessment_dir  directory where the assessment file should be written. must exist
-#     community_id    community id
+#     refset_path       path to reference dataset
+#     project_db        path to predictions in darwin db format
+#     title             name of the method which is evaluated
+#     problem           problem instance of tree benchmark, i.e. clade name
+#     treebuilder       LSTree (or BIONJ)
+#     out_dir           directory where output is written to. must exist
+#     assessment_fname  directory where the assessment file should be written. must exist
+#     community_id      community id
 #
 #               Initially written: Adrian Altenhoff, Dec 2009
 #               rewritten for QfO: Adrian Altenhoff, Jun 2011
@@ -23,8 +23,8 @@ CreateDayMatrices();
 if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
-if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
-    error('community_id, assessment_dir and out_dir all must be defined');
+if not assigned(community_id) or not assigned(assessment_fname) or not assigned(out_dir) then
+    error('community_id, assessment_fname and out_dir all must be defined');
 fi:
 
 if not member(treebuilder, {'LSTree','BIONJ'}) then
@@ -203,7 +203,7 @@ cases := If(nr_trees > MAX_NR_TREES, Shuffle(cases)[1..MAX_NR_TREES], cases):
 compRes := ComputeCongruenceStat(cases, title):
 RFstat := compRes[1]; raw_data := compRes[2]; IdentStat := compRes[3];
 stderr_nr_trees := 1.96 * sqrt(nr_trees/nr_samplings * (1 - nr_trees/nr_samplings) * nr_samplings);
-assessments := [AssessmentDataset(community_id, challenge, title, 'NR_ORT HOLOGS', nr_orthologs, 0),
+assessments := [AssessmentDataset(community_id, challenge, title, 'NR_ORTHOLOGS', nr_orthologs, 0),
                 AssessmentDataset(community_id, challenge, title, 'NR_COMPLETED_TREE_SAMPLINGS', nr_trees, stderr_nr_trees),
                 AssessmentDataset(community_id, challenge, title, 'RF_DISTANCE', RFstat['Mean'], RFstat['StdErr']),
                 AssessmentDataset(community_id, challenge, title, 'FRAC_INCORRECT_TREES', IdentStat['Mean'], IdentStat['StdErr'])];
@@ -233,6 +233,6 @@ result['nr_samplings'] := nr_samplings;
 result['participant'] := title;
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
 StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
-StoreResult(sprintf('%s/%s_%s.json', assessment_dir, challenge, title_id), assessments);
+StoreResult(assessment_fname, assessments);
 
 done;

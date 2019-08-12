@@ -98,7 +98,6 @@ process validate_input_file {
     val benchmarks
     val community_id
     val method_name
-    val validation_out
 
     output:
     val task.exitStatus into EXIT_STAT
@@ -143,7 +142,6 @@ process go_benchmark {
     val refset_dir
     val go_evidences
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
@@ -168,7 +166,6 @@ process ec_benchmark {
     val method_name
     val refset_dir
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
@@ -186,7 +183,6 @@ process ec_benchmark {
     """
 }
 
-/* not yet ready
 process speciestree_benchmark {
 
     label "darwin"
@@ -197,16 +193,22 @@ process speciestree_benchmark {
     val refset_dir
     val clade from tree_clades0
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
 
+    output:
+    file "STD_${clade}.json" into STD_STUB
+
+    when:
+    benchmarks =~ /STD_$clade/
+
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "$assessment_out" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "STD_${clade}.json" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
     """
 }
+
 
 process g_speciestree_benchmark {
 
@@ -218,14 +220,19 @@ process g_speciestree_benchmark {
     val refset_dir
     val clade from tree_clades
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
 
+    output:
+    file "G_STD_${clade}.json" into G_STD_STUB
+
+    when:
+    benchmarks =~ /G_STD_$clade/
+
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "$assessment_out" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD_${clade}.json" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
     """
 }
 
@@ -237,21 +244,25 @@ process g_speciestree_benchmark_variant2 {
     val method_name
     val refset_dir
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
 
+    output:
+    file "G_STD2_Luca.json" into G_STD2_STUB
+
+    when:
+    benchmarks =~ /G_STD2/
+
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "$assessment_out" -c "$community_id" -p Luca -m 2 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD2_Luca.json" -c "$community_id" -p Luca -m 2 $db "$method_name" $refset_dir
     """
 }
 
 
 process reference_genetrees_benchmark {
     label "darwin"
-    publishDir "${params.results_dir}", mode: 'copy', overwrite: true
 
     input:
     file db from db
@@ -259,19 +270,24 @@ process reference_genetrees_benchmark {
     val refset_dir
     val testset from genetree_sets
     val community_id
-    val assessment_out
     val otherdir
     // for mountpoint 
     file predictions
 
+    output:
+    file "${testset}.json" into REFPHYLO_STUB
+
+    when:
+    benchmarks =~ /$testset/
+
 
     """
-    /benchmark/RefPhyloTest.sh -o "$otherdir" -a "$assessment_dir" -t "$testset" $db "$method_name" $refset_dir
+    /benchmark/RefPhyloTest.sh -o "$otherdir" -a "${testset}.json" -t "$testset" $db "$method_name" $refset_dir
     """
 }
-*/
 
-challenge_assessments = GO_STUB.mix(EC_STUB)
+
+challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB)
 
 process consolidate {
     label "py"

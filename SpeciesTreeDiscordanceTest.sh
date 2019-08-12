@@ -25,7 +25,7 @@ Options
         Raw data is a file that contains the evaluated orthologs and their
         similarity score.
 
-  -a    assessment directory, where the assessemnt json stub will be stored
+  -a    assessment filename, where the assessemnt json stub will be stored
 
   -c    community_id, Name or OEB permanent ID for the benchmarking community
 
@@ -49,7 +49,7 @@ EOF
 
 problem="Luca"
 out_dir=""
-assessment_dir=""
+assessment_fname=""
 community_id="QfO"
 confidence="81"
 treebuilder="LSTree"
@@ -77,7 +77,7 @@ while getopts "a:c:f:m:o:p:t:h" opt ; do
               exit 1
            fi
            ;;
-        a) assessment_dir="$OPTARG"
+        a) assessment_fname="$OPTARG"
            ;;
         c) community_id="$OPTARG"
            ;;
@@ -103,12 +103,11 @@ title="$2"
 refset="$3"
 benchmark_dir="$(dirname $0)"
 
-if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
-    echo "output and assessment directories are mandatory arguments"
+if [[ -z "$out_dir" || -z "$assessment_fname" ]]; then
+    echo "output and assessment are mandatory arguments"
     exit 1
 fi
 if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
-if [ ! -d "$assessment_dir" ] ; then mkdir -p "$assessment_dir"; echo "created $assessment_dir"; fi
 
 darwin -E  << EOF
    project_db := '$project_db';
@@ -118,7 +117,7 @@ darwin -E  << EOF
    title := '$title';
    refset_path := '$refset';
    out_dir := '$out_dir';
-   assessment_dir := '$assessment_dir';
+   assessment_fname := '$assessment_fname';
    community_id := '$community_id';
    ReadProgram('$benchmark_dir/lib/darwinit');
    res := traperror(ReadProgram('$benchmark_dir/$algo'));

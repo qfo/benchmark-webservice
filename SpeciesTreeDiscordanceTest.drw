@@ -2,15 +2,15 @@
 #  Script to run the generalized species tree discordance test
 #
 #  input arguments:
-#     refset_path     path to reference dataset
-#     project_db      path to predictions in darwin db format
-#     title           name of the method which is evaluated
-#     problem         problem instance of tree benchmark, i.e. clade name
-#     confidence      minimum confidence level of species tree internal nodes
-#     treebuilder     LSTree (or BIONJ)
-#     out_dir         directory where output is written to. must exist
-#     assessment_dir  directory where the assessment file should be written. must exist
-#     community_id    community id
+#     refset_path       path to reference dataset
+#     project_db        path to predictions in darwin db format
+#     title             name of the method which is evaluated
+#     problem           problem instance of tree benchmark, i.e. clade name
+#     confidence        minimum confidence level of species tree internal nodes
+#     treebuilder       LSTree (or BIONJ)
+#     out_dir           directory where output is written to. must exist
+#     assessment_fname  directory where the assessment file should be written. must exist
+#     community_id      community id
 
 Set(printgc=false): printlevel := 2;
 SetRandSeed();
@@ -22,8 +22,8 @@ MAX_NR_TREES := 3000;
 if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
-if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
-    error('community_id, assessment_dir and out_dir all must be defined');
+if not assigned(community_id) or not assigned(assessment_fname) or not assigned(out_dir) then
+    error('community_id, assessment_fname and out_dir all must be defined');
 fi:
 if not assigned(confidence) then
     confidence := 81;
@@ -340,7 +340,7 @@ result['raw_data_fn'] := raw_out_fn:
 result['participant'] := title;
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
 StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
-StoreResult(sprintf('%s/%s_%s.json', assessment_dir, challenge, title_id), assessments);
+StoreResult(assessment_fname, assessments);
 
 done;
 

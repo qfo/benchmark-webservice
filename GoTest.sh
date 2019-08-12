@@ -99,8 +99,8 @@ title="$2"
 refset="$3"
 benchmark_dir="$(dirname $0)"
 
-if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
-    echo "output and assessment directories are mandatory arguments"
+if [[ -z "$out_dir"  ]]; then
+    echo "output directories is mandatory arguments"
     exit 1
 fi
 if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
