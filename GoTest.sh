@@ -29,7 +29,7 @@ Options
         Raw data is a file that contains the evaluated orthologs and their
         similarity score.
 
-  -a    assessment directory, where the assessemnt json stub will be stored
+  -a    assessment filename, where the assessemnt json stub will be stored
 
   -c    community_id, Name or OEB permanent ID for the benchmarking community
 
@@ -46,7 +46,7 @@ EOF
 
 measure="avg Schlicker"
 out_dir=""
-assessment_dir=""
+assessment_fname="GO.json"
 community_id="QfO"
 evidences="exp"
 while getopts "a:c:e:m:o:h" opt ; do
@@ -73,7 +73,7 @@ while getopts "a:c:e:m:o:h" opt ; do
            ;;
         o) out_dir="$OPTARG"
            ;;
-        a) assessment_dir="$OPTARG"
+        a) assessment_fname="$OPTARG"
            ;;
         c) community_id="$OPTARG"
            ;;
@@ -104,7 +104,6 @@ if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
     exit 1
 fi
 if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
-if [ ! -d "$assessment_dir" ] ; then mkdir -p "$assessment_dir"; echo "created $assessment_dir"; fi
 
 darwin -E  << EOF
    project_db := '$project_db':
@@ -113,7 +112,7 @@ darwin -E  << EOF
    title := '$title':
    refset_path := '$refset':
    out_dir := '$out_dir':
-   assessment_dir := '$assessment_dir':
+   assessment_fname := '$assessment_fname':
    community_id := '$community_id':
    ReadProgram('$benchmark_dir/lib/darwinit');
    ReadProgram('$benchmark_dir/GoTest.drw');

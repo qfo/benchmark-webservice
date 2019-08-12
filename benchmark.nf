@@ -155,7 +155,7 @@ process go_benchmark {
     benchmarks =~ /GO/
 
     """
-    /benchmark/GoTest.sh -o "$otherdir" -a "$assessment_out" -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
+    /benchmark/GoTest.sh -o "$otherdir" -a GO.json -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
     """
 }
 
@@ -182,7 +182,7 @@ process ec_benchmark {
 
 
     """
-    /benchmark/EcTest.sh -o "$otherdir" -a "$assessment_out" -c "$community_id" $db "$method_name" $refset_dir
+    /benchmark/EcTest.sh -o "$otherdir" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
     """
 }
 

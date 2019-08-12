@@ -17,7 +17,7 @@ Options
         Raw data is a file that contains the evaluated orthologs and their
         similarity score.
 
-  -a    assessment directory, where the assessemnt json stub will be stored
+  -a    assessment filename, where the assessemnt json stub will be stored
 
   -c    community_id, Name or OEB permanent ID for the benchmarking community
 
@@ -34,7 +34,7 @@ EOF
 
 measure="avg Schlicker"
 out_dir=""
-assessment_dir=""
+assessment_fname="EC.json"
 community_id="QfO"
 while getopts "a:c:m:o:h" opt ; do
     case $opt in
@@ -50,7 +50,7 @@ while getopts "a:c:m:o:h" opt ; do
            ;;
         o) out_dir="$OPTARG"
            ;;
-        a) assessment_dir="$OPTARG"
+        a) assessment_fname="$OPTARG"
            ;;
         c) community_id="$OPTARG"
            ;;
@@ -76,12 +76,11 @@ title="$2"
 refset="$3"
 benchmark_dir="$(dirname $0)"
 
-if [[ -z "$out_dir" || -z "$assessment_dir" ]]; then
-    echo "output and assessment directories are mandatory arguments"
+if [[ -z "$out_dir"  ]]; then
+    echo "output is a  mandatory argument"
     exit 1
 fi
 if [ ! -d "$out_dir" ] ; then mkdir -p "$out_dir"; echo "created $out_dir"; fi
-if [ ! -d "$assessment_dir" ] ; then mkdir -p "$assessment_dir"; echo "created $assessment_dir"; fi
 
 darwin -E  << EOF
    project_db := '$project_db':
@@ -89,7 +88,7 @@ darwin -E  << EOF
    title := '$title':
    refset_path := '$refset':
    out_dir := '$out_dir':
-   assessment_dir := '$assessment_dir':
+   assessment_fname := '$assessment_fname':
    community_id := '$community_id':
    ReadProgram('$benchmark_dir/lib/darwinit');
    ReadProgram('$benchmark_dir/EcTest.drw');

@@ -8,13 +8,13 @@
 #   rewritten for EBench        Adrian Altenhoff, Mar 2019
 #
 #  input arguments:
-#     refset_path     path to reference dataset
-#     project_db      path to predictions in darwin db format
-#     title           name of the method which is evaluated
-#     assessment_dir  directory where the assessment file should be written. must exist
-#     community_id    community id
-#     measure         similarity measure, e.g 'avg Schlicker'
-#     out_dir         directory where output is written to. must exist
+#     refset_path       path to reference dataset
+#     project_db        path to predictions in darwin db format
+#     title             name of the method which is evaluated
+#     assessment_fname  filename where the assessment should be written
+#     community_id      community id
+#     measure           similarity measure, e.g 'avg Schlicker'
+#     out_dir           directory where output is written to. must exist
 
 
 
@@ -24,8 +24,8 @@ if not assigned(refset_path) then
     error('refset_path not assigned');
 fi:
 
-if not assigned(community_id) or not assigned(assessment_dir) or not assigned(out_dir) then
-    error('community_id, assessment_dir and out_dir all must be defined');
+if not assigned(community_id) or not assigned(out_dir) then
+    error('community_id and out_dir all must be defined');
 fi:
 
 ReadProgram(refset_path.'/enzymes.drw'); # assigns EC
@@ -185,9 +185,7 @@ result['raw_data_fn'] := raw_out_fn:
 assessments := [AssessmentDataset(community_id, 'EC', title, 'NR_ORTHOLOGS', perf['Number'], 0),
                 AssessmentDataset(community_id, 'EC', title, measure, perf['Mean'], perf['StdErr'])];
 
-StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-#StoreResult(assessment_dir.'/EC_'.title_id.'.json', assessments);
-StoreResult('EC.json', assessments);
+StoreResult(assessment_fname, assessments);
 
 done;
 
