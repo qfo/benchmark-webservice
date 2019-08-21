@@ -97,6 +97,15 @@ def load_mapping(path):
     return data
 
 
+def unique(seq):
+    """Return the elements of a list uniquely while preserving the order
+
+    :param list seq: a list of hashable elements
+    :returns: new list with first occurence of elements of seq"""
+    seen = set()
+    return [x for x in seq if x not in seen and not seen.add(x)]
+
+
 class PairwiseOrthologRelationExtractor(object):
     def __init__(self, mapping_data):
         self.valid_id_map = mapping_data['mapping']
@@ -270,10 +279,15 @@ if __name__ == "__main__":
         predictions[x].append(y)
         predictions[y].append(x)
         tot_pred += 1
+
+    removed_duplicates = 0
     with open(conf.out, 'w') as fh:
         for i in range(1, len(predictions)):
+            orthologs = unique([str(z) for z in sorted(predictions[i])])
+            removed_duplicates += (len(predictions[i]) - len(orthologs))
             fh.write("<E><OE>{}</OE><VP>[{}]</VP><SEQ>{}</SEQ></E>\n"
-                     .format(i, ",".join([str(z) for z in sorted(predictions[i])]),
-                             encode_nr_as_seq(i)))
+                     .format(i, ",".join(orthologs), encode_nr_as_seq(i)))
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
                 .format(tot_pred))
+    if removed_duplicates > 0:
+        logger.info('    Removed {:.0f} duplicated pairwise relations'.format(removed_duplicates/2))
