@@ -295,7 +295,7 @@ end:
 
 projDB := ReadDb(project_db);
 title_id := ReplaceString(' ','-', ReplaceString('_', '-', title));
-challenge := 'G_STD-'.problem:
+challenge := 'G_STD_'.problem:
 hash_of_cur_proj := hash_sha2([problem, project_db, confidence, treebuilder]);
 raw_out_fn := sprintf('%s_%s_%a_raw.txt.gz', challenge, title_id, hash_of_cur_proj);
 

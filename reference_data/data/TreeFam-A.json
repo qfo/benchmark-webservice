@@ -1,6 +1,6 @@
 {
-  "_id": "QfO:SwissTrees_agg",
-  "challenge_ids": ["SwissTrees"],
+  "_id": "QfO:TreeFam-A_agg",
+  "challenge_ids": ["TreeFam-A"],
   "datalink": {
     "inline_data": {
       "challenge_participants": [],
