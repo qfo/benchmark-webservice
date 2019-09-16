@@ -68,8 +68,10 @@ def generate_manifest(data_dir, aggregation_dir, output_dir, participant_data):
                 participant_id = metrics_data["participant_id"]
                 if metrics_data["metrics"]["metric_id"] == metric_X:
                     new_participant_data["metric_x"] = metrics_data["metrics"]["value"]
+                    new_participant_data["stderr_x"] = metrics_data["metrics"]["stderr"]
                 elif metrics_data["metrics"]["metric_id"] == metric_Y:
                     new_participant_data["metric_y"] = metrics_data["metrics"]["value"]
+                    new_participant_data["stderr_y"] = metrics_data["metrics"]["stderr"]
 
             # copy the assessment files to output directory
             new_participant_data["participant_id"] = participant_id
@@ -305,6 +307,8 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
     tools = []
     x_values = []
     y_values = []
+    x_err = []
+    y_err = []
     with io.open(summary_file, mode='r', encoding="utf-8") as f:
         aggregation_file = json.load(f)
         x_axis = aggregation_file['datalink']['inline_data']['visualization']['x_axis']
@@ -313,7 +317,8 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
             tools.append(participant_data['participant_id'])
             x_values.append(participant_data['metric_x'])
             y_values.append(participant_data['metric_y'])
-
+            x_err.append(participant_data.get('stderr_x', 0))
+            y_err.append(participant_data.get('stderr_y', 0))
     ax = plt.subplot()
     for i, val in enumerate(tools, 0):
         markers = [".", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s", "p", "P", "*", "h", "H", "+",
@@ -322,7 +327,7 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
                    "d", "|", "_", ","]
         colors = ['#5b2a49', '#a91310', '#9693b0', '#e7afd7', '#fb7f6a', '#0566e5', '#00bdc8', '#cf4119', '#8b123f',
                   '#b35ccc', '#dbf6a6', '#c0b596', '#516e85', '#1343c3', '#7b88be']
-        ax.errorbar(x_values[i], y_values[i], linestyle='None', marker=markers[i],
+        ax.errorbar(x_values[i], y_values[i], xerr=x_err, yerr=y_err, linestyle='None', marker=markers[i],
                     markersize='15', markerfacecolor=colors[i], markeredgecolor=colors[i], capsize=6,
                     ecolor=colors[i], label=tools[i])
 
