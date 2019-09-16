@@ -32,13 +32,15 @@ if (params.help) {
         --go_evidences          Evidence filter of GO annotation used in the GO benchmark
                                 Defaults to experimental annotations
 
+        --assess_dir            Dir where the data for the benchmark are stored
+
         --results_dir           Base result for all the following output directories, unless overwritten
-        --validation_result     The output directory where the results from validation step will be saved¬
-        --assessment_results    The output directory where the results from the computed metrics step will be saved¬
-        --outdir                The output directory where the consolidation of the benchmark will be saved¬
-        --statsdir              The output directory with nextflow statistics¬
-        --data_model_export_dir The output dir where json file with benchmarking data model contents will be saved¬
-        --otherdir             The output directory where custom results will be saved (no directory inside)¬
+        --validation_result     The output directory where the results from validation step will be saved
+        --assessment_results    The output directory where the results from the computed metrics step will be saved
+        --outdir                The output directory where the consolidation of the benchmark will be saved
+        --statsdir              The output directory with nextflow statistics
+        --data_model_export_dir The output dir where json file with benchmarking data model contents will be saved
+        --otherdir              The output directory where custom results will be saved (no directory inside)
 
     Flags:
         --help                  Display this message¬
@@ -57,6 +59,7 @@ log.info """
          benchmarking community = ${params.community_id}
          selected benchmarks: ${params.challenges_ids}
          Evidence filter for GO benchmark: ${params.go_evidences}
+         Public Benchmark results: ${params.assess_dir}
          validation results directory: ${params.validation_result}
          assessment results directory: ${params.assessment_results}
          consolidated benchmark results directory: ${params.outdir}
@@ -73,6 +76,7 @@ method_name = params.participant_id.replaceAll("\\s","_")
 refset_dir = params.refset
 benchmarks = params.challenges_ids
 community_id = params.community_id
+benchmark_data = Channel.fromPath(params.assess_dir, type: "dir")
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 genetree_sets = Channel.from("SwissTrees", "TreeFam-A")
@@ -298,13 +302,15 @@ process consolidate {
     input:
     file participants from PARTICIPANT_STUB.collect()
     file challenge_stubs from challenge_assessments.collect()
+    file benchmark_data
     val assessment_out
     val data_model_export_dir
     //for mountpoint
     file predictions
 
     """
-    python /benchmark/merge_data_model_files.py -p $participants -m $assessment_out -a $challenge_stubs -o $data_model_export_dir
+    python /benchmark/manage_assessment_data.py -m $challenge_stubs -b $benchmark_data -o $otherdir -a $assessment_out
+    python /benchmark/merge_data_model_files.py -p $participants -a $assessment_out -m $challenge_stubs -o $data_model_export_dir
     """
 }
 

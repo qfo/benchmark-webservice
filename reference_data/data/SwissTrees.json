@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:SwissTrees_agg",
+  "challenge_ids": ["SwissTrees"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "PPV",
+        "y_axis": "TPR"
+      }
+    }
+  },
+  "type": "aggregation"
+}
