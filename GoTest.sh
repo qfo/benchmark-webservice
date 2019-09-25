@@ -118,4 +118,4 @@ darwin -E  << EOF
    ReadProgram('$benchmark_dir/GoTest.drw');
    done;
 EOF
-
+exit $?

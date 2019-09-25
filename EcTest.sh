@@ -95,3 +95,4 @@ darwin -E  << EOF
    done;
 EOF
 
+exit $?
