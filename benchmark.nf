@@ -79,6 +79,7 @@ community_id = params.community_id
 benchmark_data = Channel.fromPath(params.assess_dir, type: "dir")
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
+tree_clades2 = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 genetree_sets = Channel.from("SwissTrees", "TreeFam-A")
 tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
 
@@ -244,6 +245,7 @@ process g_speciestree_benchmark {
 
 process g_speciestree_benchmark_variant2 {
     label "darwin"
+    tag "$clade"
 
     input:
     file db from db
@@ -251,18 +253,19 @@ process g_speciestree_benchmark_variant2 {
     val refset_dir
     val community_id
     val otherdir
+    val clade from tree_clades2
     // for mountpoint 
     file predictions
 
     output:
-    file "G_STD2_Luca.json" into G_STD2_STUB
+    file "G_STD2_${clade}.json" into G_STD2_STUB
 
     when:
-    benchmarks =~ /G_STD2/
+    benchmarks =~ /G_STD2_$clade/
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD2_Luca.json" -c "$community_id" -p Luca -m 2 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD2_${clade}.json" -c "$community_id" -p $clade -m 2 $db "$method_name" $refset_dir
     """
 }
 
