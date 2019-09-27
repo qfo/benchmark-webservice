@@ -31,7 +31,11 @@ for year in 2011 2018 ; do
 done
 
 echo "Sampling species tree instances for SpeciesTreeDiscordanceTest benchmark. This will take a while..."
-docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py Luca"
+docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py -v Luca"
+docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py -v Euk"
+docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py -v Ver"
+docker run --rm -t -i --mount source=refset2018,target=/refset qfo_python:latest bash -c "python generateData/generate_speciestree_samples.py -v --tree-size 7 Fun"
+
 if [[ "$?" == "0" ]] ; then echo "Done \o/"; fi
 
 
