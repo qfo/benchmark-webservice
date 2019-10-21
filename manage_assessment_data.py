@@ -17,19 +17,10 @@ import logging
 logger = logging.getLogger('manage_assessment_data')
 
 
-def main(args):
-    # input parameters
-    data_dir = args.benchmark_data
-    metrics_stubs = args.metrics_data
-    output_dir = args.output
-    aggregation_dir = args.aggregation_dir
-    
-    # Assuring the output directory does exist
-    if not os.path.exists(aggregation_dir):
-        os.makedirs(aggregation_dir)
+def main(metrics_data_files, benchmark_data_dir, output_dir):
     # read participant metrics
-    participant_data = read_metrics_stubs(metrics_stubs)
-    generate_manifest(data_dir, aggregation_dir, output_dir, participant_data)
+    participant_data = read_metrics_stubs(metrics_data_files)
+    generate_manifest(benchmark_data_dir, output_dir, participant_data)
 
 
 def read_metrics_stubs(metrics_stubs):
@@ -47,11 +38,14 @@ def read_metrics_stubs(metrics_stubs):
     return participant_data
 
 
-def generate_manifest(data_dir, aggregation_dir, output_dir, participant_data):
+def generate_manifest(data_dir, output_dir, participant_data):
     info = []
     for challenge, metrics in participant_data.items():
         participants = []
-        challenge_oeb_data = os.path.join(data_dir, challenge+".json")
+        challenge_oeb_data = os.path.join(data_dir, challenge, challenge + ".json")
+        if not os.path.isfile(challenge_oeb_data):
+            # try without per-challenge nesting, i.e. empty stub case
+            challenge_oeb_data = os.path.join(data_dir, challenge + ".json")
 
         if os.path.isfile(challenge_oeb_data):
             logger.debug('loading '+challenge_oeb_data)
@@ -83,16 +77,16 @@ def generate_manifest(data_dir, aggregation_dir, output_dir, participant_data):
                 participants.append(name["participant_id"])
 
             #copy the updated aggregation file to output directory
-            summary_file = os.path.join(aggregation_dir, challenge + ".json")
+            per_challenge_output = os.path.join(output_dir, challenge)
+            summary_file = os.path.join(per_challenge_output, challenge + ".json")
             with open(summary_file, 'w') as f:
                 json.dump(aggregation_file, f, sort_keys=True, indent=4, separators=(',', ': '))
 
 
-
             # Let's draw the assessment charts!
-            print_chart(output_dir, summary_file, challenge, "RAW")
-            #print_chart(outdir_dir, summary_file,challenge, "SQR")
-            #print_chart(outdir_dir, summary_file,challenge, "DIAG")
+            print_chart(per_challenge_output, summary_file, challenge, "RAW")
+            #print_chart(per_challenge_output, summary_file, challenge, "SQR")
+            #print_chart(per_challenge_output, summary_file, challenge, "DIAG")
 
             #generate manifest
             obj = {
@@ -423,12 +417,10 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--benchmark_data", required=True,
                         help="dir where the data for the benchmark are stored", )
     parser.add_argument("-o", "--output", required=True,
-                        help="output directory where the manifest and figures are written", )
-    parser.add_argument("-a", "--aggregation_dir", required=True,
-                        help="output directory where aggregation json files will be written")
+                        help="output directory where the manifest, summary data and figures are written", )
     parser.add_argument("-d", "--debug", action='store_true', help="Turn on debugging output")
     args = parser.parse_args()
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level)
 
-    main(args)
+    main(args.metrics_data, args.benchmark_data, args.ouput)

@@ -232,7 +232,7 @@ result['raw_data_fn'] := raw_out_fn:
 result['nr_samplings'] := nr_samplings;
 result['participant'] := title;
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
+#StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
 StoreResult(assessment_fname, assessments);
 
 done;

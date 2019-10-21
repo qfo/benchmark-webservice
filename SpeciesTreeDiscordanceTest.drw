@@ -339,7 +339,7 @@ result['precision_measures'] := [prec_rf, prec_id]:
 result['raw_data_fn'] := raw_out_fn:
 result['participant'] := title;
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
-StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
+#StoreResult(sprintf('%s/%s_%s.json', out_dir, challenge, title_id), result);
 StoreResult(assessment_fname, assessments);
 
 done;

@@ -181,7 +181,7 @@ assessments := append(assessments,
     AssessmentDataset(community_id, testset, title, 'TPR', recall['value'], recall['stderr']),
     AssessmentDataset(community_id, testset, title, 'PPV', precision['value'], precision['stderr']));
 StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']);
-StoreResult(out_dir.'/result.json', result);
+#StoreResult(out_dir.'/result.json', result);
 StoreResult(assessment_fname, assessments);
 done;
 

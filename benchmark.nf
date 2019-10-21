@@ -36,7 +36,7 @@ if (params.help) {
         --assess_dir            Dir where the result data for the benchmark are stored (e.g. outdir of previous runs)
 
         --results_dir           Base result for all the following output directories, unless overwritten
-        --validation_result     The output directory where the results from validation step will be saved
+        --validation_result     The output directory where the results from validation step will be saved (currently not used)
         --assessment_results    The output directory where the results from the computed metrics step will be saved
         --outdir                The output directory where the consolidation of the benchmark will be saved
         --statsdir              The output directory with nextflow statistics
@@ -85,9 +85,9 @@ genetree_sets = Channel.from("SwissTrees", "TreeFam-A")
 tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
 
 //output
-validation_out = file(params.validation_result)
+//validation_out = file(params.validation_result)
 assessment_out = file(params.assessment_results)
-aggregation_dir = file(params.outdir)
+result_file_path = file(params.outdir)
 data_model_export_dir = file(params.data_model_export_dir)
 otherdir = file(params.otherdir)
 
@@ -148,7 +148,7 @@ process go_benchmark {
     val refset_dir
     val go_evidences
     val community_id
-    val otherdir
+    val result_file_path
     // for mountpoint 
     file predictions
 
@@ -159,7 +159,7 @@ process go_benchmark {
     benchmarks =~ /GO/
 
     """
-    /benchmark/GoTest.sh -o "$otherdir" -a GO.json -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
+    /benchmark/GoTest.sh -o "${result_file_path}/GO" -a GO.json -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
     """
 }
 
@@ -172,7 +172,7 @@ process ec_benchmark {
     val method_name
     val refset_dir
     val community_id
-    val otherdir
+    val result_file_path
     // for mountpoint 
     file predictions
 
@@ -185,7 +185,7 @@ process ec_benchmark {
 
 
     """
-    /benchmark/EcTest.sh -o "$otherdir" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
+    /benchmark/EcTest.sh -o "${result_file_path}/EC" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
     """
 }
 
@@ -200,7 +200,7 @@ process speciestree_benchmark {
     val refset_dir
     val clade from tree_clades0
     val community_id
-    val otherdir
+    val result_file_path
     // for mountpoint 
     file predictions
 
@@ -212,7 +212,7 @@ process speciestree_benchmark {
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "STD_${clade}.json" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/STD_${clade}" -a "STD_${clade}.json" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
     """
 }
 
@@ -228,7 +228,7 @@ process g_speciestree_benchmark {
     val refset_dir
     val clade from tree_clades
     val community_id
-    val otherdir
+    val result_file_path
     // for mountpoint 
     file predictions
 
@@ -240,7 +240,7 @@ process g_speciestree_benchmark {
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD_${clade}.json" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/G_STD_${clade}" -a "G_STD_${clade}.json" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
     """
 }
 
@@ -253,7 +253,7 @@ process g_speciestree_benchmark_variant2 {
     val method_name
     val refset_dir
     val community_id
-    val otherdir
+    val result_file_path
     val clade from tree_clades2
     // for mountpoint 
     file predictions
@@ -266,7 +266,7 @@ process g_speciestree_benchmark_variant2 {
 
 
     """
-    /benchmark/SpeciesTreeDiscordanceTest.sh -o "$otherdir" -a "G_STD2_${clade}.json" -c "$community_id" -p $clade -m 2 $db "$method_name" $refset_dir
+    /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/G_STD2_${clade}" -a "G_STD2_${clade}.json" -c "$community_id" -p $clade -m 2 $db "$method_name" $refset_dir
     """
 }
 
@@ -281,7 +281,7 @@ process reference_genetrees_benchmark {
     val refset_dir
     val testset from genetree_sets
     val community_id
-    val otherdir
+    val result_file_path
     // for mountpoint 
     file predictions
 
@@ -293,7 +293,7 @@ process reference_genetrees_benchmark {
 
 
     """
-    /benchmark/RefPhyloTest.sh -o "$otherdir" -a "${testset}.json" -t "$testset" $db "$method_name" $refset_dir
+    /benchmark/RefPhyloTest.sh -o "$result_file_path/${testset}" -a "${testset}.json" -t "$testset" $db "$method_name" $refset_dir
     """
 }
 
@@ -309,12 +309,13 @@ process consolidate {
     file benchmark_data
     val assessment_out
     val data_model_export_dir
+    val result_file_path
     //for mountpoint
     file predictions
 
     """
-    python /benchmark/manage_assessment_data.py -m $challenge_stubs -b $benchmark_data -o $otherdir -a $assessment_out
-    python /benchmark/merge_data_model_files.py -p $participants -a $assessment_out -m $challenge_stubs -o $data_model_export_dir
+    python /benchmark/manage_assessment_data.py -m $challenge_stubs -b $benchmark_data -o $result_file_path
+    python /benchmark/merge_data_model_files.py -p $participants  -m $challenge_stubs -r $result_file_path -a $assessment_out -o $data_model_export_dir
     """
 }
 
