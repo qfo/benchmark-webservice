@@ -32,7 +32,8 @@ if (params.help) {
         --go_evidences          Evidence filter of GO annotation used in the GO benchmark
                                 Defaults to experimental annotations
 
-        --assess_dir            Dir where the data for the benchmark are stored
+        --goldstandard_dir      Dir that contains the benchmarking datasets needed to execute
+        --assess_dir            Dir where the result data for the benchmark are stored (e.g. outdir of previous runs)
 
         --results_dir           Base result for all the following output directories, unless overwritten
         --validation_result     The output directory where the results from validation step will be saved
@@ -55,7 +56,7 @@ log.info """
          ==============================================
          input file: ${params.input}
          method name : ${params.participant_id}
-         refeset path: ${params.refset}
+         goldstandard path (refset): ${params.goldstandard_dir}
          benchmarking community = ${params.community_id}
          selected benchmarks: ${params.challenges_ids}
          Evidence filter for GO benchmark: ${params.go_evidences}
@@ -73,10 +74,10 @@ log.info """
 //input
 predictions = file(params.input)
 method_name = params.participant_id.replaceAll("\\s","_")
-refset_dir = params.refset
+refset_dir = file(params.goldstandard_dir)
 benchmarks = params.challenges_ids
 community_id = params.community_id
-benchmark_data = Channel.fromPath(params.assess_dir, type: "dir")
+benchmark_data = file(params.assess_dir)
 go_evidences = params.go_evidences
 tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 tree_clades2 = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
