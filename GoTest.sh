@@ -111,6 +111,7 @@ darwin -E  << EOF
    evidences := $evidences:
    title := '$title':
    refset_path := '$refset':
+   datadirname := '$refset':
    out_dir := '$out_dir':
    assessment_fname := '$assessment_fname':
    community_id := '$community_id':
