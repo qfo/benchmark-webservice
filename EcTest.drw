@@ -186,6 +186,7 @@ assessments := [AssessmentDataset(community_id, 'EC', title, 'NR_ORTHOLOGS', per
                 AssessmentDataset(community_id, 'EC', title, measure, perf['Mean'], perf['StdErr'])];
 
 StoreResult(assessment_fname, assessments);
+StoreRawData(raw_data, title, out_dir.'/'.result['raw_data_fn']):
 
 done;
 

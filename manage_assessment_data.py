@@ -423,4 +423,4 @@ if __name__ == '__main__':
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level)
 
-    main(args.metrics_data, args.benchmark_data, args.ouput)
+    main(args.metrics_data, args.benchmark_data, args.output)
