@@ -5,6 +5,6 @@ WORKDIR /benchmark
 
 COPY "requirements.txt" /benchmark
 
-RUN apt-get update && apt-get install -y libxml2  &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt
+RUN apt-get update && apt-get install -y libxml2 procps && rm -rf /var/lib/apt/lists/* &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt
 
 COPY . /benchmark
