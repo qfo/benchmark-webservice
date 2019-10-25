@@ -19,25 +19,25 @@ def main(participant_data_files, metrics_stub_files, aggregation_stub_dir, aggre
     aggregation_stubs = list(files_in_directory(aggregation_stub_dir, '.json'))
 
     # Assuring the output directories do exist
-    for dir in (model_output_dir, aggregation_out_dir):
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+    for path in (model_output_dir, aggregation_out_dir):
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(os.path.abspath(path)))
 
     data_model_file = []
     data_model_file = join_json_files(participant_data_files, data_model_file, "*.json")
     nr_part_stubs = len(data_model_file)
     data_model_file = join_json_files(metrics_stub_files, data_model_file, "*.json")
 
-    output_file = os.path.join(aggregation_out_dir, 'Assessment_datasets.json')
-    with open(output_file, 'w') as f:
+    #output_file = os.path.join(aggregation_out_dir, 'Assessment_datasets.json')
+    with open(aggregation_out_dir, 'w') as f:
         json.dump(data_model_file[nr_part_stubs:], f, sort_keys=True, indent=4, separators=(',', ': '))
 
     # load the aggregation files created in manage_assessment_data.py
     data_model_file = join_json_files(aggregation_stubs, data_model_file, "*.json")
 
     # write the merged data model file to json output
-    output_file = os.path.join(model_output_dir, "data_model_file.json")
-    with open(output_file, 'w') as f:
+    # output_file = os.path.join(model_output_dir, "data_model_file.json")
+    with open(model_output_dir, 'w') as f:
         json.dump(data_model_file, f, sort_keys=True, indent=4, separators=(',', ': '))
 
 
