@@ -1,10 +1,10 @@
 # Use an official Python runtime as a parent image
-FROM python:3-slim
+FROM python:3.7-slim
 
 WORKDIR /benchmark
 
 COPY "requirements.txt" /benchmark
 
-RUN apt-get update && apt-get install -y libxml2 procps && rm -rf /var/lib/apt/lists/* &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt
+RUN apt-get update && apt-get install -y build-essential pkg-config libfreetype6-dev libxml2 procps &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt && apt-get -y remove build-essential pkg-config libfreetype6-dev && apt-get -y autoremove && apt-get -y autoclean && rm -rf /var/lib/apt/lists/*
 
 COPY . /benchmark
