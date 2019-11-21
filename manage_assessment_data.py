@@ -319,8 +319,9 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
                    "x", "X",
                    "D",
                    "d", "|", "_", ","]
-        colors = ['#5b2a49', '#a91310', '#9693b0', '#e7afd7', '#fb7f6a', '#0566e5', '#00bdc8', '#cf4119', '#8b123f',
-                  '#b35ccc', '#dbf6a6', '#c0b596', '#516e85', '#1343c3', '#7b88be']
+        colors = ['#5b2a49', '#a91310', '#9693b0', '#e7afd7', '#fb7f6a', '#0566e5', '#00bdc8', '#cf4119', '#8b123f', '#c43b3b',
+                  '#b35ccc', '#dbf6a6', '#c0b596', '#516e85', '#1343c3', '#7b88be', '#000000', '#808080', '#DCDCDC', '#14ff14',
+                  "#b9b631","#37f9a2","#bac8b0","#72b770","#a0fc50","#0f66fe","#867cce","#808ca3","#fee63d",]
         ax.errorbar(x_values[i], y_values[i], xerr=x_err[i], yerr=y_err[i], linestyle='None', marker=markers[i],
                     markersize='15', markerfacecolor=colors[i], markeredgecolor=colors[i], capsize=6,
                     ecolor=colors[i], label=tools[i])
