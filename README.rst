@@ -22,8 +22,9 @@ and (iii) compute the benchmark metrics for various benchmarks.
 Data
 ----
 Orthology predictions must be provided by the user. An example file is available in the
-example directory. Reference datasets have to be made available in docker volumes (one per
-reference dataset). See Usage for more details how to obtain them.
+example directory. Reference datasets have to be made available to the workflow
+and can be obtained online for the publicly accessible datasets. See Usage section
+for more details how to obtain them.
 
 Usage
 -----
@@ -35,15 +36,16 @@ Usage
  #. Create the necessary docker images by running ``./build_dockers.sh latest``
 
  #. Create the necessary docker volumes by running ``./build_refset_volumes.sh``. This
-    will create two docker volumes named *refset2011* and *refset2018* and are populated
-    with the necessary data to run the benchmarks.
+    will download the reference datasets for the 2011 and 2018 datasets and store
+    them in reference_data/<year>/. The nextflow workflow will then mount the data
+    into the docker image.
 
- #. Run the pipeline with ``nextflow run benchmark.nf``
+ #. Run the pipeline with ``nextflow run main.nf`` 
 
 this will launch the pipeline with the default parameters that are specified in the
 `nextflow config`_ file. Output files will be created by default into ``out/``.
+Use ``nextflow run main.nf --help`` to obtain a list of possible parameters.
 
-.. _cdist: http://www.nico.schottelius.org/software/cdist/
 .. _Docker: https://www.docker.com
 .. _Nextflow: https://www.nextflow.io
 .. _benchmark service: https://orthology.benchmark-service.org
