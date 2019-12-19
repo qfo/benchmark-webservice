@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 import numpy as np
 import pandas
 import matplotlib
-matplotlib.use("SVG")
+matplotlib.use("PDF")
 import matplotlib.pyplot as plt
 plt.ioff()
 import logging
@@ -420,7 +420,7 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
         print_quartiles_table(tools_quartiles)
 
     outname = (challenge + "_benchmark_" + classification_type + "-" +
-              x_axis + "-" + y_axis + ".svg").replace(' ', '_')
+              x_axis + "-" + y_axis + ".pdf").replace(' ', '_')
     outpath = os.path.join(outdir_dir, outname)
     fig = plt.gcf()
     fig.set_size_inches(18.5, 10.5)
