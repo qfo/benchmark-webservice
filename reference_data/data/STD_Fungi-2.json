@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:STD_Fungi_agg",
+  "challenge_ids": ["STD_Fungi"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "NR_ORTHOLOGS",
+        "y_axis": "RF_DISTANCE"
+      }
+    }
+  },
+  "type": "aggregation"
+}

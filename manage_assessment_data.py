@@ -18,6 +18,7 @@ logger = logging.getLogger('manage_assessment_data')
 
 
 def main(metrics_data_files, benchmark_data_dir, output_dir):
+    logger.debug('{}, {}, {}'.format(metrics_data_files, benchmark_data_dir, output_dir))
     # read participant metrics
     participant_data = read_metrics_stubs(metrics_data_files)
     generate_manifest(benchmark_data_dir, output_dir, participant_data)
@@ -38,17 +39,28 @@ def read_metrics_stubs(metrics_stubs):
     return participant_data
 
 
+def all_datafiles_for_challenge(data_dir, challenge):
+    def json_files_for_challenge(base, challenge):
+        for file in os.scandir(base):
+            if file.name.startswith(challenge) and file.name.endswith('.json'):
+                fnd = True
+                yield file
+
+    fnd = False
+    nested_dir = os.path.join(data_dir, challenge)
+    if os.path.isdir(nested_dir):
+        yield from json_files_for_challenge(nested_dir, challenge)
+    if not fnd:
+        yield from json_files_for_challenge(data_dir, challenge)
+
+
 def generate_manifest(data_dir, output_dir, participant_data):
     info = []
     for challenge, metrics in participant_data.items():
-        participants = []
-        challenge_oeb_data = os.path.join(data_dir, challenge, challenge + ".json")
-        if not os.path.isfile(challenge_oeb_data):
-            # try without per-challenge nesting, i.e. empty stub case
-            challenge_oeb_data = os.path.join(data_dir, challenge + ".json")
-
-        if os.path.isfile(challenge_oeb_data):
-            logger.debug('loading '+challenge_oeb_data)
+        added_challenge_to_manifest = False
+        for challenge_oeb_data in all_datafiles_for_challenge(data_dir, challenge):
+            logger.debug('loading ' + challenge_oeb_data.path)
+            participants = []
             # Transferring the public participants data
             with io.open(challenge_oeb_data, mode='r', encoding="utf-8") as f:
                 aggregation_file = json.load(f)
@@ -66,11 +78,12 @@ def generate_manifest(data_dir, output_dir, participant_data):
                 elif metrics_data["metrics"]["metric_id"] == metric_Y:
                     new_participant_data["metric_y"] = metrics_data["metrics"]["value"]
                     new_participant_data["stderr_y"] = metrics_data["metrics"]["stderr"]
-
-            # copy the assessment files to output directory
-            new_participant_data["participant_id"] = participant_id
-            logger.debug("new participant_data: {}".format(new_participant_data))
-            aggregation_file["datalink"]["inline_data"]["challenge_participants"].append(new_participant_data)
+                if 'metric_x' in new_participant_data and 'metric_y' in new_participant_data:
+                    # copy the assessment files to output directory
+                    new_participant_data["participant_id"] = participant_id
+                    logger.debug("new participant_data: {}".format(new_participant_data))
+                    aggregation_file["datalink"]["inline_data"]["challenge_participants"].append(new_participant_data)
+                    new_participant_data = {}
 
             # add the rest of participants to manifest
             for name in aggregation_file["datalink"]["inline_data"]["challenge_participants"]:
@@ -78,7 +91,9 @@ def generate_manifest(data_dir, output_dir, participant_data):
 
             #copy the updated aggregation file to output directory
             per_challenge_output = os.path.join(output_dir, challenge)
-            summary_file = os.path.join(per_challenge_output, challenge + ".json")
+            if not os.path.exists(per_challenge_output):
+                os.makedirs(per_challenge_output)
+            summary_file = os.path.join(per_challenge_output, challenge_oeb_data.name)
             with open(summary_file, 'w') as f:
                 json.dump(aggregation_file, f, sort_keys=True, indent=4, separators=(',', ': '))
 
@@ -88,13 +103,14 @@ def generate_manifest(data_dir, output_dir, participant_data):
             #print_chart(per_challenge_output, summary_file, challenge, "SQR")
             #print_chart(per_challenge_output, summary_file, challenge, "DIAG")
 
-            #generate manifest
-            obj = {
-                "id": challenge,
-                "participants": participants
-            }
-
-            info.append(obj)
+            #generate manifest, only once per challenge, not per visualization variant
+            if not added_challenge_to_manifest:
+                obj = {
+                    "id": challenge,
+                    "participants": participants
+                }
+                info.append(obj)
+                added_challenge_to_manifest = True
 
     with io.open(os.path.join(output_dir, "Manifest.json"), mode='w', encoding="utf-8") as f:
         json.dump(info, f, sort_keys=True, indent=4, separators=(',', ': '))
@@ -403,10 +419,12 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
         tools_quartiles = plot_diagonal_quartiles(x_values, y_values, tools, better)
         print_quartiles_table(tools_quartiles)
 
-    outname = os.path.join(outdir_dir, challenge + "_benchmark_" + classification_type + ".svg")
+    outname = (challenge + "_benchmark_" + classification_type + "-" +
+              x_axis + "-" + y_axis + ".svg").replace(' ', '_')
+    outpath = os.path.join(outdir_dir, outname)
     fig = plt.gcf()
     fig.set_size_inches(18.5, 10.5)
-    fig.savefig(outname, dpi=100)
+    fig.savefig(outpath, dpi=100)
 
     plt.close("all")
 

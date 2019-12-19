@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:G_STD_Luca_agg",
+  "challenge_ids": ["G_STD_Luca"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "NR_COMPLETED_TREE_SAMPLINGS",
+        "y_axis": "FRAC_INCORRECT_TREES"
+      }
+    }
+  },
+  "type": "aggregation"
+}
