@@ -66,7 +66,7 @@ class FractionOfBestScore:
 class RSD(FractionOfBestScore):
     frac_of_best = 1/0.99
     better = operator.lt
-    accessor = operator.attrgetter('Score')
+    accessor = operator.attrgetter('PamDistance')
 
 
 class BitScoreBest(FractionOfBestScore):
