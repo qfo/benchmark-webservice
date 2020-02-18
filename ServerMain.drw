@@ -188,18 +188,7 @@ end:
 # Index Page                       #
 ####################################
 bsIndex := proc(;itype:string)
-
-if itype='params' then
-    if Cookies['FormSize']<>NULL then
-      itype := Cookies['FormSize'];
-    else itype := 'small' fi;
-fi;
-
-vars := table('');
-vars['nspecies'] := string(NS);
-vars['logo'] := '/OMAbrowser.gif';
-
-return(GenerateTemplate(cdir.'/templates/index.html',vars));
+    return('Location: /proxy\n\n');
 end:
 
 bsShowProject := proc()
