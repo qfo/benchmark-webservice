@@ -137,6 +137,8 @@ fi;
 
 if funcname = 'Index' then
     html := traperror(bsIndex(op(params)));
+elif funcname = 'Home' then
+    html := traperror(bsIndex_old(op(params)));
 elif funcname = 'UploadData' then 
     html := traperror(bsUploadData(op(params)));
 elif funcname = 'RedoProjectMapping' and length(params)=8 then
@@ -189,6 +191,11 @@ end:
 ####################################
 bsIndex := proc(;itype:string)
     return('Location: /proxy\n\n');
+end:
+
+bsIndex_old := proc(;itype:string)
+    vars := table('');
+    return(GenerateTemplate(cdir.'/templates/index.html',vars));
 end:
 
 bsShowProject := proc()
