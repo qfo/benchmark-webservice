@@ -31,7 +31,7 @@ def sample_cases(newick_tree, nr_samples, tree_size):
 
     cases = []
     lst_time = 0
-    MAX_TRIALS_WITHOUT_PROGRESS = rem_trials = 10000
+    MAX_TRIALS_WITHOUT_PROGRESS = rem_trials = 20000
     while rem_trials > 0 and len(cases) < nr_samples:
         if time.time() - lst_time > 30:
             logger.info("cur_samplesize: {}; {} unsuccessful consecutive trials"

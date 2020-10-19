@@ -11,11 +11,10 @@ overwrite := true:
 
 SetDatasetVariables := proc(;(ref='OMA'):string)
     global outfile, outfile_semiauto, IDIndex, DB, logFn;
-    outfile := datdir.'ReconciledTrees_'.ref.'.drw':
-    outfile_semiauto := datdir.'ReconciledTreesSemiAuto_'.ref.'.drw':
-    ddir := eval(symbol(lowercase(ref).'DBpath'));
-    IDIndex := ReadDb(ddir.'IDIndex.db');
-    logFn := datdir.'ReconciledTrees_'.ref.'.log';
+    outfile := refset_path.'/ReconciledTrees.drw':
+    outfile_semiauto := refset_path.'/ReconciledTreesSemiAuto.drw':
+    IDIndex := ReadDb(refset_path.'/IDIndex.db');
+    logFn := refset_path.'/ReconciledTrees.log';
 end:
 
 MatchID := proc(id:string)
@@ -39,7 +38,10 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
         fi:
         
         oE := NULL;
+        if printlevel > 2 then printf('Leaf: %A\n', t); fi:
         for z in mapfun( t ) do
+            if z=unassigned then next fi:
+            if printlevel > 2 then printf('z-id: %A\n', z); fi:
             oE := MatchID(z,IDIndex);
             if oE<> NULL then break fi:
         od:
@@ -94,107 +96,23 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
     fi:
 end:
 
-ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):{procedure,table},
-    (logFn=NULL):string)
+ExtractPairwiseRel := proc(t:Tree ; (mapping=NULL):{procedure,table}, (logFn=NULL):string)
     global __PWR; __PWR := table();
-    if logFn<>NULL then OpenAppending(logFn); fi:
+    if logFn<>NULL then 
+        OpenAppending(logFn); 
+    fi:
     prots := ExtractPairRelR(t, mapping):
+    if prots = NULL then prots := {} fi:
     printf(' --> %d/%d proteins mapped\n', length(prots), length(indets(t,Leaf)));
-    if logFn<>NULL then OpenAppending(previous); fi:
+    if logFn<>NULL then 
+        OpenAppending(previous); 
+    fi:
     return( [prots, __PWR] );
 end:
 
 
 
 to 1 do
-######################################################################
-#   ___  __  __    _      ____    _  _____  _    ____  _____ _____ 
-#  / _ \|  \/  |  / \    |  _ \  / \|_   _|/ \  / ___|| ____|_   _|
-# | | | | |\/| | / _ \   | | | |/ _ \ | | / _ \ \___ \|  _|   | |  
-# | |_| | |  | |/ ___ \  | |_| / ___ \| |/ ___ \ ___) | |___  | |  
-#  \___/|_|  |_/_/   \_\ |____/_/   \_\_/_/   \_\____/|_____| |_|  
-#
-######################################################################
-
-SetDatasetVariables('OMA');
-if overwrite=true then
-    for f in [outfile, outfile_semiauto] do 
-        OpenWriting(f);
-        printf('ReconciledTrees := table():\n');
-        OpenWriting(previous);
-    od:
-fi:
-
-##############################################
-# PFAM 962 rectree of Engelhardt et al. (2006)
-t := ReadRawFile(datdir.'raw/reconciled-PF00962.nex');
-label:= 'Eukaryotic Tree of PFam 962';
-name := 'PF00962';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Engelhardt BE, Jordan MI, Brenner SE (2006) A graphical model for '
-      . 'predicting protein molecular function. In: Cohen WW, Moore A, editors. '
-      . 'ICML 2006: Proceedings of the 23th International Conference on Machine '
-      . 'Learning. ACM. pp. 297-304.');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# NOX cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/nox.nhx');
-mapping := 0; ReadProgram(datdir.'raw/nox.map'); 
-assert(mapping<>0);
-label:= 'NOX protein familiy';
-name := 'NOX';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree, mapping):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the NOX gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-# POP cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/pop.nhx');
-mapping := 0; ReadProgram(datdir.'raw/pop.map'); 
-assert(mapping<>0);
-label:= 'POP protein familiy';
-name := 'POP';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree, mapping):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the POP gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-###########################################
-7# VATB cluster of Brigitte Boeckmann. (2010)
-t := ReadRawFile(datdir.'raw/vatb.nhx');
-mapping := 0; ReadProgram(datdir.'raw/vatb.map'); 
-assert(mapping<>0);
-label:= 'VATB protein familiy';
-name := 'VATB';
-tree := ParseNewickTree(t):
-map  := ExtractPairwiseRel(tree, mapping):
-case := RecTreeCase(name, label, map[1], map[2], tree, 
-      'Brigitte Boeckmann (2010) Manually reconciled phylogenetic tree of '.
-      'the VATB gene family ');
-OpenAppending(outfile);
-printf('ReconciledTrees[''%s''] := %A:\n', name, case);
-OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
-
-
-
 ##################################################################################
 #  ____       __ ____       _   ____    ____    _  _____  _    ____  _____ _____ 
 # |  _ \ ___ / _/ ___|  ___| |_| ___|  |  _ \  / \|_   _|/ \  / ___|| ____|_   _|
@@ -203,7 +121,7 @@ AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 # |_| \_\___|_| |____/ \___|\__|____/  |____/_/   \_\_/_/   \_\____/|_____| |_|  
 #                                                                                
 ##################################################################################
-SetDatasetVariables('RefSet18');
+SetDatasetVariables();
 if overwrite=true then
     for f in [outfile, outfile_semiauto] do 
         OpenWriting(f);
@@ -226,7 +144,7 @@ famIds := ['NOX','POP','VATB',
 for famNr to length(fams) do
     fam := fams[famNr];
     name := famIds[famNr];
-    t := ReadRawFile(sprintf('%s/raw/%s_referenceProteome%s.nhx', datdir, fam, treeVersion));
+    t := ReadRawFile(sprintf('%s/../data/%s_referenceProteome%s.nhx', refset_path, fam, treeVersion));
     label := fam.' protein family';
     tree := ParseNewickTree(t);
     if logFn<>NULL then 
@@ -241,7 +159,6 @@ for famNr to length(fams) do
     OpenAppending(outfile);
     printf('ReconciledTrees[''%s''] := %A:\n', name, case);
     OpenAppending(previous);
-    AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name],UTCTime());
 od:
 
 
@@ -249,22 +166,32 @@ od:
 # All of Treefam A
 name := 'TreeFamA';
 label:= 'Reconciled gene trees from TreeFam A';
-t := ReadRawFile(datdir.'raw/treefam/treefam2reference.txt');
+t := ReadRawFile(refset_path.'/../data/treefam/treefam2reference.txt');
 mapping := table():
 for z in SplitLines(t) do
     x := SearchDelim('\t',z[1..-2]);
     mapping[x[1]] := x[2];
 od:
-fams := TimedCallSystem('ls '.datdir.'raw/treefam/*.nhx')[2]:
+fams := TimedCallSystem('ls '.refset_path.'/../data/treefam/*.nhx')[2]:
 fams := [seq(z[1..-2], z=SplitLines(fams))]:
 rels := table(): memb := {}: 
 errT := errM := 0;
+logFn_treefam := ReplaceString('.log', '-treefamA.log', logFn);
 for fam in fams do 
     tree := traperror(ParseNewickTree( ReadRawFile(fam) )):
-    if tree=lasterror then errT:=errT+1; next fi:
+    if tree=lasterror then 
+        prinf('cannot read %s\n', fam);
+        errT:=errT+1; 
+        next 
+    fi:
 
-    t := traperror(ExtractPairwiseRel(tree,mapping));
-    if t=lasterror then errM := errM+1; next fi:
+    t := traperror(ExtractPairwiseRel(tree, mapping, logFn_treefam));
+    if t=lasterror then 
+        printf('cannot extract relations from tree in fam %s\n', fam);
+        prints(t);
+        errM := errM+1; 
+        next 
+    fi:
     memb := union(memb, t[1]);
     for z in Indices(t[2]) do 
         rels[z] := t[2,z];
@@ -275,8 +202,10 @@ case := RecTreeCase( name, label, memb, rels, tree,
 OpenAppending(outfile_semiauto);
 printf('ReconciledTrees[''%s''] := %A:\n', name, case);
 OpenAppending(previous);
-AddTestProperty(name,noeval(EvaluateRefPhyloTestProperty),[name,'SemiAuto'],UTCTime());
 
+od: # to 1
+
+done
 
 
 #########################################

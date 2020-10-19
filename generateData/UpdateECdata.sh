@@ -1,8 +1,7 @@
 #!/bin/bash
-dataset="${1:-RefSet5}"
 enzRaw="/tmp/enzymes.dat"
 enzDrw="/tmp/enzymes.drw"
-enzDat="$DARWIN_ORTHOLOG_BENCHMARKDATA_PATH/data/enzymes_$dataset.drw"
+enzDat="$QFO_REFSET_PATH/enzymes.drw"
 gen_dir="$(dirname $0)"
 
 wget "ftp://ftp.expasy.org/databases/enzyme/enzyme.dat" -O $enzRaw
@@ -16,10 +15,9 @@ darwin  << EOA
 wdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
 if wdir='' then error('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH not set') fi:
 ReadProgram(wdir.'/lib/darwinit');
-ddir := eval(symbol(lowercase('$dataset').'DBpath'));
-IDDB := LoadIndex(ddir.'IDIndex.db');
+IDDB := LoadIndex('${QFO_REFSET_PATH}/IDIndex.db');
 
-EC := CreateArray( 1..NrOfProteins('$dataset') ):
+EC := CreateArray( 1..NrOfProteins() ):
 c_inOma := Counter('number of proteins mappable to OMA');
 c_all   := Counter('total Proteins with EC numbers');
 
