@@ -50,7 +50,7 @@ def retrieve_files(files, target_dir):
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description="Download reference data of a given release for the QfO benchmarking platform")
-    p.add_argument('release', choices=(2011,2018,2019), type=int, help="release version to download")
+    p.add_argument('release', choices=(2011,2018,2019,2020), type=int, help="release version to download")
     p.add_argument('--out-dir', help="directory where to store the data. Defaults to ./reference_data/<release>")
 
     conf = p.parse_args()
