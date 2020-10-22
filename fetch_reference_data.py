@@ -31,10 +31,10 @@ def get_file_list(release):
     if release > 2011:
         files.extend([
             'lineage_tree.phyloxml',
-            'tree_samples_Luca.nwk',
-            'tree_samples_Ver.nwk',
-            'tree_samples_Euk.nwk',
-            'tree_samples_Fun.nwk'])
+            'species_tree_samples_Luca.nwk',
+            'species_tree_samples_Ver.nwk',
+            'species_tree_samples_Euk.nwk',
+            'species_tree_samples_Fun.nwk'])
     return [os.path.join(BASEURL, str(release), f) for f in files]
 
 
