@@ -35,10 +35,10 @@ Usage
 
  #. Create the necessary docker images by running ``./build_dockers.sh latest``
 
- #. Create the necessary docker volumes by running ``./build_refset_volumes.sh``. This
-    will download the reference datasets for the 2011 and 2018 datasets and store
-    them in reference_data/<year>/. The nextflow workflow will then mount the data
-    into the docker image.
+ #. Download the reference data by running ``./fetch_reference_data.py``. for the
+    desired year. This will download the reference datasets for the store
+    them in reference_data/<year>/. The nextflow workflow can then mount the data
+    into the docker container.
 
  #. Run the pipeline with ``nextflow run main.nf`` 
 
