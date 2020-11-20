@@ -83,6 +83,7 @@ tree_clades = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 tree_clades2 = Channel.from("Luca", "Vertebrata", "Fungi", "Eukaryota")
 genetree_sets = Channel.from("SwissTrees", "TreeFam-A")
 tree_clades0 = Channel.from("Eukaryota", "Fungi", "Bacteria")
+group_benchmark_levels = Channel.from("Bilateria")
 
 //output
 //validation_out = file(params.validation_result)
@@ -108,9 +109,16 @@ process validate_input_file {
     output:
     val task.exitStatus into EXIT_STAT
     file "participant.json" into PARTICIPANT_STUB
+    file "input_file_type.txt" into PRED_TYPE
 
     """
-    /benchmark/validate.py --com $community_id --challenges_ids "$benchmarks" --participant "$method_name" --out "participant.json" $refset_dir/mapping.json.gz $predictions
+    /benchmark/validate.py --com $community_id \
+        --challenges_ids "$benchmarks" \
+        --participant "$method_name" \
+        --out "participant.json" \
+        --type-out "input_file_type.txt" \
+        $refset_dir/mapping.json.gz \
+        $predictions
     """
 }
 
@@ -130,7 +138,7 @@ process convertPredictions {
     file 'predictions.db' into db
 
     when:
-    file_validated == 0
+    file_validated == 0 &&  benchmarks =~ /STD_|GO|EC|SwissTrees|TreeFam/
 
     """
     /benchmark/map_relations.py --out predictions.db $refset_dir/mapping.json.gz $predictions
@@ -297,8 +305,64 @@ process reference_genetrees_benchmark {
     """
 }
 
+pred_file_type = PRED_TYPE.map{ file -> file.text.trim() }
+process extract_groups_at_level {
+    label "py"
+    tag "$level"
 
-challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB)
+    input:
+    val file_validated from EXIT_STAT
+    val pred_type from pred_file_type
+    file predictions
+    val refset_dir
+    val level from group_benchmark_levels
+
+    output:
+    tuple val(level), file("groups_${level}.txt") into GROUP_CHALLENGES
+
+    when:
+    file_validated == 0 && pred_type =~ /NESTED_ORTHOXML/ && benchmarks =~ /GROUP_$level/
+
+    """
+    python /benchmark/extract_groups.py --out "groups_${level}.txt" \
+        --clade "$level" \
+        --taxonomy $refset_dir/lineage_tree.phyloxml \
+        $refset_dir/mapping.json.gz \
+        $predictions
+    """
+}
+
+process orthobench_groupbased {
+
+    label "py"
+    tag "$level"
+
+    input:
+    tuple val(level), file(group) from GROUP_CHALLENGES
+    val method_name
+    val refset_dir
+    val community_id
+    val result_file_path
+    // for mountpoint
+    file predictions
+
+    output:
+    file "GROUP_${level}.json" into GROUP_STUB
+
+    """
+    python /benchmark/orthobench.py \
+        --out "$result_file_path/GROUP_${level}/GROUP_${level}_${method_name}.txt" \
+        --assessment-out "GROUP_${level}.json" \
+        --challenge-id "GROUP_${level}" \
+        --participant-id "$method_name" \
+        --community-id $community_id \
+        --reference-groups "$refset_dir/RefGroups_${level}.json" \
+        --predicted-groups $group
+    """
+}
+
+
+challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, GROUP_STUB)
 
 process consolidate {
     label "py"

@@ -76,6 +76,7 @@ def parse_orthoxml(fh, valid_ids):
     in_species = False
     nr_species_done = 0
     max_invalid_ids = 50
+    max_og_depth = 0
 
     def fixtag(ns, tag):
         return "{" + nsmap[ns] + "}" + tag
@@ -89,6 +90,8 @@ def parse_orthoxml(fh, valid_ids):
             if elem.tag == fixtag('', 'orthologGroup'):
                 assert not in_species
                 og_level += 1
+                if og_level > max_og_depth:
+                    max_og_depth = og_level
             elif elem.tag == fixtag('', 'groups'):
                 assert nr_species_done > 0
             elif elem.tag == fixtag('', 'species'):
@@ -116,7 +119,7 @@ def parse_orthoxml(fh, valid_ids):
     assert not in_species
     assert og_level == 0
     assert nr_species_done > 0
-    return True
+    return "NESTED_ORTHOXML" if max_og_depth > 1 else "FLAT_ORTHOXML"
 
 
 def parse_tsv(fh, valid_ids):
@@ -154,22 +157,24 @@ def identify_input_type_and_validate(fpath, valid_ids):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
 
+    input_type = None
     if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
         try:
             with auto_open(fpath, 'rb') as fh:
-                parse_orthoxml(fh, valid_ids)
+                input_type = parse_orthoxml(fh, valid_ids)
         except AssertionError as e:
             logger.error('input file is not a valid orthoxml file: {}'.format(e))
-            return False
+            return False, input_type
 
     else:
         try:
             with auto_open(fpath, 'rt') as fh:
                 parse_tsv(fh, valid_ids)
+            input_type = "TSV"
         except AssertionError as e:
             logger.error('input file is not a valid tab-separated file: {}'.format(e))
-            return False
-    return True
+            return False, input_type
+    return True, input_type
 
 
 def write_participant_dataset_file(outfn, participant_id, community, challenges, is_valid):
@@ -191,6 +196,7 @@ if __name__ == "__main__":
     parser.add_argument('--challenges_ids', default=[], help="List of benchmarks that will be run")
     parser.add_argument('-p', '--participant', required=True, help="Name of the tool")
     parser.add_argument('-o', '--out', required=True, help="Output filename for validation json")
+    parser.add_argument('-t', '--type-out', help="Output filename containing type of relation file")
     conf = parser.parse_args()
 
     log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
@@ -199,7 +205,12 @@ if __name__ == "__main__":
     logging.basicConfig(**log_conf)
 
     mapping_data = load_mapping(conf.mapping)
-    is_valid = identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'])
+    is_valid, input_rel_filetype = identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'])
     write_participant_dataset_file(conf.out, conf.participant, conf.com, conf.challenges_ids, is_valid)
+    if conf.type_out:
+        with open(conf.type_out, 'wt') as fh:
+            fh.write(input_rel_filetype)
+            fh.write('\n')
     if not is_valid:
-        sys.exit("ERROR: Submitted data does not validate against any reference data! Please check "+conf.out )
+        sys.exit("ERROR: Submitted data does not validate against any reference data! Please check "+conf.out)
+
