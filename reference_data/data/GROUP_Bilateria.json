@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:GROUP_Bilateria",
+  "challenge_ids": ["GROUP_Bilateria"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "TPR",
+        "y_axis": "FPR"
+      }
+    }
+  },
+  "type": "aggregation"
+}
