@@ -111,6 +111,7 @@ class PairwiseOrthologRelationExtractor(object):
         self.valid_id_map = mapping_data['mapping']
         self.internal_genome_offs = mapping_data['Goff']
         self.species_order = mapping_data['species']
+        self.excluded_ids = mapping_data['excluded_ids'] if 'excluded_ids' in mapping_data else set([])
         self.genome_cnt = 0
         self.generef_to_internal_id = {}
         self.internal_to_genome_nr = {}
@@ -128,8 +129,9 @@ class PairwiseOrthologRelationExtractor(object):
                 self.internal_to_genome_nr[internal_id] = self.genome_cnt
                 internal_ids.append(internal_id)
             except KeyError:
-                logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
-                               .format(gene_prot_id, gene_id, genome_node.get('name')))
+                if gene_prot_id not in self.excluded_ids:
+                    logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
+                                   .format(gene_prot_id, gene_id, genome_node.get('name')))
         min_id = min(internal_ids) - 1
         max_id = max(internal_ids) - 1
         k_min = bisect_right(self.internal_genome_offs, min_id)
@@ -219,6 +221,7 @@ def parse_orthoxml(fh, processor):
 def parse_tsv(fh, mapping_data):
     logger.info("start mapping of tsv formatted input data")
     valid_id_map = mapping_data['mapping']
+    excluded_ids = mapping_data['excluded_ids'] if 'excluded_ids' in mapping_data else set([])
     goff = mapping_data['Goff']
     dialect = csv.Sniffer().sniff(fh.read(2048))
     fh.seek(0)
@@ -237,6 +240,7 @@ def parse_tsv(fh, mapping_data):
             yield id1, id2
         except KeyError:
             unkn = list(itertools.filterfalse(lambda x: x in valid_id_map, row[:2]))
+            unkn = list(itertools.filterfalse(lambda x: x in excluded_ids, unkn))
             logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
 
 
@@ -270,8 +274,6 @@ if __name__ == "__main__":
         log_conf['level'] = logging.DEBUG
     logging.basicConfig(**log_conf)
 
-
-    #valid_id_map = load_IDIndex(conf.IDIndex)
     mapping_data = load_mapping(conf.mapping)
     predictions = [[] for _ in range(mapping_data['Goff'][-1] + 1)]
     tot_pred = 0

@@ -70,7 +70,7 @@ def load_mapping(path):
     return data
 
 
-def parse_orthoxml(fh, valid_ids):
+def parse_orthoxml(fh, valid_ids, excluded_ids):
     nsmap = {}
     og_level = 0
     in_species = False
@@ -105,10 +105,13 @@ def parse_orthoxml(fh, valid_ids):
             elif elem.tag == fixtag('', 'gene'):
                 try:
                     if elem.get('protId') not in valid_ids:
-                        max_invalid_ids -= 1
-                        if max_invalid_ids < 0:
-                            raise AssertionError(
-                                'Too many invalid crossreferences found. Did you select the right reference dataset?')
+                        if elem.get('protId') not in excluded_ids:
+                            max_invalid_ids -= 1
+                            if max_invalid_ids < 0:
+                                raise AssertionError(
+                                    'Too many invalid crossreferences found. Did you select the right reference dataset?')
+                        else:
+                            logger.info("excluding protein \"{}\" from the benchmark analysis".format(elem.get('protId')))
                 except KeyError:
                     raise AssertionError('<gene> elements must encode xref in "protId" attribute')
             # we can clear all elements right away
@@ -119,16 +122,22 @@ def parse_orthoxml(fh, valid_ids):
     return True
 
 
-def parse_tsv(fh, valid_ids):
+def parse_tsv(fh, valid_ids, excluded_ids):
     logger.info("trying to read as tsv file")
     max_errors = 5
     invalid_ids = set([])
+    reported_excluded = set([])
     dialect = csv.Sniffer().sniff(fh.read(2048))
     fh.seek(0)
     csv_reader = csv.reader(fh, dialect)
 
     def check_if_valid_id(id_):
         if id_ not in valid_ids:
+            if id_ in excluded_ids:
+                if not id_ in reported_excluded:
+                    reported_excluded.add(id_)
+                    logger.info("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set).")
+                    return
             if id_ not in invalid_ids:
                 invalid_ids.add(id_)
                 if len(invalid_ids) > 50:
@@ -150,14 +159,14 @@ def parse_tsv(fh, valid_ids):
         raise AssertionError("Too few ortholog pairs to be analysed")
 
 
-def identify_input_type_and_validate(fpath, valid_ids):
+def identify_input_type_and_validate(fpath, valid_ids, excluded_ids):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
 
     if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
         try:
             with auto_open(fpath, 'rb') as fh:
-                parse_orthoxml(fh, valid_ids)
+                parse_orthoxml(fh, valid_ids, excluded_ids)
         except AssertionError as e:
             logger.error('input file is not a valid orthoxml file: {}'.format(e))
             return False
@@ -165,7 +174,7 @@ def identify_input_type_and_validate(fpath, valid_ids):
     else:
         try:
             with auto_open(fpath, 'rt') as fh:
-                parse_tsv(fh, valid_ids)
+                parse_tsv(fh, valid_ids, excluded_ids)
         except AssertionError as e:
             logger.error('input file is not a valid tab-separated file: {}'.format(e))
             return False
@@ -199,7 +208,8 @@ if __name__ == "__main__":
     logging.basicConfig(**log_conf)
 
     mapping_data = load_mapping(conf.mapping)
-    is_valid = identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'])
+    excluded_ids = mapping_data['excluded_ids'] if 'excluded_ids' in mapping_data else set([])
+    is_valid = identify_input_type_and_validate(conf.input_rels, mapping_data['mapping'], excluded_ids)
     write_participant_dataset_file(conf.out, conf.participant, conf.com, conf.challenges_ids, is_valid)
     if not is_valid:
         sys.exit("ERROR: Submitted data does not validate against any reference data! Please check "+conf.out )
