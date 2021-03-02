@@ -11,7 +11,7 @@ def parse_db(fn):
         Goff = []
         mappings = {}
 
-        parser = re.compile(r'<E><OS>(?P<os>\w*)<\/OS><MAPIDS>(?P<ids>.*)<\/MAPIDS><SEQ>.*<\/SEQ><\/E>')
+        parser = re.compile(r'<E><OS>(?P<os>\w*)<\/OS><MAPIDS>(?P<ids>.*)<\/MAPIDS>.*<SEQ>.*<\/SEQ><\/E>')
         for off, line in enumerate(fh):
             m = parser.match(line)
             if not m:
@@ -25,7 +25,7 @@ def parse_db(fn):
                     mappings[cur_id] = -1
                 else:
                     mappings[cur_id] = off + 1
-	Goff.append(off + 1)
+        Goff.append(off + 1)
     to_rem = [k for k, v in mappings.items() if v == -1]
     print("removing {} ids which are not unique".format(len(to_rem)))
     for c in to_rem:
@@ -35,6 +35,6 @@ def parse_db(fn):
 
 if __name__ == "__main__":
     data = parse_db(os.path.join(os.getenv('QFO_REFSET_PATH'), "ServerSeqs.db"))
-    with gzip.open(os.path.join(os.getenv("QFO_REFSET_PATH"), "mapping.json.gz"), 'wb', compresslevel=9) as fout:
+    with gzip.open(os.path.join(os.getenv("QFO_REFSET_PATH"), "mapping.json.gz"), 'wt', encoding="utf-8", compresslevel=9) as fout:
         json.dump(data, fout)
 
