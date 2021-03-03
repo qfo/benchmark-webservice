@@ -35,7 +35,7 @@ def parse_db(fn, exclude=[]):
     print("removing {} ids which are not unique".format(len(to_rem)))
     for c in to_rem:
         mappings.pop(c)
-    return {'mapping': mappings, 'Goff': Goff, 'species': genomes, 'excluded_ids': excluded_ids}
+    return {'mapping': mappings, 'Goff': Goff, 'species': genomes, 'excluded_ids': list(excluded_ids)}
 
 
 if __name__ == "__main__":
