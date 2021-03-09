@@ -75,6 +75,7 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
     og_level = 0
     in_species = False
     nr_species_done = 0
+    nr_excluded_genes = 0
     max_invalid_ids = 50
 
     def fixtag(ns, tag):
@@ -111,7 +112,8 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
                                 raise AssertionError(
                                     'Too many invalid crossreferences found. Did you select the right reference dataset?')
                         else:
-                            logger.info("excluding protein \"{}\" from the benchmark analysis".format(elem.get('protId')))
+                            logger.debug("excluding protein \"{}\" from the benchmark analysis".format(elem.get('protId')))
+                            nr_excluded_genes += 1
                 except KeyError:
                     raise AssertionError('<gene> elements must encode xref in "protId" attribute')
             # we can clear all elements right away
@@ -119,6 +121,8 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
     assert not in_species
     assert og_level == 0
     assert nr_species_done > 0
+    if nr_excluded_genes > 0:
+        logger.info("Excluded {} genes form the predictions (excluded species)".format(nr_excluded_genes))
     return True
 
 
@@ -136,7 +140,7 @@ def parse_tsv(fh, valid_ids, excluded_ids):
             if id_ in excluded_ids:
                 if not id_ in reported_excluded:
                     reported_excluded.add(id_)
-                    logger.info("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set).")
+                    logger.debug("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set).")
                     return
             if id_ not in invalid_ids:
                 invalid_ids.add(id_)
@@ -157,6 +161,9 @@ def parse_tsv(fh, valid_ids, excluded_ids):
             check_if_valid_id(z)
     if line_nr < 100:
         raise AssertionError("Too few ortholog pairs to be analysed")
+    if len(reported_excluded) > 0:
+        logger.info("excluded {} genes from the predictions (excluded species)"
+                    .format(len(reported_excluded)))
 
 
 def identify_input_type_and_validate(fpath, valid_ids, excluded_ids):

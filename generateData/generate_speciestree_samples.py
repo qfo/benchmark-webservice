@@ -22,12 +22,14 @@ def shuffle_children_order(tree:dendropy.Tree):
         nd._child_nodes.sort(key=lambda n: random.random())
 
 
-def sample_cases(newick_tree, nr_samples, tree_size):
+def sample_cases(newick_tree, nr_samples, tree_size, exclude=None):
     t = dendropy.Tree.get(data=newick_tree, schema="newick")
     for k, top_clade_node in enumerate(t.seed_node.child_nodes()):
         for l in top_clade_node.leaf_iter():
             l.taxon.annotations.add(k)
-    all_taxa = list(t.taxon_namespace)
+    if exclude is None:
+        exclude = []
+    all_taxa = [tax for tax in t.taxon_namespace if tax.label not in exclude]
 
     cases = []
     lst_time = 0
@@ -84,6 +86,8 @@ if __name__ == "__main__":
                              "must previously exist. It defaults to '/refset'.")
     parser.add_argument('-v', action='count', default=0,
                         help="increase verbosity of program. add -vv for debug level")
+    parser.add_argument('--exclude', default=None, nargs="*",
+                        help="species codes to exclude")
     parser.add_argument('treefile', help="species tree file in phyloxml format")
     conf = parser.parse_args()
     logging.basicConfig(level=30 - 10 * min(conf.v, 2),
@@ -92,7 +96,7 @@ if __name__ == "__main__":
     lab = conf.clade
     clade = clades[lab]
     newick = extract_relevant_newick_tree(conf.treefile, clade)
-    samples = sample_cases(newick, conf.nr_samples, conf.tree_size)
+    samples = sample_cases(newick, conf.nr_samples, conf.tree_size, exclude=conf.exclude)
     with open(os.path.join(conf.out, 'species_tree_samples_{}.nwk'.format(lab)), 'wt') as fh:
         for t in samples:
             t.write(file=fh, schema='newick')

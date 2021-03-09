@@ -78,19 +78,6 @@ def encode_nr_as_seq(nr):
     return "".join(res)
 
 
-def load_IDIndex(path):
-    pat = re.compile(r"<E><KEY>'(?P<key>.*)'</KEY>.*<VALUE>(?P<val>.*)</VALUE>")
-    lookup = {}
-    with auto_open(path, 'rt') as fh:
-        for line in fh:
-            m = pat.match(line)
-            if m is not None:
-                lookup[m.group('key')] = int(m.group('val'))
-    logger.info("loaded lookup table with {} valid crossreferences for {} distinct proteins"
-                .format(len(lookup), len(frozenset(lookup.values()))))
-    return lookup
-
-
 def load_mapping(path):
     with auto_open(path, 'rb') as fh:
         data = json.loads(fh.read().decode('utf-8'))
@@ -132,6 +119,9 @@ class PairwiseOrthologRelationExtractor(object):
                 if gene_prot_id not in self.excluded_ids:
                     logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
                                    .format(gene_prot_id, gene_id, genome_node.get('name')))
+        if len(internal_ids) == 0:
+            logger.info("Genome {} does not contain any mapped genes".format(genome_node.get('name')))
+            return True
         min_id = min(internal_ids) - 1
         max_id = max(internal_ids) - 1
         k_min = bisect_right(self.internal_genome_offs, min_id)
@@ -154,6 +144,11 @@ class PairwiseOrthologRelationExtractor(object):
                          .format(cnts, gene_refs))
             mapping_ok = False
         return mapping_ok
+
+    def log_progress(self):
+        logger.info("processed {} toplevel orthologGroups with {} induced pairwise relations"
+                    .format(self.processed_stats['processed_toplevel'],
+                            self.processed_stats['relations']))
 
     def extract_pairwise_relations(self, node):
         rels = []
@@ -182,9 +177,7 @@ class PairwiseOrthologRelationExtractor(object):
         self.processed_stats['processed_toplevel'] += 1
         self.processed_stats['relations'] += len(rels)
         if time() - self.processed_stats['last'] > 20:
-            logger.info("processed {} toplevel orthologGroups with {} induced pairwise relations"
-                        .format(self.processed_stats['processed_toplevel'],
-                                self.processed_stats['relations']))
+            self.log_progress()
             self.processed_stats['last'] = time()
         return rels
 
@@ -216,6 +209,7 @@ def parse_orthoxml(fh, processor):
                 if not processor.add_genome_genes(elem):
                     sys.exit(2)
                 elem.clear()
+    processor.log_progress()
 
 
 def parse_tsv(fh, mapping_data):
@@ -241,7 +235,8 @@ def parse_tsv(fh, mapping_data):
         except KeyError:
             unkn = list(itertools.filterfalse(lambda x: x in valid_id_map, row[:2]))
             unkn = list(itertools.filterfalse(lambda x: x in excluded_ids, unkn))
-            logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
+            if len(unkn)>0:
+                logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
 
 
 def identify_input_type_and_parse(fpath, mapping_data):
