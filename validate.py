@@ -108,6 +108,8 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
                     if elem.get('protId') not in valid_ids:
                         if elem.get('protId') not in excluded_ids:
                             max_invalid_ids -= 1
+                            logger.warning("\"{}\" is an invalid protein id for this reference dataset"
+                                           .format(elem.get('protId')))
                             if max_invalid_ids < 0:
                                 raise AssertionError(
                                     'Too many invalid crossreferences found. Did you select the right reference dataset?')
@@ -144,6 +146,8 @@ def parse_tsv(fh, valid_ids, excluded_ids):
                     return
             if id_ not in invalid_ids:
                 invalid_ids.add(id_)
+                logger.warning("\"{}\" is an invalid protein id for this reference dataset"
+                               .format(id_))
                 if len(invalid_ids) > 50:
                     raise AssertionError(
                         'Too many invalid crossreferences found. Did you select the right reference dataset?')
