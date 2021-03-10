@@ -8,6 +8,30 @@ SPEC := {':D=F',':D=N','D=N','S','SPECIATION',':Ev=speciation',':Ev=SPECIATION'}
 SPEC_MATCH := SPEC minus {'S','SPECIATION'}:
 DUPL_MATCH := DUPL minus {'D','DUPLICATION'}:
 overwrite := true:
+if not assigned(exclude) then exclude := {} fi:
+
+
+GetExcludeEntryNrs := proc(exclude)
+    global genomes, GenomeSummaries:
+
+    if length(exclude) <= 0 then return({}) fi:
+
+    ReadProgram(refset_path.'/Summaries.drw');
+    GS := GenomeSummaries:
+    NG := length(genomes):
+    Goff := CreateArray(1..NG+1):
+    for i to NG do Goff[i+1] := Goff[i] + GS[genomes[i],TotEntries] od:
+    exclude_ids := [];
+    for g in exclude do 
+        i := SearchArray(g, genomes):
+        if i<=0 then error('invalid exclude genome: '.g) fi:
+  	exclude_ids := append(exclude_ids, seq(enr, enr=Goff[i]+1..Goff[i+1]));
+    od:
+    return( {op(exclude_ids)} );
+end:              
+
+exclude_enrs := GetExcludeEntryNrs(exclude):
+printf('loaded %d enrs to exclude\n', length(exclude_enrs));
 
 SetDatasetVariables := proc(;(ref='OMA'):string)
     global outfile, outfile_semiauto, IDIndex, DB, logFn;
@@ -47,6 +71,9 @@ ExtractPairRelR := proc(t:Tree ; (mappings=NULL):{procedure,table})
         od:
 	if oE=NULL then 
             lprint('cannot map protein '''.t[Label].'''');
+        elif member(oE, exclude_enrs) then
+            lprint(t['Label'].' belongs to excluded genomes');
+            oE := NULL:
         else printf('%a --> %d (internal id)\n', t['Label'], oE) 
         fi:
         return( If(oE=NULL,NULL,{oE}) );
