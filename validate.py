@@ -142,9 +142,9 @@ def parse_tsv(fh, valid_ids, excluded_ids):
             if id_ in excluded_ids:
                 if not id_ in reported_excluded:
                     reported_excluded.add(id_)
-                    logger.debug("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set).")
-                    return
-            if id_ not in invalid_ids:
+                    logger.debug("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set)."
+                                 .format(id_))
+            elif id_ not in invalid_ids:
                 invalid_ids.add(id_)
                 logger.warning("\"{}\" is an invalid protein id for this reference dataset"
                                .format(id_))
