@@ -9,6 +9,5 @@ fi
 
 tag_id="${1:-latest}"
 
-for docker_name in qfo_darwin qfo_python ; do
-    docker build -t "$docker_name":"$tag_id" -f "Dockerfile_${docker_name}" .
-done
+docker build -t "qfobenchmark/python":"$tag_id" -f "Dockerfile_qfo_python" .
+docker build -t "qfobenchmark/darwin":"$tag_id" -f "Dockerfile_qfo_darwin" .
