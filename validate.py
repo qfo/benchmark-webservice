@@ -85,43 +85,49 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
     # The equivalent to ancestor-or-self
     parentStack = []
     for event, elem in etree.iterparse(fh, events=('start-ns', 'start', 'end')):
-        if event == 'start-ns':
-            ns, url = elem
-            nsmap[ns] = url
-        elif event == 'start':
-            if elem.tag == fixtag('', 'orthologGroup'):
+        if event == 'start':
+            elemTag = elem.tag
+            #if elem.tag == fixtag('', 'orthologGroup'):
+            if elemTag.endswith('}orthologGroup'):
                 assert not in_species
                 og_level += 1
-            elif elem.tag == fixtag('', 'groups'):
+            #elif elem.tag == fixtag('', 'groups'):
+            elif elemTag.endswith('}groups'):
                 assert nr_species_done > 0
-            elif elem.tag == fixtag('', 'species'):
+            #elif elem.tag == fixtag('', 'species'):
+            elif elemTag.endswith('}species'):
                 assert not in_species
                 in_species = True
             # The list of ancestors to the elem
             # is kept here because xml.etree.ElementTree
             # does not keep the parent in the element nodes
             parentStack.append(elem)
-        if event == 'end':
+        elif event == 'end':
             parentStack.pop()
-            if elem.tag == fixtag('', 'orthologGroup'):
+            elemTag = elem.tag
+            #if elem.tag == fixtag('', 'orthologGroup'):
+            if elemTag.endswith('}orthologGroup'):
                 og_level -= 1
                 assert og_level >= 0
-            elif elem.tag == fixtag('', 'species'):
+            #elif elem.tag == fixtag('', 'species'):
+            elif elemTag.endswith('}species'):
                 assert in_species
                 in_species = False
                 nr_species_done += 1
-            elif elem.tag == fixtag('', 'gene'):
+            #elif elem.tag == fixtag('', 'gene'):
+            elif elemTag.endswith('}gene'):
                 try:
-                    if elem.get('protId') not in valid_ids:
-                        if elem.get('protId') not in excluded_ids:
+                    protId = elem.get('protId')
+                    if protId not in valid_ids:
+                        if protId not in excluded_ids:
                             max_invalid_ids -= 1
                             logger.warning("\"{}\" is an invalid protein id for this reference dataset"
-                                           .format(elem.get('protId')))
+                                           .format(protId))
                             if max_invalid_ids < 0:
                                 raise AssertionError(
                                     'Too many invalid crossreferences found. Did you select the right reference dataset?')
                         else:
-                            logger.debug("excluding protein \"{}\" from the benchmark analysis".format(elem.get('protId')))
+                            logger.debug("excluding protein \"{}\" from the benchmark analysis".format(protId))
                             nr_excluded_genes += 1
                 except KeyError:
                     raise AssertionError('<gene> elements must encode xref in "protId" attribute')
@@ -140,6 +146,9 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
                 eparent = parentStack[-1]
                 while len(eparent) > 1:
                     del eparent[0]
+        elif event == 'start-ns':
+            ns, url = elem
+            nsmap[ns] = url
     assert not in_species
     assert og_level == 0
     assert nr_species_done > 0
