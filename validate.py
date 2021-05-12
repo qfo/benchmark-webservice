@@ -82,6 +82,8 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
         return "{" + nsmap[ns] + "}" + tag
 
     logger.info("start mapping of orthoxml formatted input file")
+    # The equivalent to ancestor-or-self
+    parentStack = []
     for event, elem in etree.iterparse(fh, events=('start-ns', 'start', 'end')):
         if event == 'start-ns':
             ns, url = elem
@@ -95,7 +97,12 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
             elif elem.tag == fixtag('', 'species'):
                 assert not in_species
                 in_species = True
+            # The list of ancestors to the elem
+            # is kept here because xml.etree.ElementTree
+            # does not keep the parent in the element nodes
+            parentStack.append(elem)
         if event == 'end':
+            parentStack.pop()
             if elem.tag == fixtag('', 'orthologGroup'):
                 og_level -= 1
                 assert og_level >= 0
@@ -120,6 +127,19 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
                     raise AssertionError('<gene> elements must encode xref in "protId" attribute')
             # we can clear all elements right away
             elem.clear()
+            
+            # This commented piece of code only works in lxml
+            # and it was obtained from
+            # https://web.archive.org/web/20210309115224/http://www.ibm.com/developerworks/xml/library/x-hiperfparse/#listing4
+            # Basically, it removes all the previous siblings
+            # of current element
+            #while elem.getprevious() is not None:
+            #    del elem.getparent()[0]
+            # It is the inspiration to next one.
+            if len(parentStack) > 0:
+                eparent = parentStack[-1]
+                while len(eparent) > 1:
+                    del eparent[0]
     assert not in_species
     assert og_level == 0
     assert nr_species_done > 0
