@@ -128,12 +128,13 @@ process convertPredictions {
 
     output:
     file 'predictions.db' into db
+    file 'orthologs.db' into sqlite_db
 
     when:
     file_validated == 0
 
     """
-    /benchmark/map_relations.py --out predictions.db $refset_dir/mapping.json.gz $predictions
+    /benchmark/map_relations.py --out predictions.db --db orthologs.db $refset_dir/mapping.json.gz $predictions
     """
 }
 
@@ -187,6 +188,36 @@ process ec_benchmark {
     """
     /benchmark/EcTest.sh -o "${result_file_path}/EC" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
     """
+}
+
+process swissprot_benchmark {
+    label "py"
+
+    input:
+    file sqlite_db from sqlite_db
+    val method_name
+    val refset_dir
+    val community_id
+    val result_file_path
+    // for mountpoint
+    file predictions
+
+    output:
+    file "SP.json" into SP_STUB
+
+    when:
+    benchmarks =~ /SwissProtIDs/
+
+    """
+    /benchmark/swissprot_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --out "SP.json" \
+         --mapping $refset_dir/mapping.json.gz \
+         --sp-entries $refset_dir/swissprot.txt.gz \
+         --db $sqlite_db
+    """
+
 }
 
 process speciestree_benchmark {
@@ -298,7 +329,7 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB)
 
 process consolidate {
     label "py"

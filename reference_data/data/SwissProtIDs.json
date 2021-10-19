@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:SwissProtIDs_agg",
+  "challenge_ids": ["SwissProtIDs"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "Nr orthologs among SwissProt entries",
+        "y_axis": "Nr conserved SwissProtIDs"
+      }
+    }
+  },
+  "type": "aggregation"
+}

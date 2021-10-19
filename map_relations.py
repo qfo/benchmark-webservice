@@ -281,11 +281,11 @@ class DatabaseInterface(object):
 
 
 
-def identify_input_type_and_parse(fpath, mapping_data):
+def identify_input_type_and_parse(fpath, mapping_data, db_path):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
 
-    with DatabaseInterface("orthologs.db") as db:
+    with DatabaseInterface(db_path) as db:
         db.add_reference_proteomes(mapping_data)
         db.create_pairwise_ortholog_table()
 
@@ -306,6 +306,7 @@ if __name__ == "__main__":
     parser.add_argument('mapping', help="Path to mapping.json of proper QfO dataset")
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('--out', help="Path to output file")
+    parser.add_argument('--db', default="orthologs.db", help="Path to sqlite database with pairwise predictions")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
     parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
     conf = parser.parse_args()
@@ -318,10 +319,10 @@ if __name__ == "__main__":
     logging.basicConfig(**log_conf)
 
     mapping_data = load_mapping(conf.mapping)
-    identify_input_type_and_parse(conf.input_rels, mapping_data)
+    identify_input_type_and_parse(conf.input_rels, mapping_data, conf.db)
     nr_genes_in_reference_set = mapping_data['Goff'][-1]
     tot_pred = 0
-    with DatabaseInterface("orthologs.db") as dbi:
+    with DatabaseInterface(conf.db) as dbi:
         with open(conf.out, 'w') as fh:
             per_prot_ortholog_iter = dbi.iter_all_orthologs()
             nxt_prot, orths = next(per_prot_ortholog_iter)
