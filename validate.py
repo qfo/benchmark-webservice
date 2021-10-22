@@ -10,58 +10,11 @@ try:
     import lxml.etree as etree
 except ImportError:
     import xml.etree.ElementTree as etree
-import os
-from io import BytesIO
-import bz2
-import gzip
 import logging
 import JSON_templates
+from helpers import auto_open
 
 logger = logging.getLogger("validator")
-
-
-# File opening. This is based on the example on SO here:
-# http://stackoverflow.com/a/26986344
-fmagic = {b'\x1f\x8b\x08': gzip.open,
-          b'\x42\x5a\x68': bz2.BZ2File}
-
-
-def auto_open(fn, *args, **kwargs):
-    """function to open regular or compressed files for read / write.
-
-    This function opens files based on their "magic bytes". Supports bz2
-    and gzip. If it finds neither of these, presumption is it is a
-    standard, uncompressed file.
-
-    Example::
-
-        with auto_open("/path/to/file/maybe/compressed", mode="rb") as fh:
-            fh.read()
-
-        with auto_open("/tmp/test.txt.gz", mode="wb") as fh:
-            fh.write("my big testfile")
-
-    :param fn: either a string of an existing or new file path, or
-        a BytesIO handle
-    :param **kwargs: additional arguments that are understood by the
-        underlying open handler
-    :returns: a file handler
-    """
-    if isinstance(fn, BytesIO):
-        return fn
-
-    if os.path.isfile(fn) and os.stat(fn).st_size > 0:
-        with open(fn, 'rb') as fp:
-            fs = fp.read(max([len(x) for x in fmagic]))
-        for (magic, _open) in fmagic.items():
-            if fs.startswith(magic):
-                return _open(fn, *args, **kwargs)
-    else:
-        if fn.endswith('gz'):
-            return gzip.open(fn, *args, **kwargs)
-        elif fn.endswith('bz2'):
-            return bz2.BZ2File(fn, *args, **kwargs)
-    return open(fn, *args, **kwargs)
 
 
 def load_mapping(path):
@@ -82,42 +35,73 @@ def parse_orthoxml(fh, valid_ids, excluded_ids):
         return "{" + nsmap[ns] + "}" + tag
 
     logger.info("start mapping of orthoxml formatted input file")
+    # The equivalent to ancestor-or-self
+    parentStack = []
     for event, elem in etree.iterparse(fh, events=('start-ns', 'start', 'end')):
-        if event == 'start-ns':
-            ns, url = elem
-            nsmap[ns] = url
-        elif event == 'start':
-            if elem.tag == fixtag('', 'orthologGroup'):
+        if event == 'start':
+            elemTag = elem.tag
+            #if elem.tag == fixtag('', 'orthologGroup'):
+            if elemTag.endswith('}orthologGroup'):
                 assert not in_species
                 og_level += 1
-            elif elem.tag == fixtag('', 'groups'):
+            #elif elem.tag == fixtag('', 'groups'):
+            elif elemTag.endswith('}groups'):
                 assert nr_species_done > 0
-            elif elem.tag == fixtag('', 'species'):
+            #elif elem.tag == fixtag('', 'species'):
+            elif elemTag.endswith('}species'):
                 assert not in_species
                 in_species = True
-        if event == 'end':
-            if elem.tag == fixtag('', 'orthologGroup'):
+            # The list of ancestors to the elem
+            # is kept here because xml.etree.ElementTree
+            # does not keep the parent in the element nodes
+            parentStack.append(elem)
+        elif event == 'end':
+            parentStack.pop()
+            elemTag = elem.tag
+            #if elem.tag == fixtag('', 'orthologGroup'):
+            if elemTag.endswith('}orthologGroup'):
                 og_level -= 1
                 assert og_level >= 0
-            elif elem.tag == fixtag('', 'species'):
+            #elif elem.tag == fixtag('', 'species'):
+            elif elemTag.endswith('}species'):
                 assert in_species
                 in_species = False
                 nr_species_done += 1
-            elif elem.tag == fixtag('', 'gene'):
+            #elif elem.tag == fixtag('', 'gene'):
+            elif elemTag.endswith('}gene'):
                 try:
-                    if elem.get('protId') not in valid_ids:
-                        if elem.get('protId') not in excluded_ids:
+                    protId = elem.get('protId')
+                    if protId not in valid_ids:
+                        if protId not in excluded_ids:
                             max_invalid_ids -= 1
+                            logger.warning("\"{}\" is an invalid protein id for this reference dataset"
+                                           .format(protId))
                             if max_invalid_ids < 0:
                                 raise AssertionError(
                                     'Too many invalid crossreferences found. Did you select the right reference dataset?')
                         else:
-                            logger.debug("excluding protein \"{}\" from the benchmark analysis".format(elem.get('protId')))
+                            logger.debug("excluding protein \"{}\" from the benchmark analysis".format(protId))
                             nr_excluded_genes += 1
                 except KeyError:
                     raise AssertionError('<gene> elements must encode xref in "protId" attribute')
             # we can clear all elements right away
             elem.clear()
+            
+            # This commented piece of code only works in lxml
+            # and it was obtained from
+            # https://web.archive.org/web/20210309115224/http://www.ibm.com/developerworks/xml/library/x-hiperfparse/#listing4
+            # Basically, it removes all the previous siblings
+            # of current element
+            #while elem.getprevious() is not None:
+            #    del elem.getparent()[0]
+            # It is the inspiration to next one.
+            if len(parentStack) > 0:
+                eparent = parentStack[-1]
+                while len(eparent) > 1:
+                    del eparent[0]
+        elif event == 'start-ns':
+            ns, url = elem
+            nsmap[ns] = url
     assert not in_species
     assert og_level == 0
     assert nr_species_done > 0
@@ -140,10 +124,12 @@ def parse_tsv(fh, valid_ids, excluded_ids):
             if id_ in excluded_ids:
                 if not id_ in reported_excluded:
                     reported_excluded.add(id_)
-                    logger.debug("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set).")
-                    return
-            if id_ not in invalid_ids:
+                    logger.debug("protein \"{}\" is excluded from benchmarking (but part of reference proteomes set)."
+                                 .format(id_))
+            elif id_ not in invalid_ids:
                 invalid_ids.add(id_)
+                logger.warning("\"{}\" is an invalid protein id for this reference dataset"
+                               .format(id_))
                 if len(invalid_ids) > 50:
                     raise AssertionError(
                         'Too many invalid crossreferences found. Did you select the right reference dataset?')
