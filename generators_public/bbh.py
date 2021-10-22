@@ -10,7 +10,7 @@ import itertools
 import multiprocessing
 import operator
 import logging
-from helpers import auto_open
+import gzip
 logger = logging.getLogger('bbh')
 Match = collections.namedtuple('Match', ["Protein1", "Protein2", "Score", "PamDistance", "Start1", "End1", "Start2",
                                          "End2", "PamVariance", "LogEValue", "PIdent", "Global_Score",
@@ -44,14 +44,14 @@ class DarwinAllAll:
         self.root = root
 
     def get_genomes(self, limit=None):
-        return [f.rsplit('.', 1) for f in os.listdir(os.path.join(self.root, "DB")) if f.endswith(".db")]
+        return [f.rsplit('.', 1)[0] for f in os.listdir(os.path.join(self.root, "DB")) if f.endswith(".db")]
 
     def get_protein_ids(self, genome, limit=None):
         lookup = {}
         with open(os.path.join(self.root, "DB", genome+".db"), 'rt') as db:
             c = 1
             for m in re.finditer(r"<ID>(?P<id>[^<]*)</ID>", db.read()):
-                lookup[c] = m.group('ID')
+                lookup[c] = m.group('id')
                 c += 1
         return lookup
 
@@ -64,23 +64,29 @@ class DarwinAllAll:
         lookup1 = self.get_protein_ids(genome1)
         lookup2 = self.get_protein_ids(genome2)
         matches = []
-        with auto_open(fn, 'rt') as fh:
+        with gzip.open(fn, 'rt') as fh:
             for line in fh:
                 line = line.strip()
-                if line.startswith("#") or line.startswith("Assert") or line.startswith("RefinedMatches"):
-                    continue
-                line = line.strip(' [],):')
-                token = line.split(',')
-                rng1 = token[4].split('..')
-                rng2 = token[5].split('..')
-                matches.append(Match(lookup1[int(token[0])],
-                                     lookup2[int(token[1])],
-                                     float(token[2]),
-                                     float(token[3]),
-                                     int(rng1[0]), int(rng1[1]),
-                                     int(rng2[0]), int(rng2[1]),
-                                     float(token[6]),
-                                     0,0,0,0,0,0,0))
+                try:
+                    if line.startswith("#") or line.startswith("Assert") or line.startswith("RefinedMatches"):
+                        continue
+                    line = line.strip(' [],):')
+                    if len(line)==0:
+                        continue
+                    token = line.split(',')
+                    rng1 = token[4].split('..')
+                    rng2 = token[5].split('..')
+                    matches.append(Match(lookup1[int(token[0])],
+                                         lookup2[int(token[1])],
+                                         float(token[2]),
+                                         float(token[3]),
+                                         int(rng1[0]), int(rng1[1]),
+                                         int(rng2[0]), int(rng2[1]),
+                                         float(token[6]),
+                                         0,0,0,0,0,0,0))
+                except Exception:
+                    logger.error("error on line: {}; {}".format(line, token))
+                    raise
         return matches
 
 
@@ -114,7 +120,7 @@ class FractionOfBestScore:
 class RSD(FractionOfBestScore):
     frac_of_best = 1/0.99
     better = operator.lt
-    accessor = operator.attrgetter('Score')
+    accessor = operator.attrgetter('PamDistance')
 
 
 class BitScoreBest(FractionOfBestScore):
