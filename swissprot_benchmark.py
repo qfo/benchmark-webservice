@@ -3,6 +3,7 @@ import itertools
 import json
 import logging
 import math
+import os
 import sqlite3
 
 from JSON_templates import write_assessment_dataset
@@ -31,7 +32,7 @@ def get_swissprot_entries(mapping_path, sp_file):
     return sp_entries
 
 
-def compute_sp_benchmark(sp_entries, db_path):
+def compute_sp_benchmark(sp_entries, db_path, raw_out):
     def get_true_orthologs_by_identical_ids():
         res = set([])
 
@@ -62,6 +63,10 @@ def compute_sp_benchmark(sp_entries, db_path):
     def no_common_prefix(x, y):
         return sp_entries[x][0] != sp_entries[y][0]
 
+    def write_raw_rels(out, rels, typ):
+        for en1, en2 in rels:
+            out.write("{}\t{}\t{}\n".format(sp_entries[en1], sp_entries[en2], typ))
+
     con = sqlite3.connect(db_path)
     orthologs_among_sp = 0
     conserved_sp_id = 0
@@ -72,7 +77,10 @@ def compute_sp_benchmark(sp_entries, db_path):
     for sp_entry in sp_entries:
         orths = get_swissprot_orthologs_of(sp_entry)
         orthologs_among_sp += len(orths)
-        fp += sum((no_common_prefix(sp_entry, en) for en in orths))
+        false_positives = [(sp_entry, en) for en in orths if no_common_prefix(sp_entry, en)]
+        fp += len(false_positives)
+        write_raw_rels(raw_out, false_positives, 'FP')
+
         fnd_good = {(sp_entry, en) for en in orths if are_same_sp_id(sp_entry, en)}
         if len(fnd_good - all_trues) > 0:
             missing = fnd_good - all_trues
@@ -81,8 +89,10 @@ def compute_sp_benchmark(sp_entries, db_path):
                 logger.error("  {} - {} missing in true set".format(sp_entries[x], sp_entries[y]))
             raise Exception("all_trues set seems incomplete")
         conserved_sp_id += len(fnd_good)
+        write_raw_rels(raw_out, fnd_good, 'TP')
         missing_true_orthologs.difference_update(fnd_good)
 
+    write_raw_rels(raw_out, missing_true_orthologs, "FN")
     tpr = conserved_sp_id / nr_true
     ppv = conserved_sp_id / (fp + conserved_sp_id)
     logger.info("TPR: {}; PPV: {}, nr_true: {}".format(tpr, ppv, nr_true))
@@ -113,7 +123,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="SwissProtID conservation benchmark")
     parser.add_argument('--mapping', required=True, help="Path to mapping.json of proper QfO dataset")
-    parser.add_argument('--out', required=True, help="Path to output file")
+    parser.add_argument('--assessment-out', required=True, help="Path where assessment json file will be stored")
+    parser.add_argument('--outdir', required=True, help="Folder to store the raw output file in")
     parser.add_argument('--db', required=True, help="Path to sqlite database with pairwise predictions")
     parser.add_argument('--com', required=True, help="community id")
     parser.add_argument('--sp-entries', required=True, help="Path to textfile with SwissProt IDs")
@@ -128,7 +139,15 @@ if __name__ == "__main__":
     if conf.debug:
         log_conf['level'] = logging.DEBUG
     logging.basicConfig(**log_conf)
+    logger.info("running swissprot_benchmark with following arguments: {}".format(conf))
 
+    os.makedirs(conf.outdir, exist_ok=True)
+    outfn_path = os.path.join(conf.outdir,
+                              "SP_{}_raw.txt.gz".format(conf.participant
+                                                        .replace(' ', '-')
+                                                        .replace('_', '-'))
+                              )
     sp_entries = get_swissprot_entries(conf.mapping, conf.sp_entries)
-    res = compute_sp_benchmark(sp_entries, conf.db)
-    write_assessment_json_stub(conf.out, conf.com, conf.participant, res)
+    with auto_open(outfn_path, 'wt') as raw_out_fh:
+        res = compute_sp_benchmark(sp_entries, conf.db, raw_out_fh)
+    write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)

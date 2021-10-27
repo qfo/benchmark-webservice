@@ -212,7 +212,8 @@ process swissprot_benchmark {
     /benchmark/swissprot_benchmark.py \
          --com $community_id \
          --participant "$method_name" \
-         --out "SP.json" \
+         --assessment-out "SP.json" \
+         --outdir "$result_file_path/SP" \
          --mapping $refset_dir/mapping.json.gz \
          --sp-entries $refset_dir/swissprot.txt.gz \
          --db $sqlite_db
