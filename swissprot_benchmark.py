@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
+import collections
+import io
 import itertools
 import json
 import logging
 import math
 import os
 import sqlite3
+
+import Bio.Phylo
+import dendropy
 
 from JSON_templates import write_assessment_dataset
 from helpers import auto_open, load_json_file
@@ -32,17 +37,111 @@ def get_swissprot_entries(mapping_path, sp_file):
     return sp_entries
 
 
-def compute_sp_benchmark(sp_entries, db_path, raw_out):
-    def get_true_orthologs_by_identical_ids():
+def get_idpart(sp):
+    return sp.rsplit('_', 1)[0]
+
+def get_species(sp):
+    s = sp.rsplit('_', 1)[1]
+    if s == "RAT":
+        s = "RATNO"
+    return s
+
+
+class SwissProtComparerSimple:
+    def __init__(self, sp_entries, **kwargs):
+        self.sp_entries = sp_entries
+        self._init_relations()
+
+    def are_orthologs(self, en1, en2):
+        #sp_id1, sp_id2 = tuple(sp_entries[enr].rsplit('_', 1)[0] for enr in (en1, en2))
+        #return sp_id1
+        return (min(en1, en2), max(en1, en2)) in self.true_orthologs
+
+    def are_non_orthologs(self, en1, en2, **kwargs):
+        # check that they have non common prefix, e.g. the sp id starts with a different character
+        return self.sp_entries[en1][0] != self.sp_entries[en2][0]
+
+    def _init_relations(self):
+        self.true_orthologs = frozenset(self._get_true_orthologs_by_identical_ids())
+
+    def _get_true_orthologs_by_identical_ids(self):
         res = set([])
-
-        def sorter_sp_id(x):
-            return x[0].rsplit('_', 1)[0]
-
-        sorted_sp_entries = sorted(((v, k) for k, v in sp_entries.items()), key=sorter_sp_id)
-        for grp, entries in itertools.groupby(sorted_sp_entries, key=sorter_sp_id):
-            res.update({(min(x[1], y[1]), max(x[1],y[1])) for x, y in itertools.combinations(entries, 2)})
+        sorted_sp_entries = sorted(((v, k) for k, v in self.sp_entries.items()), key=lambda x: get_idpart(x[0]))
+        for grp, entries in itertools.groupby(sorted_sp_entries, key=lambda x: get_idpart(x[0])):
+            res.update({(min(x[1], y[1]), max(x[1], y[1])) for x, y in itertools.combinations(entries, 2)})
         return res
+
+
+class SwissProtComparerTaxRangeLimited(SwissProtComparerSimple):
+    def __init__(self, sp_entries, species_tree_fn, **kwargs):
+        super().__init__(sp_entries, **kwargs)
+        self.species_tree = self._load_species_tree(species_tree_fn)
+        self._per_fam_species_to_consider = self._extract_per_fam_species_set()
+
+    def _load_species_tree(self, tree_fn):
+        with open(tree_fn, 'rt') as fh:
+            tree = Bio.Phylo.read(fh, 'phyloxml')
+        for n in tree.get_terminals():
+            n.name = n.taxonomy.code
+        for n in tree.get_nonterminals():
+            n.name = n.taxonomy.scientific_name
+        buf = io.StringIO()
+        Bio.Phylo.write(tree, buf, 'newick')
+        tree = dendropy.Tree.get(data=buf.getvalue(), schema="newick")
+        return tree
+
+    def _extract_per_fam_species_set(self):
+        swissprot_sorted = sorted(self.sp_entries.values(), key=get_idpart)
+        per_fam_species = collections.defaultdict(set)
+        for fam, prot in itertools.groupby(swissprot_sorted, key=get_idpart):
+            prots = list(prot)
+            sps = set([get_species(x) for x in prots])
+            assert (len(sps) == len(prots))
+            if len(prots) > 1:
+                mrca = self.species_tree.mrca(taxon_labels=sps)
+                tax_range_species = set(l.taxon.label for l in mrca.leaf_iter())
+                # remove direct clades from mrca if no annoations and at least 3 leaves
+                rem_clades = []
+                for c in mrca.child_node_iter():
+                    sub_clade_leaves = set(l.taxon.label for l in c.leaf_iter())
+                    if len(sub_clade_leaves) > 2 and len(sps.intersection(sub_clade_leaves)) == 0:
+                        tax_range_species -= sub_clade_leaves
+                        rem_clades.append(c.label)
+                per_fam_species[fam] = tax_range_species
+                logger.debug("SwissProt \"{}\": present in {}. Propagating to {} excluding {}"
+                             .format(fam, sps, mrca.label, rem_clades))
+        return per_fam_species
+
+    def are_non_orthologs(self, en1, en2, info1, info2, **kwargs):
+        id1, id2 = (get_idpart(sp_entries[en]) for en in (en1, en2))
+        org1, org2 = (i.Species for i in (info1, info2))
+        res = id1[0] != id2[0] and \
+              org2 in self._per_fam_species_to_consider[id1] and \
+              org1 in self._per_fam_species_to_consider[id2]
+        if id1[0] != id2[0] and logger.isEnabledFor(logging.DEBUG):
+            logger.debug("check non-ortholog: {} vs {}; {}:{}; {}:{}; return: {}".
+                         format(sp_entries[en1], sp_entries[en2], id1,
+                                self._per_fam_species_to_consider[id1],
+                                id2,
+                                self._per_fam_species_to_consider[id2],
+                                res))
+        return res
+
+
+Protein = collections.namedtuple("Protein", ["Acc", "Species"])
+
+
+def compute_sp_benchmark(sp_entries, db_path, raw_out, strategy: SwissProtComparerSimple):
+
+    def get_prot_data_for(proteins):
+        data = {}
+        cur = con.cursor()
+        placeholder = ",".join('?'*len(proteins))
+        query = f"SELECT * FROM proteomes WHERE prot_nr IN ({placeholder})"
+        cur.execute(query, proteins)
+        for row in cur.fetchall():
+            data[row[0]] = Protein(row[1], row[2])
+        return data
 
     def get_swissprot_orthologs_of(prot_nr):
         cur = con.cursor()
@@ -51,57 +150,43 @@ def compute_sp_benchmark(sp_entries, db_path, raw_out):
             (prot_nr,))
         return [z[0] for z in cur.fetchall() if z[0] in sp_entries]
 
-    def are_same_sp_id(*enrs):
-        sp_ids = [sp_entries[enr].rsplit('_', 1)[0] for enr in enrs]
-        return all(sp_ids[0] == sp_id for sp_id in sp_ids)
-
-    def are_prefix_or_same_id(x, y):
-        sp_ids = [sp_entries[enr].rsplit('_', 1)[0] for enr in (x, y)]
-        sp_ids.sort(key=lambda x: len(x))
-        return all(sp_ids[0] == sp_id or sp_id.startswith(sp_ids[0]) for sp_id in sp_ids)
-
-    def no_common_prefix(x, y):
-        return sp_entries[x][0] != sp_entries[y][0]
-
     def write_raw_rels(out, rels, typ):
         for en1, en2 in rels:
-            out.write("{}\t{}\t{}\n".format(sp_entries[en1], sp_entries[en2], typ))
+            out.write("{}\t{}\t{}\t{}\t{}\n".format(sp_entries[en1], sp_entries[en2], typ,
+                                                    protein_infos[en1].Species, protein_infos[en2].Species))
 
     con = sqlite3.connect(db_path)
+    nr_true = len(strategy.true_orthologs)
+    missing_true_orthologs = set(strategy.true_orthologs)
+    protein_infos = get_prot_data_for(list(sp_entries.keys()))
+    
     orthologs_among_sp = 0
-    conserved_sp_id = 0
-    all_trues = frozenset(get_true_orthologs_by_identical_ids())
-    missing_true_orthologs = set(all_trues)
-    nr_true = len(all_trues)
+    tp = 0
     fp = 0
     for sp_entry in sp_entries:
         orths = get_swissprot_orthologs_of(sp_entry)
         orthologs_among_sp += len(orths)
-        false_positives = [(sp_entry, en) for en in orths if no_common_prefix(sp_entry, en)]
+        false_positives = [(sp_entry, en) for en in orths
+                           if strategy.are_non_orthologs(sp_entry, en, info1=protein_infos[sp_entry],
+                                                         info2=protein_infos[en])]
         fp += len(false_positives)
         write_raw_rels(raw_out, false_positives, 'FP')
 
-        fnd_good = {(sp_entry, en) for en in orths if are_same_sp_id(sp_entry, en)}
-        if len(fnd_good - all_trues) > 0:
-            missing = fnd_good - all_trues
-            logger.error("{} missing for {}:".format(len(missing), sp_entry))
-            for x, y in missing:
-                logger.error("  {} - {} missing in true set".format(sp_entries[x], sp_entries[y]))
-            raise Exception("all_trues set seems incomplete")
-        conserved_sp_id += len(fnd_good)
-        write_raw_rels(raw_out, fnd_good, 'TP')
-        missing_true_orthologs.difference_update(fnd_good)
+        true_positives = {(sp_entry, en) for en in orths if strategy.are_orthologs(sp_entry, en)}
+        tp += len(true_positives)
+        write_raw_rels(raw_out, true_positives, 'TP')
+        missing_true_orthologs -= true_positives
 
     write_raw_rels(raw_out, missing_true_orthologs, "FN")
-    tpr = conserved_sp_id / nr_true
-    ppv = conserved_sp_id / (fp + conserved_sp_id)
+    tpr = tp / nr_true
+    ppv = tp / (fp + tp)
     logger.info("TPR: {}; PPV: {}, nr_true: {}".format(tpr, ppv, nr_true))
-    metrics = [{"name": "TP", 'value': conserved_sp_id},
+    metrics = [{"name": "TP", 'value': tp},
                {"name": "Nr orthologs among SwissProt entries", 'value': orthologs_among_sp},
                {"name": "FP", "value": fp},
                {"name": "FN", "value": len(missing_true_orthologs)},
                {"name": "TPR", "value": tpr, "stderr": 1.96 * math.sqrt(tpr * (1 - tpr) / nr_true)},
-               {"name": "PPV", "value": ppv, "stderr": 1.96 * math.sqrt(ppv * (1 - ppv) / (fp + conserved_sp_id))},
+               {"name": "PPV", "value": ppv, "stderr": 1.96 * math.sqrt(ppv * (1 - ppv) / (fp + tp))},
                ]
     return metrics
 
@@ -129,6 +214,10 @@ if __name__ == "__main__":
     parser.add_argument('--com', required=True, help="community id")
     parser.add_argument('--sp-entries', required=True, help="Path to textfile with SwissProt IDs")
     parser.add_argument('--participant', required=True, help="Name of participant method")
+    parser.add_argument('--strategy', choices=("simple", "clade_limit"), default="clade_limit",
+                        help="benchmark strategy to use. Simple: negatives are any non-prefix sharing relation, "
+                             "Clade_limit: only within clades where ID is used.")
+    parser.add_argument('--lineage-tree', help="path to lineage tree in phyloxml format. Used for clade_limit strategy only")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
     parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
     conf = parser.parse_args()
@@ -143,11 +232,17 @@ if __name__ == "__main__":
 
     os.makedirs(conf.outdir, exist_ok=True)
     outfn_path = os.path.join(conf.outdir,
-                              "SP_{}_raw.txt.gz".format(conf.participant
-                                                        .replace(' ', '-')
-                                                        .replace('_', '-'))
+                              "SP_{}_{}_raw.txt.gz".format(conf.participant.replace(' ', '-').replace('_', '-'),
+                                                           conf.strategy)
                               )
     sp_entries = get_swissprot_entries(conf.mapping, conf.sp_entries)
+    if conf.strategy.lower() == "simple":
+        strategy = SwissProtComparerSimple(sp_entries)
+    elif conf.strategy.lower() == "clade_limit":
+        strategy = SwissProtComparerTaxRangeLimited(sp_entries, species_tree_fn=conf.lineage_tree)
+    else:
+        raise Exception("Invalid strategy")
+
     with auto_open(outfn_path, 'wt') as raw_out_fh:
-        res = compute_sp_benchmark(sp_entries, conf.db, raw_out_fh)
+        res = compute_sp_benchmark(sp_entries, conf.db, raw_out_fh, strategy)
     write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)

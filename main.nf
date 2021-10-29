@@ -213,9 +213,11 @@ process swissprot_benchmark {
          --com $community_id \
          --participant "$method_name" \
          --assessment-out "SP.json" \
-         --outdir "$result_file_path/SP" \
+         --outdir "$result_file_path/SwissProtIDs" \
          --mapping $refset_dir/mapping.json.gz \
          --sp-entries $refset_dir/swissprot.txt.gz \
+         --strategy clade_limit \
+         --lineage-tree $refset_dir/lineage_tree.phyloxml \
          --db $sqlite_db
     """
 
