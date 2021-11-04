@@ -216,7 +216,7 @@ process swissprot_benchmark {
          --outdir "$result_file_path/SwissProtIDs" \
          --mapping $refset_dir/mapping.json.gz \
          --sp-entries $refset_dir/swissprot.txt.gz \
-         --strategy clade_limit \
+         --strategy ids_exist_in_both \
          --lineage-tree $refset_dir/lineage_tree.phyloxml \
          --db $sqlite_db
     """

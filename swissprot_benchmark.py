@@ -128,6 +128,31 @@ class SwissProtComparerTaxRangeLimited(SwissProtComparerSimple):
         return res
 
 
+class SwissProtComparerExistingIdInBothSpecies(SwissProtComparerSimple):
+    def __init__(self, sp_entries, **kwargs):
+        super().__init__(sp_entries, **kwargs)
+        self.ids_per_species = self._build_idset_per_species()
+
+    def _build_idset_per_species(self):
+        sps = collections.defaultdict(set)
+        for en, spid in self.sp_entries.items():
+            id_, species = spid.rsplit('_', 1)
+            sps[species].add(id_)
+        return sps
+
+    def are_non_orthologs(self, en1, en2, info1, info2, **kwargs):
+        id1, id2 = (get_idpart(sp_entries[en]) for en in (en1, en2))
+        org1, org2 = (i.Species for i in (info1, info2))
+        res = id1[0] != id2[0] and id1 in self.ids_per_species[org2] and id2 in self.ids_per_species[org1]
+        if id1[0] != id2[0] and logger.isEnabledFor(logging.DEBUG):
+            logger.debug("check non-ortholog: {} vs {}: {} in {}: {}; {} in {}: {}; return {}"
+                         .format(sp_entries[en1], sp_entries[en2],
+                                 id1, org2, id1 in self.ids_per_species[org2],
+                                 id2, org1, id2 in self.ids_per_species[org1],
+                                 res))
+        return res
+
+
 Protein = collections.namedtuple("Protein", ["Acc", "Species"])
 
 
@@ -214,7 +239,8 @@ if __name__ == "__main__":
     parser.add_argument('--com', required=True, help="community id")
     parser.add_argument('--sp-entries', required=True, help="Path to textfile with SwissProt IDs")
     parser.add_argument('--participant', required=True, help="Name of participant method")
-    parser.add_argument('--strategy', choices=("simple", "clade_limit"), default="clade_limit",
+    parser.add_argument('--strategy', choices=("simple", "clade_limit", "ids_exist_in_both"),
+                        default="clade_limit",
                         help="benchmark strategy to use. Simple: negatives are any non-prefix sharing relation, "
                              "Clade_limit: only within clades where ID is used.")
     parser.add_argument('--lineage-tree', help="path to lineage tree in phyloxml format. Used for clade_limit strategy only")
@@ -240,6 +266,8 @@ if __name__ == "__main__":
         strategy = SwissProtComparerSimple(sp_entries)
     elif conf.strategy.lower() == "clade_limit":
         strategy = SwissProtComparerTaxRangeLimited(sp_entries, species_tree_fn=conf.lineage_tree)
+    elif conf.strategy.lower() == "ids_exist_in_both":
+        strategy = SwissProtComparerExistingIdInBothSpecies(sp_entries)
     else:
         raise Exception("Invalid strategy")
 
