@@ -220,7 +220,36 @@ process swissprot_benchmark {
          --lineage-tree $refset_dir/lineage_tree.phyloxml \
          --db $sqlite_db
     """
+}
 
+
+process hgnc_benchmark {
+    label "py"
+
+    input:
+    file sqlite_db from sqlite_db
+    val method_name
+    val refset_dir
+    val community_id
+    val result_file_path
+    // for mountpoint
+    file predictions
+
+    output:
+    file "HGNC.json" into HGNC_STUB
+
+    when:
+    benchmarks =~ /HGNC/
+
+    """
+    /benchmark/hgnc_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --assessment-out "HGNC.json" \
+         --outdir "$result_file_path/HGNC" \
+         --hgnc-orthologs $refset_dir/hgnc-orthologs.txt.gz \
+         --db $sqlite_db
+    """
 }
 
 process speciestree_benchmark {
@@ -332,7 +361,7 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, HGNC_STUB)
 
 process consolidate {
     label "py"
