@@ -15,6 +15,7 @@ def get_file_list(release):
        'Summaries.drw.gz',
        'GOdata.drw.gz',
        'mapping.json.gz',
+       'swissprot.txt.gz',
        'ServerIndexed.db',
        'ServerIndexed.db.map',
        'ServerIndexed.db.tree',
@@ -28,7 +29,7 @@ def get_file_list(release):
        'TreeCat_Euk.drw',
        'TreeCat_Bac.drw',
        'TreeCat_Fun.drw']
-    if release > 2011:
+    if release != "2011":
         files.extend([
             'lineage_tree.phyloxml',
             'species_tree_samples_Luca.nwk',
@@ -50,7 +51,7 @@ def retrieve_files(files, target_dir):
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description="Download reference data of a given release for the QfO benchmarking platform")
-    p.add_argument('release', choices=(2011,2018,2019,2020), type=int, help="release version to download")
+    p.add_argument('release', choices=("2011", "2018", "2019", "2020", "2020.1"), help="release version to download")
     p.add_argument('--out-dir', help="directory where to store the data. Defaults to ./reference_data/<release>")
 
     conf = p.parse_args()

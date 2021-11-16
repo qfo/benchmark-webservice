@@ -136,12 +136,13 @@ process convertPredictions {
 
     output:
     file 'predictions.db' into db
+    file 'orthologs.db' into sqlite_db
 
     when:
-    file_validated == 0 &&  benchmarks =~ /STD_|GO|EC|SwissTrees|TreeFam/
+    file_validated == 0 &&  benchmarks =~ /STD_|GO|EC|SwissTrees|TreeFam|HGNC|SwissProtIDs/
 
     """
-    /benchmark/map_relations.py --out predictions.db $refset_dir/mapping.json.gz $predictions
+    /benchmark/map_relations.py --out predictions.db --db orthologs.db $refset_dir/mapping.json.gz $predictions
     """
 }
 
@@ -194,6 +195,68 @@ process ec_benchmark {
 
     """
     /benchmark/EcTest.sh -o "${result_file_path}/EC" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
+    """
+}
+
+process swissprot_benchmark {
+    label "py"
+
+    input:
+    file sqlite_db from sqlite_db
+    val method_name
+    val refset_dir
+    val community_id
+    val result_file_path
+    // for mountpoint
+    file predictions
+
+    output:
+    file "SP.json" into SP_STUB
+
+    when:
+    benchmarks =~ /SwissProtIDs/
+
+    """
+    /benchmark/swissprot_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --assessment-out "SP.json" \
+         --outdir "$result_file_path/SwissProtIDs" \
+         --mapping $refset_dir/mapping.json.gz \
+         --sp-entries $refset_dir/swissprot.txt.gz \
+         --strategy ids_exist_in_both \
+         --lineage-tree $refset_dir/lineage_tree.phyloxml \
+         --db $sqlite_db
+    """
+}
+
+
+process hgnc_benchmark {
+    label "py"
+
+    input:
+    file sqlite_db from sqlite_db
+    val method_name
+    val refset_dir
+    val community_id
+    val result_file_path
+    // for mountpoint
+    file predictions
+
+    output:
+    file "HGNC.json" into HGNC_STUB
+
+    when:
+    benchmarks =~ /HGNC/
+
+    """
+    /benchmark/hgnc_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --assessment-out "HGNC.json" \
+         --outdir "$result_file_path/HGNC" \
+         --hgnc-orthologs $refset_dir/hgnc-orthologs.txt.gz \
+         --db $sqlite_db
     """
 }
 
@@ -362,7 +425,7 @@ process orthobench_groupbased {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, GROUP_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, HGNC_STUB, GROUP_STUB)
 
 process consolidate {
     label "py"

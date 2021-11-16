@@ -10,58 +10,16 @@ try:
     import lxml.etree as etree
 except ImportError:
     import xml.etree.ElementTree as etree
-import os
 import re
-from io import BytesIO
-import bz2
-import gzip
 import itertools
+import sqlite3
 import logging
+from helpers import auto_open, unique, load_json_file
 logger = logging.getLogger("relations-processor")
 
 
-# File opening. This is based on the example on SO here:
-# http://stackoverflow.com/a/26986344
-fmagic = {b'\x1f\x8b\x08': gzip.open,
-          b'\x42\x5a\x68': bz2.BZ2File}
-
-
-def auto_open(fn, *args, **kwargs):
-    """function to open regular or compressed files for read / write.
-
-    This function opens files based on their "magic bytes". Supports bz2
-    and gzip. If it finds neither of these, presumption is it is a
-    standard, uncompressed file.
-
-    Example::
-
-        with auto_open("/path/to/file/maybe/compressed", mode="rb") as fh:
-            fh.read()
-
-        with auto_open("/tmp/test.txt.gz", mode="wb") as fh:
-            fh.write("my big testfile")
-
-    :param fn: either a string of an existing or new file path, or
-        a BytesIO handle
-    :param **kwargs: additional arguments that are understood by the
-        underlying open handler
-    :returns: a file handler
-    """
-    if isinstance(fn, BytesIO):
-        return fn
-
-    if os.path.isfile(fn) and os.stat(fn).st_size > 0:
-        with open(fn, 'rb') as fp:
-            fs = fp.read(max([len(x) for x in fmagic]))
-        for (magic, _open) in fmagic.items():
-            if fs.startswith(magic):
-                return _open(fn, *args, **kwargs)
-    else:
-        if fn.endswith('gz'):
-            return gzip.open(fn, *args, **kwargs)
-        elif fn.endswith('bz2'):
-            return bz2.BZ2File(fn, *args, **kwargs)
-    return open(fn, *args, **kwargs)
+# uniprot accession regex: https://www.uniprot.org/help/accession_numbers
+RE_UP = re.compile(r"^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$")
 
 
 def encode_nr_as_seq(nr):
@@ -78,39 +36,17 @@ def encode_nr_as_seq(nr):
     return "".join(res)
 
 
-def load_IDIndex(path):
-    pat = re.compile(r"<E><KEY>'(?P<key>.*)'</KEY>.*<VALUE>(?P<val>.*)</VALUE>")
-    lookup = {}
-    with auto_open(path, 'rt') as fh:
-        for line in fh:
-            m = pat.match(line)
-            if m is not None:
-                lookup[m.group('key')] = int(m.group('val'))
-    logger.info("loaded lookup table with {} valid crossreferences for {} distinct proteins"
-                .format(len(lookup), len(frozenset(lookup.values()))))
-    return lookup
-
-
 def load_mapping(path):
-    with auto_open(path, 'rb') as fh:
-        data = json.loads(fh.read().decode('utf-8'))
-    return data
-
-
-def unique(seq):
-    """Return the elements of a list uniquely while preserving the order
-
-    :param list seq: a list of hashable elements
-    :returns: new list with first occurence of elements of seq"""
-    seen = set()
-    return [x for x in seq if x not in seen and not seen.add(x)]
+    return load_json_file(path)
 
 
 class PairwiseOrthologRelationExtractor(object):
-    def __init__(self, mapping_data):
+    def __init__(self, mapping_data, dbi):
         self.valid_id_map = mapping_data['mapping']
         self.internal_genome_offs = mapping_data['Goff']
         self.species_order = mapping_data['species']
+        self.excluded_ids = mapping_data['excluded_ids'] if 'excluded_ids' in mapping_data else set([])
+        self.dbi = dbi
         self.genome_cnt = 0
         self.generef_to_internal_id = {}
         self.internal_to_genome_nr = {}
@@ -128,8 +64,12 @@ class PairwiseOrthologRelationExtractor(object):
                 self.internal_to_genome_nr[internal_id] = self.genome_cnt
                 internal_ids.append(internal_id)
             except KeyError:
-                logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
-                               .format(gene_prot_id, gene_id, genome_node.get('name')))
+                if gene_prot_id not in self.excluded_ids:
+                    logger.warning("protId {} of gene(id={}) (in species {}) is not known in this dataset"
+                                   .format(gene_prot_id, gene_id, genome_node.get('name')))
+        if len(internal_ids) == 0:
+            logger.info("Genome {} does not contain any mapped genes".format(genome_node.get('name')))
+            return True
         min_id = min(internal_ids) - 1
         max_id = max(internal_ids) - 1
         k_min = bisect_right(self.internal_genome_offs, min_id)
@@ -153,10 +93,16 @@ class PairwiseOrthologRelationExtractor(object):
             mapping_ok = False
         return mapping_ok
 
+    def log_progress(self):
+        logger.info("processed {} toplevel orthologGroups with {} induced pairwise relations"
+                    .format(self.processed_stats['processed_toplevel'],
+                            self.processed_stats['relations']))
+
     def extract_pairwise_relations(self, node):
-        rels = []
+        nr_rels = 0
 
         def _rec_extract(node):
+            nonlocal nr_rels
             if node.tag == "{http://orthoXML.org/2011/}geneRef":
                 try:
                     return {self.generef_to_internal_id[int(node.get('id'))]}
@@ -169,22 +115,21 @@ class PairwiseOrthologRelationExtractor(object):
                     for child1, child2 in itertools.combinations(nodes_of_children, 2):
                         for gId1, gId2 in itertools.product(child1, child2):
                             if self.internal_to_genome_nr[gId1] != self.internal_to_genome_nr[gId2]:
-                                rels.append((gId1, gId2))
+                                self.dbi.add_orthologs(gId1, gId2)
+                                nr_rels += 1
                 nodes = set.union(*nodes_of_children)
                 return nodes
             else:
                 return set([])
+
         nodes = _rec_extract(node)
         logger.debug("extracting {} pairwise orthologous relations from toplevel group {} with {} valid genes"
-                     .format(len(rels), node.get('id', 'n/a'), len(nodes)))
+                     .format(nr_rels, node.get('id', 'n/a'), len(nodes)))
         self.processed_stats['processed_toplevel'] += 1
-        self.processed_stats['relations'] += len(rels)
+        self.processed_stats['relations'] += nr_rels
         if time() - self.processed_stats['last'] > 20:
-            logger.info("processed {} toplevel orthologGroups with {} induced pairwise relations"
-                        .format(self.processed_stats['processed_toplevel'],
-                                self.processed_stats['relations']))
+            self.log_progress()
             self.processed_stats['last'] = time()
-        return rels
 
 
 def parse_orthoxml(fh, processor):
@@ -208,17 +153,19 @@ def parse_orthoxml(fh, processor):
             if elem.tag == fixtag('', 'orthologGroup'):
                 og_level -= 1
                 if og_level == 0:
-                    yield from processor.extract_pairwise_relations(elem)
+                    processor.extract_pairwise_relations(elem)
                     elem.clear()
             elif elem.tag == fixtag('', 'species'):
                 if not processor.add_genome_genes(elem):
                     sys.exit(2)
                 elem.clear()
+    processor.log_progress()
 
 
 def parse_tsv(fh, mapping_data):
     logger.info("start mapping of tsv formatted input data")
     valid_id_map = mapping_data['mapping']
+    excluded_ids = mapping_data['excluded_ids'] if 'excluded_ids' in mapping_data else set([])
     goff = mapping_data['Goff']
     dialect = csv.Sniffer().sniff(fh.read(2048))
     fh.seek(0)
@@ -237,20 +184,120 @@ def parse_tsv(fh, mapping_data):
             yield id1, id2
         except KeyError:
             unkn = list(itertools.filterfalse(lambda x: x in valid_id_map, row[:2]))
-            logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
+            unkn = list(itertools.filterfalse(lambda x: x in excluded_ids, unkn))
+            if len(unkn)>0:
+                logger.warning("relation {} contains unknown ID: {}".format(row, unkn))
 
 
-def identify_input_type_and_parse(fpath, mapping_data):
+class DatabaseInterface(object):
+    def __init__(self, fname):
+        self.fname = fname
+        self._ortholog_buffer = []
+
+    def __enter__(self):
+        self.con = sqlite3.connect(self.fname)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.flush()
+        self.commit()
+        self.con.close()
+
+    def commit(self):
+        self.con.commit()
+
+    def add_reference_proteomes(self, mapping):
+
+        def yield_uniprot_proteins():
+            goff = mapping['Goff']
+            species = mapping['species']
+            for xref, prot_nr in mapping['mapping'].items():
+                if RE_UP.match(xref):
+                    gnr = bisect_right(goff, prot_nr - 1)
+                    yield prot_nr, xref, species[gnr - 1]
+
+        cur = self.con.cursor()
+        cur.execute("""DROP TABLE IF EXISTS proteomes""")
+        cur.execute("""CREATE TABLE proteomes (
+                         prot_nr INT, 
+                         uniprot_id CHAR(10), 
+                         species CHAR(5)
+                       )""")
+        cur.executemany("INSERT INTO proteomes VALUES (?,?,?)", yield_uniprot_proteins())
+        self.commit()
+
+    def create_pairwise_ortholog_table(self):
+        cur = self.con.cursor()
+        cur.execute("""DROP TABLE IF EXISTS orthologs""")
+        cur.execute("""CREATE TABLE orthologs (
+                           prot_nr1 INT , 
+                           prot_nr2 INT
+                       )""")
+        self.commit()
+
+    def create_index_of_orthologs(self):
+        logger.info("creating index of orthologs...")
+        cur = self.con.cursor()
+        cur.execute("CREATE INDEX pair ON orthologs (prot_nr1, prot_nr2)")
+        logger.info("finished indexing")
+        self.commit()
+
+    def add_orthologs(self, p1, p2):
+        self._ortholog_buffer.extend([(p1, p2), (p2, p1)])
+        if len(self._ortholog_buffer) > 200000:
+            self.flush()
+
+    def flush(self):
+        if len(self._ortholog_buffer) > 0:
+            self.con.cursor().executemany(
+                "INSERT INTO orthologs VALUES (?,?)",
+                self._ortholog_buffer)
+            self.commit()
+            self._ortholog_buffer = []
+
+    def get_orthologs_of(self, prot_nr):
+        cur = self.con.cursor()
+        cur.execute("SELECT prot_nr2 FROM orthologs WHERE prot_nr1 == ? ORDER BY prot_nr2", (prot_nr, ))
+        return [z[0] for z in cur.fetchall()]
+
+    def iter_all_orthologs(self):
+        cur = self.con.cursor()
+        cur.execute("SELECT DISTINCT * FROM orthologs ORDER BY prot_nr1, prot_nr2")
+        cur.arraysize = 50000
+        cur_prot, orths = None, []
+        while True:
+            chunk = cur.fetchmany()
+            if len(chunk) == 0:
+                break
+            for p1, p2 in chunk:
+                if p1 != cur_prot:
+                    if cur_prot is not None:
+                        yield cur_prot, orths
+                    cur_prot = p1
+                    orths = []
+                orths.append(p2)
+        if len(orths) > 0:
+            yield cur_prot, orths
+
+
+
+def identify_input_type_and_parse(fpath, mapping_data, db_path):
     with auto_open(fpath, 'rb') as fh:
         head = fh.read(20)
 
-    if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
-        with auto_open(fpath, 'rb') as fh:
-            processor = PairwiseOrthologRelationExtractor(mapping_data)
-            yield from parse_orthoxml(fh, processor)
-    else:
-        with auto_open(fpath, 'rt') as fh:
-            yield from parse_tsv(fh, mapping_data)
+    with DatabaseInterface(db_path) as db:
+        db.add_reference_proteomes(mapping_data)
+        db.create_pairwise_ortholog_table()
+
+        if head.startswith(b'<?xml') or head.startswith(b'<ortho'):
+            with auto_open(fpath, 'rb') as fh:
+                processor = PairwiseOrthologRelationExtractor(mapping_data, db)
+                parse_orthoxml(fh, processor)
+        else:
+            with auto_open(fpath, 'rt') as fh:
+                for p1, p2 in parse_tsv(fh, mapping_data):
+                    db.add_orthologs(p1, p2)
+        db.create_index_of_orthologs()
 
 
 if __name__ == "__main__":
@@ -259,6 +306,7 @@ if __name__ == "__main__":
     parser.add_argument('mapping', help="Path to mapping.json of proper QfO dataset")
     parser.add_argument('input_rels', help="Path to input relation file. either tsv or orthoxml")
     parser.add_argument('--out', help="Path to output file")
+    parser.add_argument('--db', default="orthologs.db", help="Path to sqlite database with pairwise predictions")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
     parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
     conf = parser.parse_args()
@@ -270,24 +318,28 @@ if __name__ == "__main__":
         log_conf['level'] = logging.DEBUG
     logging.basicConfig(**log_conf)
 
-
-    #valid_id_map = load_IDIndex(conf.IDIndex)
     mapping_data = load_mapping(conf.mapping)
-    predictions = [[] for _ in range(mapping_data['Goff'][-1] + 1)]
+    identify_input_type_and_parse(conf.input_rels, mapping_data, conf.db)
+    nr_genes_in_reference_set = mapping_data['Goff'][-1]
     tot_pred = 0
-    for x, y in identify_input_type_and_parse(conf.input_rels, mapping_data):
-        predictions[x].append(y)
-        predictions[y].append(x)
-        tot_pred += 1
-
-    removed_duplicates = 0
-    with open(conf.out, 'w') as fh:
-        for i in range(1, len(predictions)):
-            orthologs = unique([str(z) for z in sorted(predictions[i])])
-            removed_duplicates += (len(predictions[i]) - len(orthologs))
-            fh.write("<E><OE>{}</OE><VP>[{}]</VP><SEQ>{}</SEQ></E>\n"
-                     .format(i, ",".join(orthologs), encode_nr_as_seq(i)))
+    with DatabaseInterface(conf.db) as dbi:
+        with open(conf.out, 'w') as fh:
+            per_prot_ortholog_iter = dbi.iter_all_orthologs()
+            nxt_prot, orths = next(per_prot_ortholog_iter)
+            for i in range(1, nr_genes_in_reference_set + 1):
+                if nxt_prot < i:
+                    try:
+                        nxt_prot, orths = next(per_prot_ortholog_iter)
+                    except StopIteration:
+                        nxt_prot, orths = nr_genes_in_reference_set + 2, []
+                if nxt_prot > i:
+                    orthologs = []
+                elif nxt_prot == i:
+                    orthologs = [str(z) for z in orths]
+                else:
+                    raise RuntimeError("must not happen. Proteins not sorted?")
+                fh.write("<E><OE>{}</OE><VP>[{}]</VP><SEQ>{}</SEQ></E>\n"
+                         .format(i, ",".join(orthologs), encode_nr_as_seq(i)))
+                tot_pred += len(orthologs)
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
-                .format(tot_pred))
-    if removed_duplicates > 0:
-        logger.info('    Removed {:.0f} duplicated pairwise relations'.format(removed_duplicates/2))
+                .format(tot_pred / 2))

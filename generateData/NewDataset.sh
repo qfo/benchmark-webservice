@@ -45,3 +45,5 @@ EOF
 cp $DARWIN_GENOMES_PATH/Summaries.drw $DARWIN_OMADATA_PATH
 gzip -f9 $DARWIN_OMADATA_PATH/Summaries.drw
 
+grep -h '>sp|' $root/{Eukaryota,Archaea,Bacteria}/*[0-9].fasta | sed -e "s/\s.*$//" > swissprot.txt
+

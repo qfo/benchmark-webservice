@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:HGNC_agg",
+  "challenge_ids": ["HGNC"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "TPR",
+        "y_axis": "PPV"
+      }
+    }
+  },
+  "type": "aggregation"
+}
