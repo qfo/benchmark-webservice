@@ -43,21 +43,6 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
         for p in prot_set:
             yield from get_orthologs_for_query(p)
 
-    def get_existing_orthologs(all_orthologs):
-        def get_chunk(orthologs):
-            template = " OR ".join(["(prot_nr1 == ? AND prot_nr2 == ?)"] * len(orthologs))
-            query = f"SELECT * FROM orthologs WHERE {template}"
-            logger.debug(query)
-            args = list(itertools.chain.from_iterable(orthologs))
-            cur.execute(query, args)
-            return cur.fetchall()
-
-        cur = con.cursor()
-        res = []
-        for chunk in range(0, len(all_orthologs), 500):
-            res.extend(get_chunk(all_orthologs[chunk:chunk + 500]))
-        return res
-
     def write_raw_rels(out, rels, typ):
         for en1, en2 in rels:
             out.write(
