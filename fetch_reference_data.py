@@ -16,6 +16,7 @@ def get_file_list(release):
        'GOdata.drw.gz',
        'mapping.json.gz',
        'swissprot.txt.gz',
+       'hgnc-orthologs.txt.gz',
        'ServerIndexed.db',
        'ServerIndexed.db.map',
        'ServerIndexed.db.tree',
