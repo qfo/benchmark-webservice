@@ -11,18 +11,24 @@ from JSON_templates import write_assessment_dataset
 from helpers import auto_open
 
 logger = logging.getLogger("HGNC-Benchmark")
-Protein = collections.namedtuple("Protein", ["Acc", "Species"])
+Protein = collections.namedtuple("Protein", ["Acc", "Species", "HGNC_ID"])
 
 
 def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
     def get_prot_data_for(proteins):
-        data = {}
+        hgnc_fam = {}
+        for (p1, p2), fam in hgnc_orthologs.items():
+            hgnc_fam[p1] = fam
+            hgnc_fam[p2] = fam
+
         cur = con.cursor()
         placeholder = ",".join('?' * len(proteins))
         query = f"SELECT * FROM proteomes WHERE prot_nr IN ({placeholder})"
         cur.execute(query, proteins)
+
+        data = {}
         for row in cur.fetchall():
-            data[row[0]] = Protein(row[1], row[2])
+            data[row[0]] = Protein(row[1], row[2], hgnc_fam[row[0]])
         return data
 
     def get_orthologs_among_subset_of_proteins(proteins):
@@ -56,8 +62,8 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
         for en1, en2 in rels:
             out.write(
                 f"{protein_infos[en1].Acc}\t{protein_infos[en2].Acc}\t{typ}\t"
-                f"{hgnc_fam[en1]}\t{hgnc_fam[en2]}\t{protein_infos[en1].Species}\t"
-                f"{protein_infos[en2].Species}\n")
+                f"{protein_infos[en1].HGNC_ID}\t{protein_infos[en2].HGNC_ID}\t"
+                f"{protein_infos[en1].Species}\t{protein_infos[en2].Species}\n")
 
     con = sqlite3.connect(db_path)
     nr_true = len(hgnc_orthologs)
@@ -75,11 +81,25 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
     tp = len(hgnc_orthologs) - len(missing_true_orthologs)
     tpr = tp / nr_true
 
-    hgnc_fam = {}
-    for (p1, p2), fam in hgnc_orthologs.items():
-        hgnc_fam[p1] = fam
-        hgnc_fam[p2] = fam
-    false_positives = [rel for rel in all_predicted_orthologs_among_hgnc_genes if hgnc_fam[rel[0]] != hgnc_fam[rel[1]]]
+    hgnc_per_species = collections.defaultdict(set)
+    for info in protein_infos.values():
+        hgnc_per_species[info.Species].add(info.HGNC_ID)
+
+    false_positives = []
+    for p1, p2 in all_predicted_orthologs_among_hgnc_genes:
+        if protein_infos[p1].HGNC_ID != protein_infos[p2].HGNC_ID:
+            id1_in_sp2 = protein_infos[p1].HGNC_ID in hgnc_per_species[protein_infos[p2].Species]
+            id2_in_sp1 = protein_infos[p1].HGNC_ID in hgnc_per_species[protein_infos[p2].Species]
+            is_fp = id1_in_sp2 and id2_in_sp1
+            logger.debug(
+                f"is used as fp: {is_fp:1} -- "
+                f"{protein_infos[p1].HGNC_ID} vs {protein_infos[p2].HGNC_ID}: {protein_infos[p1].HGNC_ID} in "
+                f"{protein_infos[p2].Species}: {id1_in_sp2}; {protein_infos[p2].HGNC_ID} in "
+                f"{protein_infos[p1].Species}: {id2_in_sp1}")
+
+            if is_fp:
+                false_positives.append((p1, p2))
+
     nr_pos = tp + len(false_positives)
     ppv = tp / nr_pos
 
