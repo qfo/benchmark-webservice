@@ -26,17 +26,15 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
         return data
 
     def get_orthologs_among_subset_of_proteins(proteins):
-        placeholder = ",".join("?" * len(proteins))
-        query = f"SELECT * FROM orthologs WHERE prot_nr1 == ? AND prot_nr2 IN ({placeholder}) AND prot_nr1 < prot_nr2"
+        query = f"SELECT * FROM orthologs WHERE prot_nr1 == ? AND prot_nr1 < prot_nr2"
+        prot_set = set(proteins)
 
         def get_orthologs_for_query(query_protein):
             cur = con.cursor()
-            args = [query_protein]
-            args.extend(proteins)
-            cur.execute(query, args)
-            return cur.fetchall()
+            cur.execute(query, (query_protein,))
+            return [rel for rel in cur.fetchall() if rel[1] in prot_set]
 
-        for p in proteins:
+        for p in prot_set:
             yield from get_orthologs_for_query(p)
 
     def get_existing_orthologs(all_orthologs):
@@ -88,7 +86,9 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
     write_raw_rels(raw_out, true_positives, "TP")
     write_raw_rels(raw_out, false_positives, "FP")
     write_raw_rels(raw_out, missing_true_orthologs, "FN")
-    logger.info("TPR: {}; nr_true: {}".format(tpr, nr_true))
+    logger.info(f"TPR: {tpr}; nr_true: {nr_true}")
+    logger.info(f"PPV: {ppv}; nr_pos: {nr_pos}")
+
     metrics = [{"name": "TP", 'value': tp},
                {"name": "FN", "value": len(missing_true_orthologs)},
                {"name": "TPR", "value": tpr, "stderr": 1.96 * math.sqrt(tpr * (1 - tpr) / nr_true)},
