@@ -414,12 +414,13 @@ process orthobench_groupbased {
 
     """
     python /benchmark/orthobench.py \
-        --out "$result_file_path/GROUP_${level}/GROUP_${level}_${method_name}.txt" \
+        --outdir "$result_file_path/GROUP_${level}" \
         --assessment-out "GROUP_${level}.json" \
         --challenge-id "GROUP_${level}" \
         --participant-id "$method_name" \
         --community-id $community_id \
-        --reference-groups "$refset_dir/RefGroups_${level}.json" \
+        --reference-groups "$refset_dir/OrthoBenchRefOGs_${level}.tgz" \
+        --orthobench-to-qfo "$refset_dir/ob_to_qfo.txt.gz" \
         --predicted-groups $group
     """
 }

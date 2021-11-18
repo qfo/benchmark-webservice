@@ -16,7 +16,6 @@ def get_file_list(release):
        'GOdata.drw.gz',
        'mapping.json.gz',
        'swissprot.txt.gz',
-       'hgnc-orthologs.txt.gz',
        'ServerIndexed.db',
        'ServerIndexed.db.map',
        'ServerIndexed.db.tree',
@@ -37,6 +36,12 @@ def get_file_list(release):
             'species_tree_samples_Ver.nwk',
             'species_tree_samples_Euk.nwk',
             'species_tree_samples_Fun.nwk'])
+    if int(release.split('.')[0]) >= 2020:
+        files.extend([
+            'OrthoBenchRefOGs_Bilateria.tgz',
+            'ob_to_qfo.txt.gz',
+            'hgnc-orthologs.txt.gz',
+        ])
     return [os.path.join(BASEURL, str(release), f) for f in files]
 
 
