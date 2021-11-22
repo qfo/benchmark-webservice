@@ -74,13 +74,13 @@ def compute_hgnc_benchmark(hgnc_orthologs, db_path, raw_out):
     for p1, p2 in all_predicted_orthologs_among_hgnc_genes:
         if protein_infos[p1].HGNC_ID != protein_infos[p2].HGNC_ID:
             id1_in_sp2 = protein_infos[p1].HGNC_ID in hgnc_per_species[protein_infos[p2].Species]
-            id2_in_sp1 = protein_infos[p1].HGNC_ID in hgnc_per_species[protein_infos[p2].Species]
+            id2_in_sp1 = protein_infos[p2].HGNC_ID in hgnc_per_species[protein_infos[p1].Species]
             is_fp = id1_in_sp2 and id2_in_sp1
             logger.debug(
                 f"is used as fp: {is_fp:1} -- "
-                f"{protein_infos[p1].HGNC_ID} vs {protein_infos[p2].HGNC_ID}: {protein_infos[p1].HGNC_ID} in "
-                f"{protein_infos[p2].Species}: {id1_in_sp2}; {protein_infos[p2].HGNC_ID} in "
-                f"{protein_infos[p1].Species}: {id2_in_sp1}")
+                f"{protein_infos[p1].HGNC_ID} ({protein_infos[p1].Acc}) vs {protein_infos[p2].HGNC_ID} ({protein_infos[p2].Acc}): "
+                f"{protein_infos[p1].HGNC_ID} in {protein_infos[p2].Species}: {id1_in_sp2}; "
+                f"{protein_infos[p2].HGNC_ID} in {protein_infos[p1].Species}: {id2_in_sp1}")
 
             if is_fp:
                 false_positives.append((p1, p2))
