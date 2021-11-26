@@ -155,8 +155,52 @@ class SwissProtComparerExistingIdInBothSpecies(SwissProtComparerSimple):
 
 Protein = collections.namedtuple("Protein", ["Acc", "Species"])
 
+def create_one2one_orthologs_table(db_path):
+    def load_species():
+        cur = con.cursor()
+        cur.execute("SELECT species, min(prot_nr), max(prot_nr) FROM proteomes GROUP BY species ORDER BY prot_nr")
+        return {z[0]: (z[1], z[2]) for z in cur.fetchall()}
 
-def compute_sp_benchmark(sp_entries, db_path, raw_out, strategy: SwissProtComparerSimple):
+    def create_one2one_table():
+        cur = con.cursor()
+        cur.execute("""DROP TABLE IF EXISTS one2one_orthologs""")
+        cur.execute("""CREATE TABLE one2one_orthologs (
+                                   prot_nr1 INT , 
+                                   prot_nr2 INT
+                               )""")
+        con.commit()
+
+    def create_indexes():
+        cur = con.cursor()
+        cur.execute("DROP INDEX IF EXISTS one2one_pair")
+        cur.execute("CREATE INDEX one2one_pair ON one2one_orthologs (prot_nr1, prot_nr2)")
+        logger.info("finished indexing")
+        con.commit()
+
+    def filter_species_pair(g1, g2):
+        cur = con.cursor()
+        cur.execute("SELECT * from orthologs WHERE prot_nr1>=? and prot_nr1 <= ? and prot_nr2>=? and prot_nr2<=?",
+                    (genomes[g1][0], genomes[g1][1], genomes[g2][0], genomes[g2][1],))
+        pairs = cur.fetchall()
+        cnt = collections.Counter(itertools.chain.from_iterable(pairs))
+        one_to_one_pairs = [rel for rel in pairs if cnt[rel[0]] == 1 and cnt[rel[1]] == 1]
+        logger.info("{} vs {}: kept {} 1:1 orthologs from {} initially ({:.1f}%%)".format(
+            g1, g2, len(one_to_one_pairs), len(pairs), 100 * len(one_to_one_pairs) / len(pairs)
+        ))
+        one_to_one_pairs.extend([(z[1], z[0]) for z in one_to_one_pairs])
+        cur.executemany("INSERT INTO one2one_orthologs (prot_nr1, prot_nr2) VALUES (?, ?)", one_to_one_pairs)
+        con.commit()
+
+    con = sqlite3.connect(db_path)
+    genomes = load_species()
+    create_one2one_table()
+    for g1, g2 in itertools.combinations(genomes, 2):
+        filter_species_pair(g1, g2)
+    create_indexes()
+    con.close()
+
+
+def compute_sp_benchmark(sp_entries, db_path, raw_out, strategy: SwissProtComparerSimple, orth_tab):
 
     def get_prot_data_for(proteins):
         data = {}
@@ -171,7 +215,7 @@ def compute_sp_benchmark(sp_entries, db_path, raw_out, strategy: SwissProtCompar
     def get_swissprot_orthologs_of(prot_nr):
         cur = con.cursor()
         cur.execute(
-            "SELECT DISTINCT prot_nr2 FROM orthologs WHERE prot_nr1 == ? AND prot_nr1 < prot_nr2 ORDER BY prot_nr2",
+            f"SELECT DISTINCT prot_nr2 FROM {orth_tab} WHERE prot_nr1 == ? AND prot_nr1 < prot_nr2 ORDER BY prot_nr2",
             (prot_nr,))
         return [z[0] for z in cur.fetchall() if z[0] in sp_entries]
 
@@ -202,6 +246,7 @@ def compute_sp_benchmark(sp_entries, db_path, raw_out, strategy: SwissProtCompar
         write_raw_rels(raw_out, true_positives, 'TP')
         missing_true_orthologs -= true_positives
 
+    con.close()
     write_raw_rels(raw_out, missing_true_orthologs, "FN")
     tpr = tp / nr_true
     ppv = tp / (fp + tp)
@@ -239,6 +284,7 @@ if __name__ == "__main__":
     parser.add_argument('--com', required=True, help="community id")
     parser.add_argument('--sp-entries', required=True, help="Path to textfile with SwissProt IDs")
     parser.add_argument('--participant', required=True, help="Name of participant method")
+    parser.add_argument('--only-one2one', action="store_true")
     parser.add_argument('--strategy', choices=("simple", "clade_limit", "ids_exist_in_both"),
                         default="clade_limit",
                         help="benchmark strategy to use. Simple: negatives are any non-prefix sharing relation, "
@@ -271,6 +317,11 @@ if __name__ == "__main__":
     else:
         raise Exception("Invalid strategy")
 
+    orth_tab = "orthologs"
+    if conf.only_one2one:
+        create_one2one_orthologs_table(conf.db)
+        orth_tab = "one2one_orthologs"
+
     with auto_open(outfn_path, 'wt') as raw_out_fh:
-        res = compute_sp_benchmark(sp_entries, conf.db, raw_out_fh, strategy)
+        res = compute_sp_benchmark(sp_entries, conf.db, raw_out_fh, strategy, orth_tab=orth_tab)
     write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)
