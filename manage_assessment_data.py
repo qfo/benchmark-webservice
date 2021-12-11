@@ -329,6 +329,14 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
             y_values.append(participant_data['metric_y'])
             x_err.append(participant_data.get('stderr_x', 0))
             y_err.append(participant_data.get('stderr_y', 0))
+    n = len(tools)
+    sort_key = sorted([i for i in range(n)], key=lambda i: tools[i])
+    tools = [tools[sort_key[i]] for i in range(n)]
+    x_values = [x_values[sort_key[i]] for i in range(n)]
+    y_values = [y_values[sort_key[i]] for i in range(n)]
+    x_err = [x_err[sort_key[i]] for i in range(n)]
+    y_err = [y_err[sort_key[i]] for i in range(n)]
+
     ax = plt.subplot()
     for i, val in enumerate(tools, 0):
         markers = [".", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s", "p", "P", "*", "h", "H", "+",
