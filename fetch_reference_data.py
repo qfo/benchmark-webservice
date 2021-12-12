@@ -15,8 +15,6 @@ def get_file_list(release):
        'Summaries.drw.gz',
        'GOdata.drw.gz',
        'mapping.json.gz',
-       'swissprot.txt.gz',
-       'vgnc-orthologs.txt.gz',
        'ServerIndexed.db',
        'ServerIndexed.db.map',
        'ServerIndexed.db.tree',
@@ -37,6 +35,11 @@ def get_file_list(release):
             'species_tree_samples_Ver.nwk',
             'species_tree_samples_Euk.nwk',
             'species_tree_samples_Fun.nwk'])
+    if int(release.split('.')[0]) >= 2020:
+        files.extend([
+            'vgnc-orthologs.txt.gz',
+            'swissprot.txt.gz',
+        ])
     return [os.path.join(BASEURL, str(release), f) for f in files]
 
 
@@ -51,8 +54,12 @@ def retrieve_files(files, target_dir):
 
 if __name__ == "__main__":
     import argparse
-    p = argparse.ArgumentParser(description="Download reference data of a given release for the QfO benchmarking platform")
-    p.add_argument('release', choices=("2011", "2018", "2019", "2020", "2020.1"), help="release version to download")
+    p = argparse.ArgumentParser(description="Download reference data of a given release "
+                                            "for the QfO benchmarking platform")
+    p.add_argument('release', choices=("2011", "2018", "2019", "2020", "2020.1", "2020.2"),
+                   help="release version to download. Note that the pure year release always points to the latest"
+                        "version of that year (e.g. 2020 --> 2020.2"
+                   )
     p.add_argument('--out-dir', help="directory where to store the data. Defaults to ./reference_data/<release>")
 
     conf = p.parse_args()
@@ -61,5 +68,4 @@ if __name__ == "__main__":
 
     retrieve_files(get_file_list(conf.release), conf.out_dir)
     print("Finished downloading data for release {}. Stored in {}".format(conf.release, conf.out_dir))
-
 
