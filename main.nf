@@ -225,7 +225,7 @@ process swissprot_benchmark {
 }
 
 
-process hgnc_benchmark {
+process vgnc_benchmark {
     label "py"
 
     input:
@@ -238,18 +238,18 @@ process hgnc_benchmark {
     file predictions
 
     output:
-    file "HGNC.json" into HGNC_STUB
+    file "VGNC.json" into VGNC_STUB
 
     when:
-    benchmarks =~ /HGNC/
+    benchmarks =~ /VGNC/
 
     """
-    /benchmark/hgnc_benchmark.py \
+    /benchmark/vgnc_benchmark.py \
          --com $community_id \
          --participant "$method_name" \
-         --assessment-out "HGNC.json" \
-         --outdir "$result_file_path/HGNC" \
-         --hgnc-orthologs $refset_dir/hgnc-orthologs.txt.gz \
+         --assessment-out "VGNC.json" \
+         --outdir "$result_file_path/VGNC" \
+         --vgnc-orthologs $refset_dir/vgnc-orthologs.txt.gz \
          --db $sqlite_db
     """
 }
@@ -363,7 +363,7 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, HGNC_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB)
 
 process consolidate {
     label "py"

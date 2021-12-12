@@ -3,7 +3,7 @@ import logging
 import gzip
 import json
 
-logger = logging.getLogger("hgnc-convert")
+logger = logging.getLogger("vgnc-convert")
 
 
 def extract_rels_from_line(line, refset_data):
@@ -23,19 +23,19 @@ def extract_rels_from_line(line, refset_data):
         yield rel, symbol
 
 
-def extract_and_write_hgnc_orthologs(hgnc_dump, refset_data, out_fh):
-    open_ = gzip.open if hgnc_dump.endswith(".gz") else open
-    with open_(hgnc_dump, 'rt') as hgnc_fh:
-        for line in hgnc_fh:
+def extract_and_write_vgnc_orthologs(vgnc_dump, refset_data, out_fh):
+    open_ = gzip.open if vgnc_dump.endswith(".gz") else open
+    with open_(vgnc_dump, 'rt') as vgnc_fh:
+        for line in vgnc_fh:
             for rel, symbol in extract_rels_from_line(line, refset_data):
                 out_fh.write(f"{rel[0]}\t{rel[1]}\t{symbol}\n")
 
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Extract Refset relevant orthologs relations asserted from HGNC")
-    parser.add_argument('--hgnc-dump',
-                        help="tab-separated dump file from HGNC")
+    parser = argparse.ArgumentParser(description="Extract Refset relevant orthologs relations asserted from VGNC")
+    parser.add_argument('--vgnc-dump',
+                        help="tab-separated dump file from VGNC")
     parser.add_argument('--mapping',
                         help="mapping json file for reference dataset")
     parser.add_argument('--out', default="output file path")
@@ -50,6 +50,6 @@ if __name__ == "__main__":
         refset_data = json.load(fh)
 
     with gzip.open(conf.out, 'wt') as fh:
-        extract_and_write_hgnc_orthologs(conf.hgnc_dump, refset_data, fh)
+        extract_and_write_vgnc_orthologs(conf.vgnc_dump, refset_data, fh)
 
 
