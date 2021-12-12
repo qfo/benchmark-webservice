@@ -120,11 +120,13 @@ process validate_input_file {
 process convertPredictions {
 
     label "py"
+    publishDir path: "$otherdir", saveAs: {file -> (file == 'orthologs.db') ? "${method_name}.db" : null}, mode: "copy", enabled: params.cpy_sqlite_db
 
     input:
     val file_validated from EXIT_STAT
     file predictions
     val refset_dir
+    val method_name
 
     output:
     file 'predictions.db' into db
