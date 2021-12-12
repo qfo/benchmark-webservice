@@ -45,6 +45,8 @@ if (params.help) {
 
     Flags:
         --help                  Display this message¬
+        --cpy_sqlite_db         Store the sqlite3 database with the pairwise prediction in the folder specified
+                                with --otherdir parameter (${param.otherdir})
     """.stripIndent()
 
     exit 1
@@ -128,18 +130,20 @@ process validate_input_file {
 process convertPredictions {
 
     label "py"
+    publishDir path: "$otherdir", saveAs: {file -> (file == 'orthologs.db') ? "${method_name}.db" : null}, mode: "copy", enabled: params.cpy_sqlite_db
 
     input:
     val file_validated from EXIT_STAT
     file predictions
     val refset_dir
+    val method_name
 
     output:
     file 'predictions.db' into db
     file 'orthologs.db' into sqlite_db
 
     when:
-    file_validated == 0 &&  benchmarks =~ /STD_|GO|EC|SwissTrees|TreeFam|HGNC|SwissProtIDs/
+    file_validated == 0 &&  benchmarks =~ /STD_|GO|EC|SwissTrees|TreeFam|VGNC|SwissProtIDs/
 
     """
     /benchmark/map_relations.py --out predictions.db --db orthologs.db $refset_dir/mapping.json.gz $predictions
@@ -231,7 +235,7 @@ process swissprot_benchmark {
 }
 
 
-process hgnc_benchmark {
+process vgnc_benchmark {
     label "py"
 
     input:
@@ -244,18 +248,18 @@ process hgnc_benchmark {
     file predictions
 
     output:
-    file "HGNC.json" into HGNC_STUB
+    file "VGNC.json" into VGNC_STUB
 
     when:
-    benchmarks =~ /HGNC/
+    benchmarks =~ /VGNC/
 
     """
-    /benchmark/hgnc_benchmark.py \
+    /benchmark/vgnc_benchmark.py \
          --com $community_id \
          --participant "$method_name" \
-         --assessment-out "HGNC.json" \
-         --outdir "$result_file_path/HGNC" \
-         --hgnc-orthologs $refset_dir/hgnc-orthologs.txt.gz \
+         --assessment-out "VGNC.json" \
+         --outdir "$result_file_path/VGNC" \
+         --vgnc-orthologs $refset_dir/vgnc-orthologs.txt.gz \
          --db $sqlite_db
     """
 }
@@ -426,7 +430,7 @@ process orthobench_groupbased {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, HGNC_STUB, GROUP_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB, GROUP_STUB)
 
 process consolidate {
     label "py"
@@ -442,7 +446,7 @@ process consolidate {
     file predictions
 
     """
-    python /benchmark/manage_assessment_data.py -d -m $challenge_stubs -b $benchmark_data -o $result_file_path
+    python /benchmark/manage_assessment_data.py -m $challenge_stubs -b $benchmark_data -o $result_file_path
     python /benchmark/merge_data_model_files.py -p $participants  -m $challenge_stubs -r $result_file_path -a $assessment_out -o $data_model_export_dir
     """
 }

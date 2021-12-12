@@ -1,6 +1,6 @@
 {
-  "_id": "QfO:HGNC_agg",
-  "challenge_ids": ["HGNC"],
+  "_id": "QfO:VGNC_agg",
+  "challenge_ids": ["VGNC"],
   "datalink": {
     "inline_data": {
       "challenge_participants": [],
