@@ -69,3 +69,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     main(args.participant_data, args.metrics_data, args.results_dir, args.aggregation_file, args.output_file)
+

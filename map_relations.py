@@ -343,3 +343,4 @@ if __name__ == "__main__":
                 tot_pred += len(orthologs)
     logger.info("*** Successfully extracted {} pairwise relations from uploaded predictions"
                 .format(tot_pred / 2))
+
