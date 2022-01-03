@@ -94,9 +94,7 @@ def compute_vgnc_benchmark(vgnc_orthologs, db_path, raw_out):
     logger.info(f"TPR: {tpr}; nr_true: {nr_true}")
     logger.info(f"PPV: {ppv}; nr_pos: {nr_pos}")
 
-    metrics = [{"name": "TP", 'value': tp},
-               {"name": "FN", "value": len(missing_true_orthologs)},
-               {"name": "TPR", "value": tpr, "stderr": 1.96 * math.sqrt(tpr * (1 - tpr) / nr_true)},
+    metrics = [{"name": "TPR", "value": tpr, "stderr": 1.96 * math.sqrt(tpr * (1 - tpr) / nr_true)},
                {"name": "PPV", "value": ppv, "stderr": 1.96 * math.sqrt(ppv * (1 - ppv) / nr_pos)},
                ]
     return metrics
