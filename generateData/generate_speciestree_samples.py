@@ -61,7 +61,10 @@ def extract_relevant_newick_tree(fn_phyloxml, clade):
 
     target_clade = tree if clade == 'LUCA' else next(tree.find_clades(target=clade))
     for n in target_clade.get_terminals():
-        n.name = n.taxonomy.code
+        try:
+            n.name = n.taxonomy.code
+        except AttributeError:
+            pass
 
     buf = io.StringIO()
     Bio.Phylo.write(target_clade, buf, 'newick')
