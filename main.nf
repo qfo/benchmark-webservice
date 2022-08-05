@@ -126,6 +126,8 @@ db_vg = Channel.create()
 
 predictions_db = Channel.create()
 
+predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_geneTrees, db_sw, db_vg)
+
 /*
  * extract pairwise predictions and store in darwin compatible database
  */
@@ -139,7 +141,7 @@ process convertPredictions {
     file refset_dir
 
     output:
-    file 'predictions.db' into db_go_test , db_ec_test , db_std, db_g_std, db_g_std_v2, db_geneTrees, db_vg, db_sw
+    file 'predictions.db' into predictions_db
     file 'orthologs.db' into sqlite_db
 
 
