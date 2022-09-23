@@ -19,16 +19,19 @@ def get_file_list(release):
        'ServerIndexed.db.map',
        'ServerIndexed.db.tree',
        'enzymes.drw.gz',
-       'speciestree_Luca_conf81.drw',
-       'speciestree_Euk_conf81.drw',
-       'speciestree_Ver_conf81.drw',
-       'speciestree_Fun_conf81.drw',
        'ReconciledTrees_SwissTrees.drw',
        'ReconciledTrees_TreeFam-A.drw',
        'TreeCat_Euk.drw',
        'TreeCat_Bac.drw',
        'TreeCat_Fun.drw']
-    if release != "2011":
+    if int(release.split('.')[0]) <= 2020:
+        files.extend([
+            'speciestree_Luca_conf81.drw',
+            'speciestree_Euk_conf81.drw',
+            'speciestree_Ver_conf81.drw',
+            'speciestree_Fun_conf81.drw',
+        ])
+    if int(release.split('.')[0]) >= 2011:
         files.extend([
             'lineage_tree.phyloxml',
             'species_tree_samples_Luca.nwk',
