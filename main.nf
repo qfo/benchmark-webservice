@@ -43,6 +43,8 @@ if (params.help) {
 
     Flags:
         --help                  Display this message¬
+        --cpy_sqlite_db         Store the sqlite3 database with the pairwise prediction in the folder specified
+                                with --otherdir parameter (${param.otherdir})
     """.stripIndent()
 
     exit 1
@@ -99,15 +101,15 @@ process validate_input_file {
     label "py"
 
     input:
-    file predictions
-    file refset_dir
+    path predictions
+    path refset_dir
     val benchmarks
     val community_id
     val method_name
 
     output:
     val task.exitStatus into EXIT_STAT
-    file "participant.json" into PARTICIPANT_STUB
+    path "participant.json" into PARTICIPANT_STUB
 
     """
     /benchmark/validate.py --com $community_id --challenges_ids "$benchmarks" --participant "$method_name" --out "participant.json" $refset_dir/mapping.json.gz $predictions
@@ -121,12 +123,14 @@ db_std = Channel.create()
 db_g_std = Channel.create()
 db_g_std_v2 = Channel.create()
 db_geneTrees = Channel.create()
-db_sw = Channel.create()
-db_vg = Channel.create()
+db_sp = Channel.create()
+db_vgnc = Channel.create()
 
 predictions_db = Channel.create()
+sqlite_db = Channel.create()
 
-predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_geneTrees, db_sw, db_vg)
+predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_geneTrees)
+sqlite_db.into(db_sp, db_vgnc)
 
 /*
  * extract pairwise predictions and store in darwin compatible database
@@ -134,22 +138,23 @@ predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_ge
 process convertPredictions {
 
     label "py"
+    publishDir path: "$otherdir", saveAs: {file -> (file == 'orthologs.db') ? "${method_name}.db" : null}, mode: "copy", enabled: params.cpy_sqlite_db
 
     input:
     val file_validated from EXIT_STAT
-    file predictions
-    file refset_dir
+    path predictions
+    path refset_dir
+    val method_name
 
     output:
-    file 'predictions.db' into predictions_db
-    file 'orthologs.db' into sqlite_db
-
+    path 'predictions.db' into predictions_db
+    path 'orthologs.db' into sqlite_db
 
     when:
     file_validated == 0
 
     """
-    /benchmark/map_relations.py --out predictions.db $refset_dir/mapping.json.gz $predictions
+    /benchmark/map_relations.py --out predictions.db --db orthologs.db $refset_dir/mapping.json.gz $predictions
     """
 }
 
@@ -158,24 +163,24 @@ c_ec = Channel.create()
 c_g_std = Channel.create()
 c_g_std_v2 = Channel.create()
 c_geneTrees = Channel.create()
-c_sw = Channel.create()
+c_sp = Channel.create()
 c_vg = Channel.create()
 
 process scheduleMetrics {
     
     input:
-        val file_validated from EXIT_STAT
-        val benchmark from benchmarks_chan
+    val file_validated from EXIT_STAT
+    val benchmark from benchmarks_chan
     
     output:
-        val v_go into c_go
-        val v_ec into c_ec
-        val v_std into c_std
-        val v_g_std into c_g_std
-        val v_g_std_v2 into c_g_std_v2
-        val v_geneTrees into c_geneTrees
-	val v_sw into c_sw
-	val v_vg into c_vg
+    val v_go into c_go
+    val v_ec into c_ec
+    val v_std into c_std
+    val v_g_std into c_g_std
+    val v_g_std_v2 into c_g_std_v2
+    val v_geneTrees into c_geneTrees
+	val v_sp into c_sp
+	val v_vgnc into c_vgnc
     
     when:
     file_validated == 0
@@ -190,8 +195,8 @@ process scheduleMetrics {
     v_g_std = null
     v_g_std_v2 = null
     v_geneTrees = null
-    v_sw = null
-    v_vg = null
+    v_sp = null
+    v_vgnc = null
 
     switch(benchmark) {
         case "GO":
@@ -227,10 +232,12 @@ process scheduleMetrics {
                 println "WARNING: Unmatched G_STD2 benchmark $benchmark"
             }
             break
-	case "VGNC":
-            v_vg = benchmark
+	    case "VGNC":
+            v_vgnc = benchmark
             break
-
+        case "SP":
+            v_sp = benchmark
+            break
         default:
             if(genetree_sets.contains(benchmark)) {
                 v_geneTrees = benchmark
@@ -249,17 +256,17 @@ process go_benchmark {
     label "darwin"
 
     input:
-    set val(benchmark), db  from c_go.filter({ it != null }).combine(db_go_test)
+    tuple val(benchmark), path(db)  from c_go.filter({ it != null }).combine(db_go_test)
     val method_name
-    file refset_dir
+    path refset_dir
     val go_evidences
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
     
     output:
-    file "GO.json" into GO_STUB
+    path "GO.json" into GO_STUB
     
     """
     /benchmark/GoTest.sh -o "${result_file_path}/GO" -a GO.json -c "$community_id" -e "$go_evidences" $db "$method_name" $refset_dir
@@ -271,16 +278,16 @@ process ec_benchmark {
     label "darwin"
 
     input:
-    set val(benchmark), db  from c_ec.filter({ it != null }).combine(db_ec_test)
+    tuple val(benchmark), path(db)  from c_ec.filter({ it != null }).combine(db_ec_test)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
 
     output:
-    file "EC.json" into EC_STUB
+    path "EC.json" into EC_STUB
     
     """
     /benchmark/EcTest.sh -o "${result_file_path}/EC" -a EC.json -c "$community_id" $db "$method_name" $refset_dir
@@ -291,22 +298,24 @@ process swissprot_benchmark {
     label "py"
 
     input:
-    set val(benchmark), db  from c_sw.filter({ it != null }).combine(db_sw)
+    tuple val(benchmark), path(db)  from c_sp.filter({ it != null }).combine(db_sp)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint
-    file predictions
+    path predictions
 
     output:
-    file "SP.json" into SP_STUB
-
-   
+    path "SP.json" into SP_STUB
 
     """
-    /benchmark/swissprot_benchmark.py  --com $community_id "$community_id" --participant "$method_name" --assessment-out "SP.json" --outdir "${result_file_path}/SwissProtIDs" \
-	 --mapping "${refset_dir}/mapping.json.gz" \
+    /benchmark/swissprot_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --assessment-out "SP.json" \
+         --outdir "${result_file_path}/SwissProtIDs" \
+         --mapping "${refset_dir}/mapping.json.gz" \
          --sp-entries $refset_dir/swissprot.txt.gz \
          --strategy ids_exist_in_both \
          --lineage-tree $refset_dir/lineage_tree.phyloxml \
@@ -319,19 +328,16 @@ process vgnc_benchmark {
     label "py"
 
     input:
-    file sqlite_db from sqlite_db
+    tuple val(benchmark), path(sqlite_db) from c_vgnc.filter({it != null }).combine(db_vgnc)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint
-    file predictions
+    path predictions
 
     output:
-    file "VGNC.json" into VGNC_STUB
-
-    when:
-    benchmarks =~ /VGNC/
+    path "VGNC.json" into VGNC_STUB
 
     """
     /benchmark/vgnc_benchmark.py \
@@ -352,16 +358,16 @@ process speciestree_benchmark {
     tag "$clade"
 
     input:
-    set val(clade), db  from c_std.filter({ it != null }).combine(db_std)
+    set val(clade), path(db)  from c_std.filter({ it != null }).combine(db_std)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
 
     output:
-    file "STD_${clade}.json" into STD_STUB
+    path "STD_${clade}.json" into STD_STUB
 
     """
     /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/STD_${clade}" -a "STD_${clade}.json" -c "$community_id" -p $clade -m 0 $db "$method_name" $refset_dir
@@ -375,16 +381,16 @@ process g_speciestree_benchmark {
     tag "$clade"
 
     input:
-    set val(clade), db  from c_g_std.filter({ it != null }).combine(db_g_std)
+    set val(clade), path(db)  from c_g_std.filter({ it != null }).combine(db_g_std)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
 
     output:
-    file "G_STD_${clade}.json" into G_STD_STUB
+    path "G_STD_${clade}.json" into G_STD_STUB
 
     """
     /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/G_STD_${clade}" -a "G_STD_${clade}.json" -c "$community_id" -p $clade -m 1 $db "$method_name" $refset_dir
@@ -396,16 +402,16 @@ process g_speciestree_benchmark_variant2 {
     tag "$clade"
 
     input:
-    set val(clade), db  from c_g_std_v2.filter({ it != null }).combine(db_g_std_v2)
+    set val(clade), path(db)  from c_g_std_v2.filter({ it != null }).combine(db_g_std_v2)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
 
     output:
-    file "G_STD2_${clade}.json" into G_STD2_STUB
+    path "G_STD2_${clade}.json" into G_STD2_STUB
 
     """
     /benchmark/SpeciesTreeDiscordanceTest.sh -o "${result_file_path}/G_STD2_${clade}" -a "G_STD2_${clade}.json" -c "$community_id" -p $clade -m 2 $db "$method_name" $refset_dir
@@ -418,16 +424,16 @@ process reference_genetrees_benchmark {
     tag "$testset"
 
     input:
-    set val(testset), db   from c_geneTrees.filter({ it != null }).combine(db_geneTrees)
+    set val(testset), path(db)   from c_geneTrees.filter({ it != null }).combine(db_geneTrees)
     val method_name
-    file refset_dir
+    path refset_dir
     val community_id
-    file result_file_path
+    path result_file_path
     // for mountpoint 
-    file predictions
+    path predictions
 
     output:
-    file "${testset}.json" into REFPHYLO_STUB
+    path "${testset}.json" into REFPHYLO_STUB
 
     """
     /benchmark/RefPhyloTest.sh -o "$result_file_path/${testset}" -a "${testset}.json" -t "$testset" $db "$method_name" $refset_dir
@@ -435,20 +441,20 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB)
 
 process consolidate {
     label "py"
 
     input:
-    file participants from PARTICIPANT_STUB.collect()
-    file challenge_stubs from challenge_assessments.collect()
-    file benchmark_data
-    file assessment_out
-    file data_model_export_dir
-    file result_file_path
+    path participants from PARTICIPANT_STUB.collect()
+    path challenge_stubs from challenge_assessments.collect()
+    path benchmark_data
+    path assessment_out
+    path data_model_export_dir
+    path result_file_path
     //for mountpoint
-    file predictions
+    path predictions
 
     """
     python /benchmark/manage_assessment_data.py -m $challenge_stubs -b $benchmark_data -o $result_file_path
@@ -461,4 +467,3 @@ process consolidate {
 workflow.onComplete {
 	println ( workflow.success ? "Done!" : "Oops .. something went wrong" )
 }
-
