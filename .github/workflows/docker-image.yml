@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ elixir, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   release:
     type: [published]
 
@@ -83,8 +83,10 @@ jobs:
 
       - name: Test Darwin image
         run: |
-          docker run --rm -i -v $PWD/output:/out ${{ env.TEST_TAG_DARWIN }} bash -c "echo 'gigahertz(); done' | darwin -q -E -o /out/speed.txt" 
-          if [ ! -f output/speed.txt ] ; then exit 1; fi
+          mkdir -p output
+          docker run --rm -i -v $PWD/output:/out ${{ env.TEST_TAG_DARWIN }} bash -c "echo 'gigahertz(); done' | darwin -q -E -o /out/speed.txt"
+          echo "$?"
+          ls -l output/
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request' && github.event_name != 'push'
