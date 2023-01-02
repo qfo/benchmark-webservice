@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 enzRaw="/tmp/enzymes.dat"
 enzDrw="/tmp/enzymes.drw"
 enzDat="$QFO_REFSET_PATH/enzymes.drw"
@@ -11,7 +11,7 @@ $gen_dir/convert_ec.pl $enzRaw $enzDrw
 if [ $? -ne 0 ] ; then echo "could not convert enzymes into darwin format"; exit 1; fi
 
 
-darwin  << EOA
+darwin -E  << EOA
 wdir := getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH');
 if wdir='' then error('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH not set') fi:
 ReadProgram(wdir.'/lib/darwinit');

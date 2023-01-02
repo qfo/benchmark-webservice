@@ -7,11 +7,14 @@
 #   symlink 'raw' pointing to the extracted seqxml files.              #
 ########################################################################
 
-name="reference18"
-root="/pub/scratch/adriaal/refgenomes"
+name="reference22"
+root="/work/FAC/FBM/DBC/cdessim2/default/aaltenho/obs22/"
 
+export DARWIN_OMA_REPO_PATH=${HOME}/OMA
 export DARWIN_GENOMES_PATH=$root/genomes
-export DARWIN_OMADATA_PATH=/pub/projects/cbrg-ortholog-benchmark-service/$name
+export DARWIN_OMADATA_PATH=/work/FAC/FBM/DBC/cdessim2/default/aaltenho/$name
+export DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH="$(cd $(dirname $0)/../ && pwd)"
+mkdir -p $DARWIN_GENOMES_PATH
 
 darwin -E << EOF
  wdir := '$root';
@@ -37,6 +40,16 @@ for db in $(find $DARWIN_GENOMES_PATH -mindepth 1 -type d -printf "%f\n"); do
 EOF
 done
 
+darwin -E -q << EOF
+    ReadProgram('$DARWIN_GENOMES_PATH/Summaries.drw');
+    GS := GenomeSummaries:
+    OpenWriting('$DARWIN_GENOMES_PATH/species.txt');
+    for g in genomes do
+	printf('%s\t%s\n', g, GS[g, 'TAXONID']);
+    od:
+    done
+EOF
+
 mkdir -p $DARWIN_OMADATA_PATH
 darwin -E << EOF
     ReadProgram('GenerateIDMapAndSeqDb.drw');
@@ -45,5 +58,5 @@ EOF
 cp $DARWIN_GENOMES_PATH/Summaries.drw $DARWIN_OMADATA_PATH
 gzip -f9 $DARWIN_OMADATA_PATH/Summaries.drw
 
-grep -h '>sp|' $root/{Eukaryota,Archaea,Bacteria}/*[0-9].fasta | sed -e "s/\s.*$//" > swissprot.txt
+grep -h '>sp|' $root/raw/{Eukaryota,Archaea,Bacteria}/*[0-9].fasta | sed -e "s/\s.*$//" | gzip > $DARWIN_OMADATA_PATH/swissprot.txt.gz
 

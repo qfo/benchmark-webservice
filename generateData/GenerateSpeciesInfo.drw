@@ -34,7 +34,7 @@ GetDataset := proc(root)
     return(dataset);
 end:
 
-dataset := GetDataset(raw_seqxml_root);
+dataset := GetDataset(wdir);
 sp_info := GenerateSpeciesInfo(Indices(dataset)):
 
 OpenWriting(wdir.'/SpeciesInfo.txt');

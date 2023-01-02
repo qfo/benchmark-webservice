@@ -69,7 +69,7 @@ printf('IDmapping := %A:\n',mapping);
 OpenWriting(previous);
 CallSystem('gzip -f9 '.fn);
 
-ReadProgram( getenv('DARWIN_BROWSER_REPO_PATH').'/lib/Index');
+ReadProgram( getenv('DARWIN_ORTHOLOG_BENCHMARK_REPO_PATH').'/lib/Index' );
 fn := getenv('DARWIN_OMADATA_PATH').'/IDIndex.db';
 CreateIndex( mapping, fn);
 if length(FileStat(fn))=0 then warning('IDIndex.db not created') fi:

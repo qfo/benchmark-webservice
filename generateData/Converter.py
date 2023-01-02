@@ -6,6 +6,7 @@ import getopt, sys
 import re
 import gzip
 
+
 class Protein:
   def __init__(self):
     self.mapping = {}
@@ -20,7 +21,7 @@ class Protein:
   
   def toDarwinFmt(self):
     buf = "<E>"
-    for tag in self.mapping.iterkeys():
+    for tag in self.mapping:
       self.mapping[tag].sort()
       buf += "<%s>"%(tag,)
       buf += "; ".join(self.mapping[tag])
@@ -91,9 +92,9 @@ class SeqXMLHandler(xml.sax.handler.ContentHandler):
       self.seq = ""
     elif name == "seqXML" :
       for proc in self.processors : proc.finish()
-      print "Converted %d unknown AA to X\n"%(self.AAsubst)
+      print("Converted %d unknown AA to X"%(self.AAsubst))
 
-class ProteinProcessor : 
+class ProteinProcessor: 
   def __init__(self, path, oginfo):
     self.path = path
     self.oginfo = oginfo 
@@ -150,34 +151,26 @@ class ProteinProcessor :
     f.close()
     
 
-def main() :
-  try:
-    oplist, args = getopt.getopt(sys.argv[1:], 's:d:',['speciesinfo=','datadir='])
-  except getopt.GetoptError, err:
-    print str(err)
-    sys.exit(2)
-  
-  spfn = "SpeciesInfo.txt"
-  ddir = "/home/darwin/DB/refgenomes/genomes/"
-  for o,a in oplist:
-    if o in ("-s", "--speciesinfo"):
-      spfn = a
-    elif o in ("-d", "--datadir"):
-      ddir = a
-  speciesInfo = eval('%s'%open(spfn).read())
-  
+def main():
+  import argparse
+  parser = argparse.ArgumentParser(description="Convert QfO reference proteomes from xml format into Darwin databases")
+  parser.add_argument('-s', '--speciesinfo', default="SpeciesInfo.txt", help="path to input SpeciesInfo.txt file")
+  parser.add_argument('-d', '--datadir', required=True, help="Path to data folder that contains the genomes")
+  parser.add_argument('files', nargs="+", help="path to input genomes")
+  conf = parser.parse_args()
+ 
+  with open(conf.speciesinfo, 'rt') as fh:
+      speciesInfo = eval(fh.read())
+
   parser = xml.sax.make_parser()
   handler = SeqXMLHandler()
-  handler.addProteinProcessor( ProteinProcessor(ddir, speciesInfo) )
+  handler.addProteinProcessor( ProteinProcessor(conf.datadir, speciesInfo) )
   parser.setContentHandler( handler )
-  print args
 
-  for f in args:
+  for f in conf.files:
     open_ = gzip.open if f.endswith('.gz') else open;
-    with open_(f) as fh:
+    with open_(f, 'rt') as fh:
       parser.parse(fh)
-
-  sys.exit(0)
 
 if __name__ == "__main__":
    main()

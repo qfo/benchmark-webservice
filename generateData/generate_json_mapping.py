@@ -5,7 +5,8 @@ import json
 import argparse
 
 
-def parse_db(fn, exclude=[]):
+def parse_db(fn, exclude=None):
+    exclude = [] if exclude is None else exclude
     with open(fn, 'rt') as fh:
         curOS = ""
         genomes = []

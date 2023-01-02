@@ -157,7 +157,7 @@ if overwrite=true then
     od:
 fi:
 
-treeVersion := '_v5_sens';
+treeVersion := '_v5_sens_up_2022';
 fams := ['NOX1-4','POP','VATB','SERC',
     'HOX9-14','SUMF','S10-S20','ASTER',
     'CITE','BAMBI','APP','CLUS','BAR','PSEN',
