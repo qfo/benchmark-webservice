@@ -5,7 +5,22 @@ WORKDIR /benchmark
 
 COPY "requirements.txt" /benchmark
 
-RUN apt-get update && apt-get install -y build-essential pkg-config libfreetype6-dev libxml2 procps &&  pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt && apt-get -y remove build-essential pkg-config libfreetype6-dev && apt-get -y autoremove && apt-get -y autoclean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y \
+       build-essential \
+       libfreetype6-dev \
+       libsqlite3-0 \
+       libxml2 \
+       pkg-config \
+       procps \
+    && pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt \
+    && apt-get -y remove \
+       build-essential \
+       libfreetype6-dev \
+       pkg-config \
+    && apt-get -y autoremove \
+    && apt-get -y autoclean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . /benchmark
 
