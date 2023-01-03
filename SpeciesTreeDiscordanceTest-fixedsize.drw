@@ -95,7 +95,7 @@ end:
 
 
 SelectNextFam := proc()
-    global fail_fast, get_orth_calls, __next_tree_idx:
+    global fail_fast, get_orth_calls, __next_tree_idx, DB:
     t0 := time();
     if not assigned(__next_tree_idx) then __next_tree_idx := 1 fi:
     accTree := ParseNewickTree(species_tree_samples[__next_tree_idx]);
@@ -104,10 +104,13 @@ SelectNextFam := proc()
 
     startRange := GenomeRange(specList[1]);
     fnd := false;
+    curDB := DB: DB := SeqDB:
     for xx to 50 do 
         start := Rand(startRange);
+        if SearchTag('MINOR_ISOFORM', Entry(start))='true' then next fi:
         if member(start,iSet) then fnd := true; break fi:
     od:
+    DB := curDB:
     if not fnd then 
         warning('no start protein in '.specList[1].' found in iSet');
         return(NULL) 
