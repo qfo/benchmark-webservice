@@ -59,7 +59,7 @@ if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description="Download reference data of a given release "
                                             "for the QfO benchmarking platform")
-    p.add_argument('release', choices=("2011", "2018", "2019", "2020", "2020.1", "2020.2"),
+    p.add_argument('release', choices=("2011", "2018", "2019", "2020", "2020.1", "2020.2", "2022"),
                    help="release version to download. Note that the pure year release always points to the latest"
                         "version of that year (e.g. 2020 --> 2020.2"
                    )
