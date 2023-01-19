@@ -148,7 +148,7 @@ def calculate_benchmarks_pairwise(ref_ogs, uncert_genes, pred_ogs, q_even=True, 
         if q_remove_uncertain:
             refOg = refOg.difference(uncert)
         nRefOG = len(refOg)
-        log_buffer = {'refOG': "[" + ",".join(refOg) +"]"}
+        log_buffer = {'refOG': "[" + ",".join(refOg) +"]", "ogs": []}
 
         not_present = set(refOg)
         for predOg in predictedOGs:
@@ -163,8 +163,6 @@ def calculate_benchmarks_pairwise(ref_ogs, uncert_genes, pred_ogs, q_even=True, 
                 thisTP += overlap * (overlap - 1)/2    # n-Ch-2
                 thisFP += overlap * (len(predOg) - overlap)
                 thisFN += (nRefOG - overlap) * overlap
-                if "ogs" not in log_buffer:
-                    log_buffer['ogs'] = []
                 log_buffer['ogs'].append("[" + ",".join(predOg) + "]")
         # Are FNs more from splintered OGs or missing genes?
         # print("%f\t%f" % (thisFN/2./(nRefOG-1), len(not_present)*(nRefOG-1)/2./(nRefOG-1))) 
