@@ -432,8 +432,8 @@ def print_chart(outdir_dir, summary_file, challenge, classification_type):
     outpath = os.path.join(outdir_dir, outname)
     fig = plt.gcf()
     fig.set_size_inches(18.5, 10.5)
-    fig.savefig(outname, dpi=100)
-
+    fig.savefig(outpath, dpi=100)
+    fig.savefig(outpath[:-3]+"pdf", dpi=100)
     plt.close("all")
 
 
