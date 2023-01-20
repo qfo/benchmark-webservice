@@ -14,7 +14,7 @@ def parse_db(fn, exclude=None):
         mappings = {}
         excluded_ids = set([])
 
-        parser = re.compile(r'<E><OS>(?P<os>\w*)<\/OS><MAPIDS>(?P<ids>.*)<\/MAPIDS>.*<SEQ>.*<\/SEQ><\/E>')
+        parser = re.compile(r'<E><OS>(?P<os>\w*)<\/OS><MAPIDS>(?P<ids>.*)<\/MAPIDS>.*<SEQ>.*<\/SEQ>.*<\/E>')
         for off, line in enumerate(fh):
             m = parser.match(line)
             if not m:
