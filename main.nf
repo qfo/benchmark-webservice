@@ -89,9 +89,14 @@ tree_clades0 = ["Eukaryota", "Fungi", "Bacteria"]
 //validation_out = file(params.validation_result)
 assessment_out = file(params.assessment_results)
 result_file_path = file(params.outdir, type: 'dir')
-data_model_export_dir = file(params.data_model_export_dir, type: 'dir')
+data_model_export_dir = file(params.data_model_export_dir)
 otherdir = file(params.otherdir, type: 'dir')
 
+// create output directories
+assessment_out.parent.mkdirs()
+result_file_path.mkdirs()
+data_model_export_dir.parent.mkdirs()
+otherdir.mkdirs()
 
 
 /*
@@ -449,7 +454,7 @@ process consolidate {
     input:
     path participants from PARTICIPANT_STUB.collect()
     path challenge_stubs from challenge_assessments.collect()
-    path benchmark_data
+    path benchmark_data, stageAs: "reference_results_path"
     path assessment_out
     path data_model_export_dir
     path result_file_path
