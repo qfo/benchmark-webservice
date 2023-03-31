@@ -44,7 +44,7 @@ if (params.help) {
     Flags:
         --help                  Display this message¬
         --cpy_sqlite_db         Store the sqlite3 database with the pairwise prediction in the folder specified
-                                with --otherdir parameter (${param.otherdir})
+                                with --otherdir parameter (${params.otherdir})
     """.stripIndent()
 
     exit 1
