@@ -34,7 +34,7 @@ end:
 GSIDtab := LoadGenomeStartIDs();
 
 NrOfGenomes := proc()
-    return( GSID['NS'] );
+    return( GSIDtab['NS'] );
 end:
 
 NrOfProteins := proc( )
