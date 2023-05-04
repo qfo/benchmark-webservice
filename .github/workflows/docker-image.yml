@@ -62,7 +62,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build and export python image to docker for testing
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_qfo_python
@@ -74,7 +74,7 @@ jobs:
           docker run --rm -i ${{ env.TEST_TAG_PYTHON }} python --version
 
       - name: Build and export darwin image to docker for testing
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_qfo_darwin
@@ -96,7 +96,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_qfo_python
@@ -106,7 +106,7 @@ jobs:
           labels: ${{ steps.meta_python.outputs.labels }}
 
       - name: Build and push darwin
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_qfo_darwin
