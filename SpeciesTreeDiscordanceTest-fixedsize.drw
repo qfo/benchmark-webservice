@@ -197,7 +197,10 @@ ComputeCongruenceStat := proc(cases:list, title)
         od:
         nseq := length(seqs):
         msa := traperror(MafftMSA(seqs)):
-        if msa=lasterror then cErr+1; next fi:
+        if msa=lasterror then 
+            Logger(sprintf('Error while computing mafft msa: %a\n', msa), 'CRITICAL');
+            cErr+1; next 
+        fi:
         D := CreateArray(1..nseq,1..nseq):
         V := CreateArray(1..nseq,1..nseq):
         for i to nseq do for j from i+1 to nseq do
@@ -206,7 +209,10 @@ ComputeCongruenceStat := proc(cases:list, title)
              V[i,j] := V[j,i] := dps[3];
         od od:
         genetree := traperror( InferDistTree(D,V,labs) ):
-        if genetree=lasterror then cErr+1; next fi;
+        if genetree=lasterror then 
+            Logger(sprintf('Error while computing distance tree: %a\n', genetree), 'CRITICAL');
+            cErr+1; next 
+        fi;
 
         pruned_st := PruneTree(copy(speciestree), spec);
         for l in Leaves(pruned_st) do
