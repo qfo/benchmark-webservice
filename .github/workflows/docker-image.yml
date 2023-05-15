@@ -86,6 +86,8 @@ jobs:
           mkdir -p output
           docker run --rm -i -v $PWD/output:/out ${{ env.TEST_TAG_DARWIN }} bash -c "echo 'gigahertz(); done' | darwin -q -E -o /out/speed.txt"
           echo "$?"
+          docker run --rm -i ${{ env.TEST_TAG_DARWIN }} bash -c "echo \"print(MafftMSA(['ADRIAN','ADIAN','DRRAN'],['1','2','3])); done\" | darwin -q -E"
+          echo "$?"
           ls -l output/
 
       - name: Login to DockerHub
