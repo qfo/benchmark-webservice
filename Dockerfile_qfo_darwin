@@ -1,11 +1,16 @@
-FROM ubuntu:latest
+FROM ubuntu:focal
 
 #RUN apk add --no-cache curl
-RUN apt-get update && apt-get install -y curl mafft
+RUN apt-get -qq update \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates \
+       curl \
+       mafft \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /darwin && cd /darwin && \
-    curl -SL -O http://biorecipes.com/darwin/darwin.linux64 && \
-    curl -SL http://biorecipes.com/darwin/darwin-lib.tgz | tar -xz  && \
+    curl -SL -O https://biorecipes.com/darwin/darwin.linux64 && \
+    curl -SL https://biorecipes.com/darwin/darwin-lib.tgz | tar -xz  && \
     chmod +x darwin.linux64 && \
     sed -i -e "s/\(datadirname\s*:=\s*\)'[^']*'[:;]/\1'\/refset':/" lib/darwinit
 
