@@ -23,7 +23,7 @@ jobs:
 
       - name: Docker python meta
         id: meta_python
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
           images: |
@@ -40,7 +40,7 @@ jobs:
 
       - name: Docker python meta
         id: meta_darwin
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
           images: |
