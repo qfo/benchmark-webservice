@@ -1,0 +1,25 @@
+FROM python:3.9-slim
+
+RUN apt-get update \
+    && apt-get install -y \
+       build-essential \
+       libsqlite3-0 \
+       pkg-config \
+       procps \
+    && pip install --no-cache-dir --trusted-host pypi.python.org greedyFAS numpy jsonschema tqdm \
+    && apt-get -y remove \
+       build-essential \
+       pkg-config \
+    && apt-get -y autoremove \
+    && apt-get -y autoclean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo "/usr/local/lib/python3.9/site-packages/greedyFAS/" > /usr/local/lib/python3.9/site-packages/greedyFAS/pathconfig.txt \
+    && echo "#linearized\nPfam\nSMART\n#normal\nfLPS\nCOILS2\nSEG\nSignalP\nTMHMM\n#checked" > /usr/local/lib/python3.9/site-packages/greedyFAS/annoTools.txt
+
+COPY fas_benchmark.py helpers.py /benchmark/
+COPY JSON_templates /benchmark/JSON_templates
+WORKDIR /benchmark
+
+ENV PATH="$PATH:/benchmark"
+

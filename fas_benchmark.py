@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+import concurrent.futures
+import csv
+import itertools
+import json
+import logging
+import subprocess
+import tempfile
+
+import numpy
+import sqlite3
+from pathlib import Path
+from typing import TextIO
+from tqdm import tqdm
+
+from JSON_templates import write_assessment_dataset
+from helpers import auto_open, load_json_file
+
+logger = logging.getLogger("FAS-Benchmark")
+
+def load_precomputed_fas_scores(f: Path):
+    dat = load_json_file(str(f))
+    data = {}
+    for pair, vals in dat.items():
+        p1, p2 = pair.split('_')
+        if p1 > p2: p1, p2 = p2, p1
+        data[(p1, p2)] = float(numpy.array(vals, dtype="float").mean())
+    return data
+
+def generate_prot_to_annoationfile_map(annotations: Path):
+    def map_one_file(json_file:Path):
+        """ Read annotation json file and return a dictionary
+        where IDs are the protein IDs and values are their corresponding filename
+        """
+        tax = json_file.stem
+        with json_file.open(mode='rb') as jf:
+            anno_dict = json.load(jf)
+        return {id_: tax for id_ in anno_dict['feature']}
+
+    taxa_dict = {}
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        for res in ex.map(map_one_file, annotations.glob("*.json")):
+            taxa_dict.update(res)
+    return taxa_dict
+
+
+def compute_fas_scores_for_pairs(pairs, prot2tax, annotations):
+    MAX_PAIRS = 30_000
+    logger.info("For %d orthologous pairs we don't have precomputed FAS scores", len(pairs))
+    if len(pairs) > MAX_PAIRS:
+        logger.warning("Too many pairs to analyse, will sub-sample to %d", MAX_PAIRS)
+        import random
+        pairs = random.shuffle(pairs)[:MAX_PAIRS]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        missing_fn = Path(tmp) / "missing.txt"
+        with missing_fn.open(mode='wt') as fh:
+            for p1, p2 in pairs:
+                fh.write(f"{p1}\t{prot2tax[p1]}\t{p2}\t{prot2tax[p2]}\n")
+
+        fas_cmds = ["fas.runMultiTaxa", "--input", missing_fn, "-a", annotations,
+                    "-o", Path(tmp)/"fas_res", "--bidirectional", "--tsv", "--domain", "--no_config", "--json",
+                    "--mergeJson", "--outName", "computed_results", "--pairLimit", "30000", "--cpus", "8"]
+        res = subprocess.run(fas_cmds, capture_output=True)
+        if res.returncode != 0:
+            logger.error("Computing fas.runMultiTaxa failed: %s", res.stderr)
+            scores = {}
+        else:
+            scores = load_precomputed_fas_scores(Path(tmp) / "fas_res" / "computed_results.json")
+    return scores
+
+
+def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: Path, raw_out: TextIO):
+    def iter_all_orthologs():
+        cur = con.cursor()
+        cur.execute("SELECT DISTINCT p1.uniprot_id, p2.uniprot_id FROM orthologs JOIN proteomes as p1 ON orthologs.prot_nr1 = p1.prot_nr JOIN proteomes as p2 ON orthologs.prot_nr2 = p2.prot_nr WHERE p1.uniprot_id < p2.uniprot_id" )
+        cur.arraysize = 50000
+        while True:
+            chunk = cur.fetchmany()
+            if len(chunk) == 0:
+                break
+            yield from chunk
+
+    con = sqlite3.connect(db_path)
+    scores_lookup = load_precomputed_fas_scores(precomputed_scores)
+    prot_2_tax_map = generate_prot_to_annoationfile_map(annotations)
+    logger.info("feature annotations available for %d proteins", len(prot_2_tax_map))
+    logger.debug(list(itertools.islice(prot_2_tax_map.items(), 30)))
+
+    scores = []; missing_pairs = []; no_fa = 0
+    for p1, p2 in tqdm(iter_all_orthologs()):
+        if '_' in p1 or '_' in p2:
+            # skipping uniprot_ids, only uniprot accessions!
+            continue
+        if (p1, p2) in scores_lookup:
+            scores.append((p1, p2))
+        elif p1 in prot_2_tax_map and p2 in prot_2_tax_map:
+            missing_pairs.append((p1, p2))
+        else:
+            logger.info("No feature architecture found for relation %s/%s. Skipping", p1, p2)
+            no_fa += 1
+
+    nr_orthologs = len(scores) + len(missing_pairs)
+    logger.info("%d pairs precomputed, %d missing (will compute); %d no feature annotations",
+                len(scores), len(missing_pairs), no_fa)
+    if len(missing_pairs) > 0:
+        score2 = compute_fas_scores_for_pairs(missing_pairs, prot_2_tax_map, annotations)
+        scores_lookup.update(score2)
+    csv_writer = csv.writer(raw_out, dialect="excel-tab")
+    csv_writer.writerow(("Acc1", "Acc2", "FAS"))
+    scores_list = []
+    for pair in itertools.chain(scores, missing_pairs):
+        score = scores_lookup[pair]
+        csv_writer.writerow((pair[0], pair[1], score))
+        scores_list.append(score)
+    fas_scores = numpy.array(scores_list, dtype="float")
+    fas_mean = fas_scores.mean()
+    fas_sem = fas_scores.std(ddof=1) / numpy.sqrt(numpy.size(fas_scores))
+
+    logger.info(f"FAS_mean: {fas_mean} +- {fas_sem}; nr_orthologs: {nr_orthologs}; sample_size: {len(fas_scores)} vs {numpy.size(fas_scores)}")
+
+    metrics = [{"name": "FAS", "value": float(fas_mean), "stderr": float(fas_sem)},
+               {"name": "NR_ORTHOLOGS", "value": nr_orthologs, "stderr": 0},
+               ]
+    return metrics
+
+
+
+
+def write_assessment_json_stub(fn, community, participant, result):
+    challenge = "FAS"
+    stubs = []
+    for metric in result:
+        id_ = "{}:{}_{}_{}_A".format(community, challenge, metric['name'],
+                                     participant.replace(' ', '-').replace('_', '-'))
+        stubs.append(write_assessment_dataset(id_, community, challenge, participant, metric['name'], metric['value'],
+                                              metric.get('stderr', 0)))
+    with auto_open(fn, 'wt') as fout:
+        json.dump(stubs, fout, sort_keys=True, indent=4, separators=(',', ': '))
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="FAS benchmark assessment")
+    parser.add_argument('--assessment-out', required=True, help="Path where assessment json file will be stored")
+    parser.add_argument('--outdir', required=True, help="Folder to store the raw output file in")
+    parser.add_argument('--db', required=True, help="Path to sqlite database with pairwise predictions")
+    parser.add_argument('--com', required=True, help="community id")
+    parser.add_argument('--fas-precomputed-scores', required=True, help="Path to text file with VGNC asserted orthologs")
+    parser.add_argument('--fas-data', help="Path to the input data of protein to feature architecture mapping. If not "
+                                          "provided, missing pairs in the fas-precomputed-sores will be simply skipped "
+                                          "and not computed on the fly")
+    parser.add_argument('--participant', required=True, help="Name of participant method")
+    parser.add_argument('--log', help="Path to log file. Defaults to stderr")
+    parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
+    conf = parser.parse_args()
+
+    log_conf = {'level': logging.INFO, 'format': "%(asctime)-15s %(levelname)-7s: %(message)s"}
+    if conf.log is not None:
+        log_conf['filename'] = conf.log
+    if conf.debug:
+        log_conf['level'] = logging.DEBUG
+    logging.basicConfig(**log_conf)
+    logger.info("running fas_benchmark with following arguments: {}".format(conf))
+
+    outdir = Path(conf.outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    outfn_path = outdir / "FAS_{}_raw.txt.gz".format(conf.participant.replace(' ', '-').replace('_', '-'))
+
+    with auto_open(str(outfn_path), 'wt') as raw_out_fh:
+        res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), raw_out_fh)
+    write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)
