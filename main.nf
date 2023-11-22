@@ -385,7 +385,7 @@ process fas_benchmark{
          --participant "$method_name" \
          --assessment-out "FAS.json" \
          --outdir "${result_file_path}/FAS" \
-         --fas-precomputed-scores ${refset_dir}/fas_subset.json \
+         --fas-precomputed-scores ${refset_dir}/fas_precomputed.json \
          --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db
     """

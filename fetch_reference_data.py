@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import subprocess
 
 try:
     from urllib.request import urlretrieve
@@ -42,6 +43,8 @@ def get_file_list(release):
         files.extend([
             'vgnc-orthologs.txt.gz',
             'swissprot.txt.gz',
+            'fas_precomputed.json',
+            'fas_annotations.tgz',
         ])
     return [os.path.join(BASEURL, str(release), f) for f in files]
 
@@ -53,6 +56,8 @@ def retrieve_files(files, target_dir):
         fname = os.path.basename(url)
         target = os.path.join(target_dir, fname)
         urlretrieve(url, target)
+        if fname.endswith('.tgz'):
+            subprocess.run(['tar', 'xzf', fname], cwd=target_dir, check=True)
 
 
 if __name__ == "__main__":
