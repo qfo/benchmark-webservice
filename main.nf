@@ -365,6 +365,7 @@ process vgnc_benchmark {
 
 process fas_benchmark{
     label "fas"
+    cpus = 4
 
     input:
     tuple val(benchmark), path(sqlite_db) from c_fas.filter({it != null }).combine(db_fas)
@@ -385,7 +386,7 @@ process fas_benchmark{
          --assessment-out "FAS.json" \
          --outdir "${result_file_path}/FAS" \
          --fas-precomputed-scores ${refset_dir}/fas_subset.json \
-         --fas-data ${refset_dir}/fas_annotation \
+         --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db
     """
 }

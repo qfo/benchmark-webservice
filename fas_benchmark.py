@@ -4,6 +4,7 @@ import csv
 import itertools
 import json
 import logging
+import multiprocessing
 import subprocess
 import tempfile
 
@@ -44,13 +45,14 @@ def generate_prot_to_annoationfile_map(annotations: Path):
     return taxa_dict
 
 
-def compute_fas_scores_for_pairs(pairs, prot2tax, annotations):
-    MAX_PAIRS = 30_000
+def compute_fas_scores_for_pairs(pairs, prot2tax, annotations, nr_cpus):
+    MAX_PAIRS = 9_000
     logger.info("For %d orthologous pairs we don't have precomputed FAS scores", len(pairs))
     if len(pairs) > MAX_PAIRS:
         logger.warning("Too many pairs to analyse, will sub-sample to %d", MAX_PAIRS)
         import random
-        pairs = random.shuffle(pairs)[:MAX_PAIRS]
+        random.shuffle(pairs)
+        pairs = pairs[:MAX_PAIRS]
 
     with tempfile.TemporaryDirectory() as tmp:
         missing_fn = Path(tmp) / "missing.txt"
@@ -60,8 +62,8 @@ def compute_fas_scores_for_pairs(pairs, prot2tax, annotations):
 
         fas_cmds = ["fas.runMultiTaxa", "--input", missing_fn, "-a", annotations,
                     "-o", Path(tmp)/"fas_res", "--bidirectional", "--tsv", "--domain", "--no_config", "--json",
-                    "--mergeJson", "--outName", "computed_results", "--pairLimit", "30000", "--cpus", "8"]
-        res = subprocess.run(fas_cmds, capture_output=True)
+                    "--mergeJson", "--outName", "computed_results", "--pairLimit", "30000", "--cpus", str(nr_cpus)]
+        res = subprocess.run(fas_cmds) # , capture_output=True)
         if res.returncode != 0:
             logger.error("Computing fas.runMultiTaxa failed: %s", res.stderr)
             scores = {}
@@ -70,7 +72,7 @@ def compute_fas_scores_for_pairs(pairs, prot2tax, annotations):
     return scores
 
 
-def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: Path, raw_out: TextIO):
+def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: Path, nr_cpus: int, raw_out: TextIO):
     def iter_all_orthologs():
         cur = con.cursor()
         cur.execute("SELECT DISTINCT p1.uniprot_id, p2.uniprot_id FROM orthologs JOIN proteomes as p1 ON orthologs.prot_nr1 = p1.prot_nr JOIN proteomes as p2 ON orthologs.prot_nr2 = p2.prot_nr WHERE p1.uniprot_id < p2.uniprot_id" )
@@ -104,15 +106,18 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
     logger.info("%d pairs precomputed, %d missing (will compute); %d no feature annotations",
                 len(scores), len(missing_pairs), no_fa)
     if len(missing_pairs) > 0:
-        score2 = compute_fas_scores_for_pairs(missing_pairs, prot_2_tax_map, annotations)
+        score2 = compute_fas_scores_for_pairs(missing_pairs, prot_2_tax_map, annotations, nr_cpus)
         scores_lookup.update(score2)
     csv_writer = csv.writer(raw_out, dialect="excel-tab")
     csv_writer.writerow(("Acc1", "Acc2", "FAS"))
     scores_list = []
     for pair in itertools.chain(scores, missing_pairs):
-        score = scores_lookup[pair]
-        csv_writer.writerow((pair[0], pair[1], score))
-        scores_list.append(score)
+        try:
+            score = scores_lookup[pair]
+            csv_writer.writerow((pair[0], pair[1], score))
+            scores_list.append(score)
+        except KeyError:
+            pass
     fas_scores = numpy.array(scores_list, dtype="float")
     fas_mean = fas_scores.mean()
     fas_sem = fas_scores.std(ddof=1) / numpy.sqrt(numpy.size(fas_scores))
@@ -153,6 +158,7 @@ if __name__ == "__main__":
                                           "and not computed on the fly")
     parser.add_argument('--participant', required=True, help="Name of participant method")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
+    parser.add_argument('--cpus', type=int, help="nr of cpus to use. defaults to all available cpus")
     parser.add_argument('-d', '--debug', action="store_true", help="Set logging to debug level")
     conf = parser.parse_args()
 
@@ -161,6 +167,8 @@ if __name__ == "__main__":
         log_conf['filename'] = conf.log
     if conf.debug:
         log_conf['level'] = logging.DEBUG
+    if conf.cpus is None:
+        conf.cpus = multiprocessing.cpu_count()
     logging.basicConfig(**log_conf)
     logger.info("running fas_benchmark with following arguments: {}".format(conf))
 
@@ -169,5 +177,5 @@ if __name__ == "__main__":
     outfn_path = outdir / "FAS_{}_raw.txt.gz".format(conf.participant.replace(' ', '-').replace('_', '-'))
 
     with auto_open(str(outfn_path), 'wt') as raw_out_fh:
-        res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), raw_out_fh)
+        res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), conf.cpus, raw_out_fh)
     write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)
