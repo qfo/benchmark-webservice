@@ -2,7 +2,6 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ elixir, master ]
   pull_request:
     branches: [ master ]
   release:
@@ -131,7 +130,7 @@ jobs:
           context: .
           file: Dockerfile_qfo_python
           platforms: linux/amd64
-          push: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_python.outputs.tags }}
           labels: ${{ steps.meta_python.outputs.labels }}
 
@@ -141,7 +140,7 @@ jobs:
           context: .
           file: Dockerfile_qfo_darwin
           platforms: linux/amd64
-          push: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_darwin.outputs.tags }}
           labels: ${{ steps.meta_darwin.outputs.labels }}
 
@@ -151,6 +150,6 @@ jobs:
           context: .
           file: Dockerfile_qfo_fas
           platforms: linux/amd64
-          push: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_fas.outputs.tags }}
           labels: ${{ steps.meta_fas.outputs.labels }}
