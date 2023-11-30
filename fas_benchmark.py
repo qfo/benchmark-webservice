@@ -79,7 +79,7 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
         if species is not None:
             sp_lst = ','.join(['"%s"' % v for v in species])
             query += " && p1.species IN (%s) && p2.species IN (%s)" % (sp_lst, sp_lst)
-        cur.execute( )
+        cur.execute(query)
         cur.arraysize = 50000
         while True:
             chunk = cur.fetchmany()
