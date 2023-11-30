@@ -72,10 +72,14 @@ def compute_fas_scores_for_pairs(pairs, prot2tax, annotations, nr_cpus):
     return scores
 
 
-def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: Path, nr_cpus: int, raw_out: TextIO):
-    def iter_all_orthologs():
+def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: Path, nr_cpus: int, raw_out: TextIO, limited_species=False):
+    def iter_all_orthologs(species=None):
         cur = con.cursor()
-        cur.execute("SELECT DISTINCT p1.uniprot_id, p2.uniprot_id FROM orthologs JOIN proteomes as p1 ON orthologs.prot_nr1 = p1.prot_nr JOIN proteomes as p2 ON orthologs.prot_nr2 = p2.prot_nr WHERE p1.uniprot_id < p2.uniprot_id" )
+        query = "SELECT DISTINCT p1.uniprot_id, p2.uniprot_id FROM orthologs JOIN proteomes as p1 ON orthologs.prot_nr1 = p1.prot_nr JOIN proteomes as p2 ON orthologs.prot_nr2 = p2.prot_nr WHERE p1.uniprot_id < p2.uniprot_id"
+        if species is not None:
+            sp_lst = ','.join(['"%s"' % v for v in species])
+            query += " && p1.species IN (%s) && p2.species IN (%s)" % (sp_lst, sp_lst)
+        cur.execute( )
         cur.arraysize = 50000
         while True:
             chunk = cur.fetchmany()
@@ -90,7 +94,8 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
     logger.debug(list(itertools.islice(prot_2_tax_map.items(), 30)))
 
     scores = []; missing_pairs = []; no_fa = 0
-    for p1, p2 in tqdm(iter_all_orthologs()):
+    species = ("HUMAN", "MOUSE", "RATNO", "YEAST", "ECOLI", "ARATH") if limited_species else None
+    for p1, p2 in tqdm(iter_all_orthologs(species)):
         if '_' in p1 or '_' in p2:
             # skipping uniprot_ids, only uniprot accessions!
             continue
@@ -156,6 +161,7 @@ if __name__ == "__main__":
     parser.add_argument('--fas-data', help="Path to the input data of protein to feature architecture mapping. If not "
                                           "provided, missing pairs in the fas-precomputed-sores will be simply skipped "
                                           "and not computed on the fly")
+    parser.add_argument('--limited-species', action="store_true", help="run on limited species set (6 species)")
     parser.add_argument('--participant', required=True, help="Name of participant method")
     parser.add_argument('--log', help="Path to log file. Defaults to stderr")
     parser.add_argument('--cpus', type=int, help="nr of cpus to use. defaults to all available cpus")
@@ -177,5 +183,5 @@ if __name__ == "__main__":
     outfn_path = outdir / "FAS_{}_raw.txt.gz".format(conf.participant.replace(' ', '-').replace('_', '-'))
 
     with auto_open(str(outfn_path), 'wt') as raw_out_fh:
-        res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), conf.cpus, raw_out_fh)
+        res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), conf.cpus, raw_out_fh, limited_species=conf.limited_species)
     write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)

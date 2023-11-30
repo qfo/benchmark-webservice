@@ -387,7 +387,8 @@ process fas_benchmark{
          --outdir "${result_file_path}/FAS" \
          --fas-precomputed-scores ${refset_dir}/fas_precomputed.json \
          --fas-data ${refset_dir}/fas_annotations/ \
-         --db $sqlite_db
+         --db $sqlite_db \
+         --limited-species
     """
 }
 
