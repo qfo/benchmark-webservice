@@ -78,7 +78,7 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
         query = "SELECT DISTINCT p1.uniprot_id, p2.uniprot_id FROM orthologs JOIN proteomes as p1 ON orthologs.prot_nr1 = p1.prot_nr JOIN proteomes as p2 ON orthologs.prot_nr2 = p2.prot_nr WHERE p1.uniprot_id < p2.uniprot_id"
         if species is not None:
             sp_lst = ','.join(['"%s"' % v for v in species])
-            query += " && p1.species IN (%s) && p2.species IN (%s)" % (sp_lst, sp_lst)
+            query += " AND p1.species IN (%s) AND p2.species IN (%s)" % (sp_lst, sp_lst)
         cur.execute(query)
         cur.arraysize = 50000
         while True:
