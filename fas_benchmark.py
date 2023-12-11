@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import subprocess
 import tempfile
+import random
 
 import numpy
 import sqlite3
@@ -18,6 +19,7 @@ from JSON_templates import write_assessment_dataset
 from helpers import auto_open, load_json_file
 
 logger = logging.getLogger("FAS-Benchmark")
+MAX_PAIRS_COMPUTE = 9_000
 
 def load_precomputed_fas_scores(f: Path):
     dat = load_json_file(str(f))
@@ -46,13 +48,11 @@ def generate_prot_to_annoationfile_map(annotations: Path):
 
 
 def compute_fas_scores_for_pairs(pairs, prot2tax, annotations, nr_cpus):
-    MAX_PAIRS = 9_000
     logger.info("For %d orthologous pairs we don't have precomputed FAS scores", len(pairs))
-    if len(pairs) > MAX_PAIRS:
-        logger.warning("Too many pairs to analyse, will sub-sample to %d", MAX_PAIRS)
-        import random
+    if len(pairs) > MAX_PAIRS_COMPUTE:
+        logger.warning("Too many pairs to analyse, will sub-sample to %d", MAX_PAIRS_COMPUTE)
         random.shuffle(pairs)
-        pairs = pairs[:MAX_PAIRS]
+        pairs = pairs[:MAX_PAIRS_COMPUTE]
 
     with tempfile.TemporaryDirectory() as tmp:
         missing_fn = Path(tmp) / "missing.txt"
@@ -110,7 +110,16 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
     nr_orthologs = len(scores) + len(missing_pairs)
     logger.info("%d pairs precomputed, %d missing (will compute); %d no feature annotations",
                 len(scores), len(missing_pairs), no_fa)
+    frac_precomputed = len(scores) / (len(scores) + len(missing_pairs))
+    logger.info("ratio of precomputed vs missing pairs: ~%.0f:%.0f", 100*frac_precomputed, 100*(1-frac_precomputed))
     if len(missing_pairs) > 0:
+        compute_nr = min(len(missing_pairs), MAX_PAIRS_COMPUTE)
+        nr_precomp_maintain_frac = round( compute_nr * frac_precomputed / (1-frac_precomputed))
+        logger.info("to maintain ratio of precomputed vs missing, we will compute %d new pairs "
+                    "and sample %d precomputed pairs", compute_nr, nr_precomp_maintain_frac)
+        random.shuffle(scores)
+        scores = scores[:nr_precomp_maintain_frac]
+
         score2 = compute_fas_scores_for_pairs(missing_pairs, prot_2_tax_map, annotations, nr_cpus)
         scores_lookup.update(score2)
     csv_writer = csv.writer(raw_out, dialect="excel-tab")
