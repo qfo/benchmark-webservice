@@ -126,13 +126,20 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
     csv_writer = csv.writer(raw_out, dialect="excel-tab")
     csv_writer.writerow(("Acc1", "Acc2", "FAS"))
     scores_list = []
-    for pair in itertools.chain(scores, missing_pairs):
-        try:
-            score = scores_lookup[pair]
-            csv_writer.writerow((pair[0], pair[1], score))
-            scores_list.append(score)
-        except KeyError:
-            pass
+    for part, pairs in zip(("precomputed", "missing"), (scores, missing_pairs)):
+        score_part = []
+        for pair in pairs:
+            try:
+                score = scores_lookup[pair]
+                csv_writer.writerow((pair[0], pair[1], score))
+                score_part.append(score)
+            except KeyError:
+                pass
+        scores_list.extend(score_part)
+        score_part = numpy.array(score_part, dtype="float")
+        logger.info("FAS score[%s]: %f +- %f", part, score_part.mean(),
+                    score_part.std(ddof=1) / numpy.sqrt(numpy.size(score_part)))
+
     fas_scores = numpy.array(scores_list, dtype="float")
     fas_mean = fas_scores.mean()
     fas_sem = fas_scores.std(ddof=1) / numpy.sqrt(numpy.size(fas_scores))
