@@ -43,7 +43,7 @@ def get_file_list(release):
         files.extend([
             'vgnc-orthologs.txt.gz',
             'swissprot.txt.gz',
-            'fas_precomputed.json',
+            'fas_precomputed.json.gz',
             'fas_annotations.tgz',
         ])
     return [os.path.join(BASEURL, str(release), f) for f in files]

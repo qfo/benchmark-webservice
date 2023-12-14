@@ -131,12 +131,13 @@ db_geneTrees = Channel.create()
 db_sp = Channel.create()
 db_vgnc = Channel.create()
 db_fas = Channel.create()
+db_fas_all = Channel.create()
 
 predictions_db = Channel.create()
 sqlite_db = Channel.create()
 
 predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_geneTrees)
-sqlite_db.into(db_sp, db_vgnc, db_fas)
+sqlite_db.into(db_sp, db_vgnc, db_fas, db_fas_all)
 
 /*
  * extract pairwise predictions and store in darwin compatible database
@@ -385,12 +386,43 @@ process fas_benchmark{
          --participant "$method_name" \
          --assessment-out "FAS.json" \
          --outdir "${result_file_path}/FAS" \
-         --fas-precomputed-scores ${refset_dir}/fas_precomputed.json \
+         --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
          --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db \
          --limited-species
     """
 }
+
+
+
+process fas_all_benchmark{
+    label "fas_all"
+    cpus = 4
+
+    input:
+    tuple val(benchmark), path(sqlite_db) from c_fas.filter({it != null }).combine(db_fas_all)
+    val method_name
+    path refset_dir
+    val community_id
+    path result_file_path
+    // for mountpoint
+    path predictions
+
+    output:
+    path "FAS_all.json" into FAS_ALL_STUB
+
+    """
+    fas_benchmark.py \
+         --com $community_id \
+         --participant "$method_name" \
+         --assessment-out "FAS_all.json" \
+         --outdir "${result_file_path}/FAS" \
+         --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
+         --fas-data ${refset_dir}/fas_annotations/ \
+         --db $sqlite_db
+    """
+}
+
 
 
 process speciestree_benchmark {
@@ -482,7 +514,7 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB, FAS_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB, FAS_STUB, FAS_ALL_STUB)
 
 process consolidate {
     label "py"
