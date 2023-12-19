@@ -62,8 +62,9 @@ def compute_fas_scores_for_pairs(pairs, prot2tax, annotations, nr_cpus):
 
         fas_cmds = ["fas.runMultiTaxa", "--input", missing_fn, "-a", annotations,
                     "-o", Path(tmp)/"fas_res", "--bidirectional", "--tsv", "--domain", "--no_config", "--json",
-                    "--mergeJson", "--outName", "computed_results", "--max_cardinality", "10",
+                    "--mergeJson", "--outName", "computed_results", "--max_cardinality", "1",
                     "--pairLimit", "30000", "--cpus", str(nr_cpus)]
+        logger.info("running subprocess: %s", " ".join(fas_cmds))
         res = subprocess.run(fas_cmds) # , capture_output=True)
         if res.returncode != 0:
             logger.error("Computing fas.runMultiTaxa failed: %s", res.stderr)
@@ -137,8 +138,9 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
                 pass
         scores_list.extend(score_part)
         score_part = numpy.array(score_part, dtype="float")
-        logger.info("FAS score[%s]: %f +- %f", part, score_part.mean(),
-                    score_part.std(ddof=1) / numpy.sqrt(numpy.size(score_part)))
+        logger.info("FAS score[%s]: %f +- %f [N=%d]", part, score_part.mean(),
+                    score_part.std(ddof=1) / numpy.sqrt(numpy.size(score_part)),
+                    len(score_part))
 
     fas_scores = numpy.array(scores_list, dtype="float")
     fas_mean = fas_scores.mean()
