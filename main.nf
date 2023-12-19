@@ -173,6 +173,7 @@ c_geneTrees = Channel.create()
 c_sp = Channel.create()
 c_vg = Channel.create()
 c_fas = Channel.create()
+c_fas_all = Channel.create()
 
 process scheduleMetrics {
     
@@ -190,6 +191,7 @@ process scheduleMetrics {
 	val v_sp into c_sp
 	val v_vgnc into c_vgnc
 	val v_fas into c_fas
+        val v_fas_all into c_fas_all
     
     when:
     file_validated == 0
@@ -207,6 +209,7 @@ process scheduleMetrics {
     v_sp = null
     v_vgnc = null
     v_fas = null
+    v_fas_all = null
 
     switch(benchmark) {
         case "GO":
@@ -250,6 +253,9 @@ process scheduleMetrics {
             break
         case "FAS":
             v_fas = benchmark
+            break
+        case "FAS_all":
+            v_fas_all = benchmark
             break
         default:
             if(genetree_sets.contains(benchmark)) {
@@ -396,11 +402,11 @@ process fas_benchmark{
 
 
 process fas_all_benchmark{
-    label "fas_all"
+    label "fas"
     cpus = 4
 
     input:
-    tuple val(benchmark), path(sqlite_db) from c_fas.filter({it != null }).combine(db_fas_all)
+    tuple val(benchmark), path(sqlite_db) from c_fas_all.filter({it != null }).combine(db_fas_all)
     val method_name
     path refset_dir
     val community_id
@@ -416,7 +422,7 @@ process fas_all_benchmark{
          --com $community_id \
          --participant "$method_name" \
          --assessment-out "FAS_all.json" \
-         --outdir "${result_file_path}/FAS" \
+         --outdir "${result_file_path}/FAS_all" \
          --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
          --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db
