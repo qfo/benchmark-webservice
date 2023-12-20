@@ -395,7 +395,8 @@ process fas_benchmark{
          --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
          --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db \
-         --limited-species
+         --limited-species \
+         --cpus ${task.cpus}
     """
 }
 
@@ -425,7 +426,8 @@ process fas_all_benchmark{
          --outdir "${result_file_path}/FAS_all" \
          --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
          --fas-data ${refset_dir}/fas_annotations/ \
-         --db $sqlite_db
+         --db $sqlite_db \
+         --cpus ${task.cpus}
     """
 }
 
