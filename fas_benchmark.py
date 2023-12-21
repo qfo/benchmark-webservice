@@ -27,7 +27,10 @@ def load_precomputed_fas_scores(f: Path):
     for pair, vals in dat.items():
         p1, p2 = pair.split('_')
         if p1 > p2: p1, p2 = p2, p1
-        data[(p1, p2)] = float(numpy.array(vals, dtype="float").mean())
+        try:
+            data[(p1, p2)] = float(numpy.array(vals, dtype="float").mean())
+        except ValueError as e:
+            logger.debug("FAS score for (%s,%s) is not parseable: %s", p1, p2, e)
     return data
 
 def generate_prot_to_annoationfile_map(annotations: Path):
