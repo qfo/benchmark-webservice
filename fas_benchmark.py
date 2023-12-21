@@ -62,7 +62,7 @@ def compute_fas_scores_for_pairs(pairs, prot2tax, annotations, nr_cpus):
 
         fas_cmds = ["fas.runMultiTaxa", "--input", missing_fn, "-a", annotations,
                     "-o", Path(tmp)/"fas_res", "--bidirectional", "--tsv", "--domain", "--no_config", "--json",
-                    "--mergeJson", "--outName", "computed_results", "--max_cardinality", "50", "--paths_limit", "15",
+                    "--mergeJson", "--outName", "computed_results", "--max_cardinality", "40", "--paths_limit", "15",
                     "--pairLimit", "30000", "--cpus", str(nr_cpus)]
         logger.info("running subprocess: %s", fas_cmds)
         res = subprocess.run(fas_cmds) # , capture_output=True)
