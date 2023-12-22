@@ -159,8 +159,7 @@ def compute_fas_benchmark(precomputed_scores: Path, annotations: Path, db_path: 
 
 
 
-def write_assessment_json_stub(fn, community, participant, result):
-    challenge = "FAS"
+def write_assessment_json_stub(fn, community, participant, result, challenge):
     stubs = []
     for metric in result:
         id_ = "{}:{}_{}_{}_A".format(community, challenge, metric['name'],
@@ -199,11 +198,14 @@ if __name__ == "__main__":
         conf.cpus = multiprocessing.cpu_count()
     logging.basicConfig(**log_conf)
     logger.info("running fas_benchmark with following arguments: {}".format(conf))
+    challenge = "FAS"
+    if not conf.limited_species:
+        challenge += "_all"
 
     outdir = Path(conf.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    outfn_path = outdir / "FAS_{}_raw.txt.gz".format(conf.participant.replace(' ', '-').replace('_', '-'))
+    outfn_path = outdir / "{}_{}_raw.txt.gz".format(challenge, conf.participant.replace(' ', '-').replace('_', '-'))
 
     with auto_open(str(outfn_path), 'wt') as raw_out_fh:
         res = compute_fas_benchmark(Path(conf.fas_precomputed_scores), Path(conf.fas_data), Path(conf.db), conf.cpus, raw_out_fh, limited_species=conf.limited_species)
-    write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res)
+    write_assessment_json_stub(conf.assessment_out, conf.com, conf.participant, res, challenge)
