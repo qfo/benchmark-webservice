@@ -1,0 +1,15 @@
+{
+  "_id": "QfO:FAS_agg",
+  "challenge_ids": ["FAS"],
+  "datalink": {
+    "inline_data": {
+      "challenge_participants": [],
+      "visualization": {
+        "type": "2D-plot",
+        "x_axis": "NR_ORTHOLOGS",
+        "y_axis": "FAS"
+      }
+    }
+  },
+  "type": "aggregation"
+}

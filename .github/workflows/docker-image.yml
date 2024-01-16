@@ -2,7 +2,6 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ elixir, master ]
   pull_request:
     branches: [ master ]
   release:
@@ -11,6 +10,7 @@ on:
 env:
   TEST_TAG_PYTHON: qfobenchmark/python:test
   TEST_TAG_DARWIN: qfobenchmark/darwin:test
+  TEST_TAG_FAS: qfobechmark/fas_bechmark:test
 
 jobs:
   build:
@@ -38,13 +38,30 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
 
-      - name: Docker python meta
+      - name: Docker darwin meta
         id: meta_darwin
         uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
           images: |
             qfobenchmark/darwin
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Docker FAS meta
+        id: meta_fas
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            qfobenchmark/fas_benchmark
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -88,8 +105,20 @@ jobs:
           echo "$?"
           ls -l output/
 
+      - name: Build and export fas_benchmark image to docker for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile_qfo_fas
+          load: true
+          tags: ${{ env.TEST_TAG_FAS }}
+
+      - name: Test FAS
+        run: |
+          docker run --rm -i ${{ env.TEST_TAG_FAS }} fas.runMultiTaxa --version
+
       - name: Login to DockerHub
-        if: github.event_name != 'pull_request' && github.event_name != 'push'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -101,7 +130,7 @@ jobs:
           context: .
           file: Dockerfile_qfo_python
           platforms: linux/amd64
-          push: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_python.outputs.tags }}
           labels: ${{ steps.meta_python.outputs.labels }}
 
@@ -111,6 +140,16 @@ jobs:
           context: .
           file: Dockerfile_qfo_darwin
           platforms: linux/amd64
-          push: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_darwin.outputs.tags }}
           labels: ${{ steps.meta_darwin.outputs.labels }}
+
+      - name: Build and push fas
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile_qfo_fas
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta_fas.outputs.tags }}
+          labels: ${{ steps.meta_fas.outputs.labels }}
