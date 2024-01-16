@@ -199,9 +199,7 @@ if __name__ == "__main__":
     logging.basicConfig(**log_conf)
     logger.info("running fas_benchmark with following arguments: {}".format(conf))
     challenge = "FAS"
-    if not conf.limited_species:
-        challenge += "_all"
-
+    
     outdir = Path(conf.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     outfn_path = outdir / "{}_{}_raw.txt.gz".format(challenge, conf.participant.replace(' ', '-').replace('_', '-'))

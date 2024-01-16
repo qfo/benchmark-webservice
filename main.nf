@@ -131,13 +131,12 @@ db_geneTrees = Channel.create()
 db_sp = Channel.create()
 db_vgnc = Channel.create()
 db_fas = Channel.create()
-db_fas_all = Channel.create()
 
 predictions_db = Channel.create()
 sqlite_db = Channel.create()
 
 predictions_db.into(db_go_test, db_ec_test, db_std, db_g_std, db_g_std_v2, db_geneTrees)
-sqlite_db.into(db_sp, db_vgnc, db_fas, db_fas_all)
+sqlite_db.into(db_sp, db_vgnc, db_fas)
 
 /*
  * extract pairwise predictions and store in darwin compatible database
@@ -173,7 +172,6 @@ c_geneTrees = Channel.create()
 c_sp = Channel.create()
 c_vg = Channel.create()
 c_fas = Channel.create()
-c_fas_all = Channel.create()
 
 process scheduleMetrics {
     
@@ -191,7 +189,6 @@ process scheduleMetrics {
 	val v_sp into c_sp
 	val v_vgnc into c_vgnc
 	val v_fas into c_fas
-        val v_fas_all into c_fas_all
     
     when:
     file_validated == 0
@@ -209,7 +206,6 @@ process scheduleMetrics {
     v_sp = null
     v_vgnc = null
     v_fas = null
-    v_fas_all = null
 
     switch(benchmark) {
         case "GO":
@@ -253,9 +249,6 @@ process scheduleMetrics {
             break
         case "FAS":
             v_fas = benchmark
-            break
-        case "FAS_all":
-            v_fas_all = benchmark
             break
         default:
             if(genetree_sets.contains(benchmark)) {
@@ -395,42 +388,9 @@ process fas_benchmark{
          --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
          --fas-data ${refset_dir}/fas_annotations/ \
          --db $sqlite_db \
-         --limited-species \
          --cpus ${task.cpus}
     """
 }
-
-
-
-process fas_all_benchmark{
-    label "fas"
-    cpus = 4
-
-    input:
-    tuple val(benchmark), path(sqlite_db) from c_fas_all.filter({it != null }).combine(db_fas_all)
-    val method_name
-    path refset_dir
-    val community_id
-    path result_file_path
-    // for mountpoint
-    path predictions
-
-    output:
-    path "FAS_all.json" into FAS_ALL_STUB
-
-    """
-    fas_benchmark.py \
-         --com $community_id \
-         --participant "$method_name" \
-         --assessment-out "FAS_all.json" \
-         --outdir "${result_file_path}/FAS_all" \
-         --fas-precomputed-scores ${refset_dir}/fas_precomputed.json.gz \
-         --fas-data ${refset_dir}/fas_annotations/ \
-         --db $sqlite_db \
-         --cpus ${task.cpus}
-    """
-}
-
 
 
 process speciestree_benchmark {
@@ -522,7 +482,7 @@ process reference_genetrees_benchmark {
 }
 
 
-challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB, FAS_STUB, FAS_ALL_STUB)
+challenge_assessments = GO_STUB.mix(EC_STUB, SP_STUB, STD_STUB, G_STD_STUB, G_STD2_STUB, REFPHYLO_STUB, VGNC_STUB, FAS_STUB)
 
 process consolidate {
     label "py"
