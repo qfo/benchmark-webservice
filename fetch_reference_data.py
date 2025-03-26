@@ -10,7 +10,13 @@ except ImportError:
 
 BASEURLS = {
         "2022.1": "https://zenodo.org/records/10517603/files/",
+        "2022.0": "https://zenodo.org/records/7919753/files/",
+        "2020.2": "https://zenodo.org/records/15087752/files/",
+        "2018": "https://zenodo.org/records/15087679/files/",
+        "2011": "https://zenodo.org/records/15083829/files/",
 }
+BASEURLS["2022"] = BASEURLS["2022.1"]
+BASEURLS["2020"] = BASEURLS["2020.2"]
 
 
 def get_file_list(release):
