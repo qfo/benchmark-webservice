@@ -8,10 +8,14 @@ except ImportError:
     from urllib import urlretrieve
 
 
-BASEURL = "https://orthology.benchmarkservice.org/refsets"
+BASEURLS = {
+        "2022.1": "https://zenodo.org/records/10517603/files/",
+}
 
 
 def get_file_list(release):
+    if release not in BASEURLS:
+        raise KeyError(f"Either release {release} is unknown, or a base URL is not available for it yet")
     files = [
        'Summaries.drw.gz',
        'GOdata.drw.gz',
@@ -46,7 +50,7 @@ def get_file_list(release):
             'fas_precomputed.json.gz',
             'fas_annotations.tgz',
         ])
-    return [os.path.join(BASEURL, str(release), f) for f in files]
+    return [os.path.join(BASEURLS[release], f) for f in files]
 
 
 def retrieve_files(files, target_dir):
